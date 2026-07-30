@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+.next
+.git
+.gitignore
+*.md
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+coverage
+agent-transcripts
+.cursor

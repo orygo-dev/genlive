@@ -1,0 +1,159 @@
+import { NextResponse } from "next/server";
+import { compare } from "bcryptjs";
+import type { ParticipantRole } from "@/generated/prisma/enums";
+import { createAdmissionToken } from "@/lib/admission";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { createParticipantToken } from "@/lib/livekit-token";
+import { meetingRequestSchema } from "@/lib/meeting";
+import { isParticipantRoomOpen } from "@/lib/meeting-lifecycle";
+
+export const runtime = "nodejs";
+const ADMISSION_TTL_MS = 15 * 60 * 1000;
+
+export async function POST(request: Request) {
+  try {
+    const body: unknown = await request.json();
+    const parsed = meetingRequestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Data meeting tidak valid." },
+        { status: 400 },
+      );
+    }
+
+    const user = await getCurrentUser();
+    const identity = `${user ? "user" : "guest"}-${crypto.randomUUID()}`;
+    const meeting = await prisma.meeting.findUnique({
+      where: { roomName: parsed.data.roomName },
+      select: {
+        id: true,
+        organizationId: true,
+        createdById: true,
+        passwordHash: true,
+        waitingRoom: true,
+        status: true,
+        startsAt: true,
+      },
+    });
+
+    let role: ParticipantRole = "PARTICIPANT";
+    if (meeting && user?.id === meeting.createdById) {
+      role = "HOST";
+    } else if (meeting && user) {
+      const membership = user.memberships.find(
+        (item) => item.organization.id === meeting.organizationId,
+      );
+      if (membership?.role === "OWNER" || membership?.role === "ADMIN") {
+        role = "MODERATOR";
+      }
+    }
+
+    if (meeting?.status === "CANCELLED" || meeting?.status === "ENDED") {
+      return NextResponse.json(
+        { error: "Meeting ini sudah tidak menerima peserta." },
+        { status: 410 },
+      );
+    }
+
+    if (
+      meeting &&
+      role === "PARTICIPANT" &&
+      !isParticipantRoomOpen(meeting.status)
+    ) {
+      return NextResponse.json(
+        { error: "Meeting belum dimulai oleh host." },
+        { status: 403 },
+      );
+    }
+
+    if (meeting?.passwordHash && role === "PARTICIPANT") {
+      const passwordMatches =
+        parsed.data.password &&
+        (await compare(parsed.data.password, meeting.passwordHash));
+      if (!passwordMatches) {
+        return NextResponse.json(
+          { error: "Password meeting tidak sesuai." },
+          { status: 401 },
+        );
+      }
+    }
+
+    if (meeting?.waitingRoom && role === "PARTICIPANT") {
+      const admission = createAdmissionToken();
+      const participant = await prisma.meetingParticipant.create({
+        data: {
+          meetingId: meeting.id,
+          userId: user?.id,
+          livekitIdentity: identity,
+          displayName: parsed.data.participantName,
+          role,
+          admissionStatus: "WAITING",
+          admissionTokenHash: admission.tokenHash,
+          admissionExpiresAt: new Date(Date.now() + ADMISSION_TTL_MS),
+        },
+        select: { id: true },
+      });
+
+      return NextResponse.json(
+        {
+          waiting: true,
+          requestId: participant.id,
+          admissionToken: admission.token,
+        },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
+    const connection = await createParticipantToken({
+      identity,
+      name: parsed.data.participantName,
+      role,
+      roomName: parsed.data.roomName,
+    });
+
+    if (meeting) {
+      await prisma.$transaction(async (transaction) => {
+        if (role !== "PARTICIPANT" && meeting.status === "SCHEDULED") {
+          await transaction.meeting.update({
+            where: { id: meeting.id },
+            data: { status: "ACTIVE" },
+          });
+        }
+        await transaction.meetingParticipant.create({
+          data: {
+            meetingId: meeting.id,
+            userId: user?.id,
+            livekitIdentity: identity,
+            displayName: parsed.data.participantName,
+            role,
+            admissionStatus: "ADMITTED",
+          },
+        });
+      });
+    }
+
+    return NextResponse.json(
+      connection,
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
+    );
+  } catch (error) {
+    const isConfigurationError =
+      error instanceof Error && error.message.startsWith("Konfigurasi LiveKit");
+    const message = isConfigurationError
+      ? error.message
+      : "Tidak dapat membuat akses meeting.";
+    const status = error instanceof SyntaxError ? 400 : 500;
+
+    if (!isConfigurationError && !(error instanceof SyntaxError)) {
+      console.error("LiveKit token creation failed", error);
+    }
+
+    return NextResponse.json({ error: message }, { status });
+  }
+}

@@ -1,0 +1,48 @@
+import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsPanel } from "@/components/settings-panel";
+import { requireActiveMembership } from "@/lib/dashboard-guard";
+import { prisma } from "@/lib/db";
+import { canManageMembers } from "@/lib/organization-helpers";
+
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage() {
+  const context = await requireActiveMembership();
+  const { user, activeMembership } = context;
+  const organization = activeMembership.organization;
+
+  const orgDetails = await prisma.organization.findUniqueOrThrow({
+    where: { id: organization.id },
+    select: { planCode: true },
+  });
+
+  return (
+    <DashboardShell
+      user={user}
+      memberships={user.memberships}
+      activeOrganizationId={organization.id}
+      activeNav="settings"
+    >
+      <header className="dashboard-header">
+        <div>
+          <p>{organization.name}</p>
+          <h1>Pengaturan</h1>
+        </div>
+      </header>
+
+      <SettingsPanel
+        user={{ id: user.id, name: user.name, email: user.email }}
+        organization={{
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          planCode: orgDetails.planCode,
+        }}
+        currentRole={activeMembership.role}
+        canManageOrg={canManageMembers(activeMembership.role)}
+        canDeleteOrg={activeMembership.role === "OWNER"}
+        membershipCount={user.memberships.length}
+      />
+    </DashboardShell>
+  );
+}
