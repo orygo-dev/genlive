@@ -1,11 +1,12 @@
 import { config as loadEnv } from "dotenv";
 import { existsSync } from "node:fs";
 
-if (existsSync(".env.local")) {
-  loadEnv({ path: ".env.local" });
+for (const path of [".env.local", ".env", ".env.production"]) {
+  if (existsSync(path)) {
+    loadEnv({ path });
+  }
 }
 loadEnv();
-
 const strict = process.argv.includes("--strict");
 const issues = [];
 

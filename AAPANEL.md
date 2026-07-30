@@ -126,13 +126,22 @@ SUPER_ADMIN_EMAIL=anda@perusahaan.com
 # Email
 RESEND_API_KEY=...
 EMAIL_FROM="GenMeet <noreply@domainanda.com>"
+```
+
+Prisma & Next membaca `.env.local` / `.env` / `.env.production`. Buat symlink
+**sebelum** `npm ci` (karena `postinstall` menjalankan `prisma generate`):
 
 ```bash
 chmod 600 .env.production
 ln -sf .env.production .env
+ln -sf .env.production .env.local
+# pastikan DATABASE_URL terbaca:
+grep ^DATABASE_URL .env.local
 npm run check:env -- --strict
 ```
 
+> Error `Cannot resolve environment variable: DATABASE_URL` artinya file env
+> belum ada / belum di-symlink. Jangan jalankan `npm ci` sebelum langkah ini.
 ---
 
 ## 6. Install, migrasi, build
