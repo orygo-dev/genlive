@@ -209,6 +209,25 @@ Halaman billing ada di `/dashboard/billing`. Setelah pembayaran sukses,
 workspace naik ke plan Pro selama 30 hari dan kuota anggota/meeting/recording
 diberlakukan di API.
 
+## Super Admin & brand platform
+
+Halaman `/admin` untuk Super Admin mengatur identitas visual aplikasi:
+
+- Nama aplikasi
+- Logo aplikasi
+- Background halaman login
+- Background splash screen
+- Logo splash screen
+
+Set email Super Admin di environment:
+
+```bash
+SUPER_ADMIN_EMAIL=anda@perusahaan.com
+```
+
+Setelah login dengan email tersebut, buka `/admin` atau menu **Super Admin** di
+sidebar dashboard. Upload aset disimpan di `public/uploads/brand/`.
+
 ## Pemeriksaan kualitas
 
 ```bash

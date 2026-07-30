@@ -6,8 +6,10 @@ const SESSION_COOKIE_NAME =
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const needsAuth =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
 
-  if (!pathname.startsWith("/dashboard")) {
+  if (!needsAuth) {
     return NextResponse.next();
   }
 
@@ -22,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard", "/dashboard/:path*"],
+  matcher: ["/dashboard", "/dashboard/:path*", "/admin", "/admin/:path*"],
 };

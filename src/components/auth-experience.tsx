@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -10,8 +9,9 @@ import {
   EyeOff,
   LoaderCircle,
   LockKeyhole,
-  Video,
 } from "lucide-react";
+import { AppBrand } from "@/components/app-brand";
+import type { PlatformBranding } from "@/lib/platform-branding";
 
 type AuthMode = "login" | "register";
 
@@ -23,7 +23,13 @@ function safeNextPath(nextPath?: string) {
   return nextPath;
 }
 
-export function AuthExperience({ nextPath }: { nextPath?: string }) {
+export function AuthExperience({
+  nextPath,
+  branding,
+}: {
+  nextPath?: string;
+  branding: PlatformBranding;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -62,13 +68,25 @@ export function AuthExperience({ nextPath }: { nextPath?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as {
+        error?: string;
+        user?: { isSuperAdmin?: boolean };
+      };
 
       if (!response.ok) {
         throw new Error(result.error ?? "Permintaan tidak dapat diproses.");
       }
 
-      router.replace(destination);
+      let target = destination;
+      if (mode === "login" && result.user?.isSuperAdmin) {
+        if (!nextPath || nextPath === "/dashboard") {
+          target = "/admin";
+        } else {
+          target = destination;
+        }
+      }
+
+      router.replace(target);
       router.refresh();
     } catch (requestError) {
       setError(
@@ -83,11 +101,20 @@ export function AuthExperience({ nextPath }: { nextPath?: string }) {
 
   return (
     <main className="auth-page">
-      <section className="auth-aside">
-        <Link className="brand auth-brand" href="/">
-          <span className="brand-mark"><Video size={20} /></span>
-          <span>GenMeet</span>
-        </Link>
+      <section
+        className={[
+          "auth-aside",
+          branding.loginBackgroundUrl ? "has-image" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        style={
+          branding.loginBackgroundUrl
+            ? { backgroundImage: `url(${branding.loginBackgroundUrl})` }
+            : undefined
+        }
+      >
+        <AppBrand branding={branding} className="brand auth-brand" />
         <div className="auth-aside-copy">
           <span className="auth-overline">Kolaborasi yang lebih dekat</span>
           <h1>Satu tempat untuk semua percakapan penting tim Anda.</h1>
@@ -127,7 +154,11 @@ export function AuthExperience({ nextPath }: { nextPath?: string }) {
 
           <div className="auth-heading">
             <span className="auth-lock"><LockKeyhole size={20} /></span>
-            <h2>{mode === "login" ? "Selamat datang kembali" : "Mulai dengan GenMeet"}</h2>
+            <h2>
+              {mode === "login"
+                ? "Selamat datang kembali"
+                : `Mulai dengan ${branding.appName}`}
+            </h2>
             <p>
               {mode === "login"
                 ? "Masuk untuk mengelola meeting dan workspace Anda."

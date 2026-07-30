@@ -409,7 +409,8 @@ export const ModelName = {
   Recording: 'Recording',
   PaymentOrder: 'PaymentOrder',
   MeetingParticipant: 'MeetingParticipant',
-  LiveKitWebhookEvent: 'LiveKitWebhookEvent'
+  LiveKitWebhookEvent: 'LiveKitWebhookEvent',
+  PlatformSettings: 'PlatformSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -425,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "organization" | "organizationInvitation" | "auditLog" | "organizationMember" | "meeting" | "meetingInvite" | "reminderSent" | "recording" | "paymentOrder" | "meetingParticipant" | "liveKitWebhookEvent"
+    modelProps: "user" | "session" | "organization" | "organizationInvitation" | "auditLog" | "organizationMember" | "meeting" | "meetingInvite" | "reminderSent" | "recording" | "paymentOrder" | "meetingParticipant" | "liveKitWebhookEvent" | "platformSettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1287,6 +1288,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PlatformSettings: {
+      payload: Prisma.$PlatformSettingsPayload<ExtArgs>
+      fields: Prisma.PlatformSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlatformSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlatformSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.PlatformSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlatformSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.PlatformSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.PlatformSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.PlatformSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.PlatformSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        update: {
+          args: Prisma.PlatformSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlatformSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlatformSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.PlatformSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlatformSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.PlatformSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlatformSettings>
+        }
+        groupBy: {
+          args: Prisma.PlatformSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlatformSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlatformSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlatformSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1331,6 +1398,7 @@ export const UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   passwordHash: 'passwordHash',
+  isSuperAdmin: 'isSuperAdmin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1519,6 +1587,20 @@ export const LiveKitWebhookEventScalarFieldEnum = {
 export type LiveKitWebhookEventScalarFieldEnum = (typeof LiveKitWebhookEventScalarFieldEnum)[keyof typeof LiveKitWebhookEventScalarFieldEnum]
 
 
+export const PlatformSettingsScalarFieldEnum = {
+  id: 'id',
+  appName: 'appName',
+  logoUrl: 'logoUrl',
+  loginBackgroundUrl: 'loginBackgroundUrl',
+  splashBackgroundUrl: 'splashBackgroundUrl',
+  splashLogoUrl: 'splashLogoUrl',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type PlatformSettingsScalarFieldEnum = (typeof PlatformSettingsScalarFieldEnum)[keyof typeof PlatformSettingsScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1702,6 +1784,18 @@ export const LiveKitWebhookEventOrderByRelevanceFieldEnum = {
 export type LiveKitWebhookEventOrderByRelevanceFieldEnum = (typeof LiveKitWebhookEventOrderByRelevanceFieldEnum)[keyof typeof LiveKitWebhookEventOrderByRelevanceFieldEnum]
 
 
+export const PlatformSettingsOrderByRelevanceFieldEnum = {
+  appName: 'appName',
+  logoUrl: 'logoUrl',
+  loginBackgroundUrl: 'loginBackgroundUrl',
+  splashBackgroundUrl: 'splashBackgroundUrl',
+  splashLogoUrl: 'splashLogoUrl',
+  updatedById: 'updatedById'
+} as const
+
+export type PlatformSettingsOrderByRelevanceFieldEnum = (typeof PlatformSettingsOrderByRelevanceFieldEnum)[keyof typeof PlatformSettingsOrderByRelevanceFieldEnum]
+
+
 
 /**
  * Field references
@@ -1712,6 +1806,13 @@ export type LiveKitWebhookEventOrderByRelevanceFieldEnum = (typeof LiveKitWebhoo
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1754,13 +1855,6 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1997,6 +2091,7 @@ export type GlobalOmitConfig = {
   paymentOrder?: Prisma.PaymentOrderOmit
   meetingParticipant?: Prisma.MeetingParticipantOmit
   liveKitWebhookEvent?: Prisma.LiveKitWebhookEventOmit
+  platformSettings?: Prisma.PlatformSettingsOmit
 }
 
 /* Types for Logging */

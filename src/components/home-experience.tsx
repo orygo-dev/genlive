@@ -15,6 +15,8 @@ import {
   Video,
 } from "lucide-react";
 import { createRoomName, normalizeRoomName } from "@/lib/meeting";
+import { AppBrand } from "@/components/app-brand";
+import type { PlatformBranding } from "@/lib/platform-branding";
 
 const benefits = [
   "Video HD adaptif",
@@ -23,7 +25,7 @@ const benefits = [
   "Akses terenkripsi",
 ];
 
-export function HomeExperience() {
+export function HomeExperience({ branding }: { branding: PlatformBranding }) {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
@@ -47,12 +49,7 @@ export function HomeExperience() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <Link className="brand" href="/" aria-label="GenMeet beranda">
-          <span className="brand-mark">
-            <Video size={20} strokeWidth={2.4} />
-          </span>
-          <span>GenMeet</span>
-        </Link>
+        <AppBrand branding={branding} />
         <nav className="header-nav" aria-label="Navigasi utama">
           <a href="#fitur">Fitur</a>
           <a href="#keamanan">Keamanan</a>
@@ -107,7 +104,7 @@ export function HomeExperience() {
               </p>
             )}
 
-            <ul className="benefit-list" aria-label="Keunggulan GenMeet">
+            <ul className="benefit-list" aria-label={`Keunggulan ${branding.appName}`}>
               {benefits.map((benefit) => (
                 <li key={benefit}>
                   <Check size={15} /> {benefit}
@@ -116,7 +113,7 @@ export function HomeExperience() {
             </ul>
           </div>
 
-          <div className="hero-visual" aria-label="Pratinjau ruang meeting GenMeet">
+          <div className="hero-visual" aria-label={`Pratinjau ruang meeting ${branding.appName}`}>
             <div className="meeting-preview">
               <div className="preview-topbar">
                 <div>
@@ -173,11 +170,9 @@ export function HomeExperience() {
       </main>
 
       <footer>
-        <Link className="brand brand-small" href="/">
-          <span className="brand-mark"><Video size={16} /></span> GenMeet
-        </Link>
+        <AppBrand branding={branding} className="brand brand-small" markSize={16} />
         <p>Komunikasi yang lebih manusiawi.</p>
-        <span>© {new Date().getFullYear()} GenMeet</span>
+        <span>© {new Date().getFullYear()} {branding.appName}</span>
       </footer>
     </div>
   );

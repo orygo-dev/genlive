@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createSession } from "@/lib/auth";
 import { loginSchema } from "@/lib/auth-validation";
 import { prisma } from "@/lib/db";
+import { syncSuperAdminFlag } from "@/lib/super-admin";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         name: true,
         email: true,
         passwordHash: true,
+        isSuperAdmin: true,
         memberships: {
           orderBy: { joinedAt: "asc" },
           take: 1,
@@ -42,10 +44,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const syncedSuperAdmin = await syncSuperAdminFlag(user.id, user.email);
+    const isSuperAdmin = syncedSuperAdmin || user.isSuperAdmin;
+
     await createSession(user.id, user.memberships[0]?.organizationId);
 
     return NextResponse.json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isSuperAdmin,
+      },
     });
   } catch (error) {
     if (error instanceof SyntaxError) {

@@ -8,11 +8,13 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { MeetingHistory } from "@/components/meeting-history";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
+import { getPlatformBranding } from "@/lib/platform-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const context = await requireActiveMembership();
+  const branding = await getPlatformBranding();
 
   const { user, activeMembership } = context;
   const organizationName = activeMembership.organization.name;
@@ -58,10 +60,15 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell
-      user={user}
+      user={{
+        name: user.name,
+        email: user.email,
+        isSuperAdmin: user.isSuperAdmin,
+      }}
       memberships={user.memberships}
       activeOrganizationId={organizationId}
       activeNav="meeting"
+      branding={branding}
     >
       <header className="dashboard-header">
         <div>

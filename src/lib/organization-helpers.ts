@@ -28,6 +28,7 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
+  isSuperAdmin?: boolean;
   memberships: Membership[];
 };
 

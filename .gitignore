@@ -34,6 +34,13 @@ yarn-error.log*
 .env*
 !.env.example
 
+# uploaded brand assets (kept locally / on server)
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/brand/
+/public/uploads/brand/*
+!/public/uploads/brand/.gitkeep
+
 # vercel
 .vercel
 

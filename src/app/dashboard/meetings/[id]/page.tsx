@@ -5,6 +5,7 @@ import { MeetingRecordingsPanel } from "@/components/meeting-recordings-panel";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
+import { getPlatformBranding } from "@/lib/platform-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function MeetingDetailPage({
 }: MeetingDetailPageProps) {
   const { id } = await params;
   const context = await requireActiveMembership();
+  const branding = await getPlatformBranding();
 
   const meeting = await prisma.meeting.findUnique({
     where: { id },
@@ -67,10 +69,15 @@ export default async function MeetingDetailPage({
 
   return (
     <DashboardShell
-      user={context.user}
+      user={{
+        name: context.user.name,
+        email: context.user.email,
+        isSuperAdmin: context.user.isSuperAdmin,
+      }}
       memberships={context.user.memberships}
       activeOrganizationId={context.activeMembership.organization.id}
       activeNav="meeting"
+      branding={branding}
     >
       <MeetingDetailPanel
         canManage={canManageMeeting(context.user, meeting)}

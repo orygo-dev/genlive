@@ -106,3 +106,8 @@ export type MeetingParticipant = Prisma.MeetingParticipantModel
  * 
  */
 export type LiveKitWebhookEvent = Prisma.LiveKitWebhookEventModel
+/**
+ * Model PlatformSettings
+ * 
+ */
+export type PlatformSettings = Prisma.PlatformSettingsModel

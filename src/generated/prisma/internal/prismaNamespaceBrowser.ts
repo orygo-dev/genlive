@@ -63,7 +63,8 @@ export const ModelName = {
   Recording: 'Recording',
   PaymentOrder: 'PaymentOrder',
   MeetingParticipant: 'MeetingParticipant',
-  LiveKitWebhookEvent: 'LiveKitWebhookEvent'
+  LiveKitWebhookEvent: 'LiveKitWebhookEvent',
+  PlatformSettings: 'PlatformSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -87,6 +88,7 @@ export const UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   passwordHash: 'passwordHash',
+  isSuperAdmin: 'isSuperAdmin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -275,6 +277,20 @@ export const LiveKitWebhookEventScalarFieldEnum = {
 export type LiveKitWebhookEventScalarFieldEnum = (typeof LiveKitWebhookEventScalarFieldEnum)[keyof typeof LiveKitWebhookEventScalarFieldEnum]
 
 
+export const PlatformSettingsScalarFieldEnum = {
+  id: 'id',
+  appName: 'appName',
+  logoUrl: 'logoUrl',
+  loginBackgroundUrl: 'loginBackgroundUrl',
+  splashBackgroundUrl: 'splashBackgroundUrl',
+  splashLogoUrl: 'splashLogoUrl',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type PlatformSettingsScalarFieldEnum = (typeof PlatformSettingsScalarFieldEnum)[keyof typeof PlatformSettingsScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -456,4 +472,16 @@ export const LiveKitWebhookEventOrderByRelevanceFieldEnum = {
 } as const
 
 export type LiveKitWebhookEventOrderByRelevanceFieldEnum = (typeof LiveKitWebhookEventOrderByRelevanceFieldEnum)[keyof typeof LiveKitWebhookEventOrderByRelevanceFieldEnum]
+
+
+export const PlatformSettingsOrderByRelevanceFieldEnum = {
+  appName: 'appName',
+  logoUrl: 'logoUrl',
+  loginBackgroundUrl: 'loginBackgroundUrl',
+  splashBackgroundUrl: 'splashBackgroundUrl',
+  splashLogoUrl: 'splashLogoUrl',
+  updatedById: 'updatedById'
+} as const
+
+export type PlatformSettingsOrderByRelevanceFieldEnum = (typeof PlatformSettingsOrderByRelevanceFieldEnum)[keyof typeof PlatformSettingsOrderByRelevanceFieldEnum]
 

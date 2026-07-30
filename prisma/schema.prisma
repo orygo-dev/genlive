@@ -83,6 +83,7 @@ model User {
   name              String                   @db.VarChar(80)
   email             String                   @unique @db.VarChar(255)
   passwordHash      String                   @map("password_hash") @db.VarChar(255)
+  isSuperAdmin      Boolean                  @default(false) @map("is_super_admin")
   createdAt         DateTime                 @default(now()) @map("created_at")
   updatedAt         DateTime                 @updatedAt @map("updated_at")
   memberships       OrganizationMember[]
@@ -319,4 +320,17 @@ model LiveKitWebhookEvent {
   processedAt DateTime @default(now()) @map("processed_at")
 
   @@map("livekit_webhook_events")
+}
+
+model PlatformSettings {
+  id                   Int      @id @default(1)
+  appName              String   @default("GenMeet") @map("app_name") @db.VarChar(80)
+  logoUrl              String?  @map("logo_url") @db.VarChar(1000)
+  loginBackgroundUrl   String?  @map("login_background_url") @db.VarChar(1000)
+  splashBackgroundUrl  String?  @map("splash_background_url") @db.VarChar(1000)
+  splashLogoUrl        String?  @map("splash_logo_url") @db.VarChar(1000)
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  updatedById          String?  @map("updated_by_id") @db.Char(36)
+
+  @@map("platform_settings")
 }

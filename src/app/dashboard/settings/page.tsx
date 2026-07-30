@@ -3,11 +3,13 @@ import { SettingsPanel } from "@/components/settings-panel";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
 import { canManageMembers } from "@/lib/organization-helpers";
+import { getPlatformBranding } from "@/lib/platform-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const context = await requireActiveMembership();
+  const branding = await getPlatformBranding();
   const { user, activeMembership } = context;
   const organization = activeMembership.organization;
 
@@ -18,10 +20,15 @@ export default async function SettingsPage() {
 
   return (
     <DashboardShell
-      user={user}
+      user={{
+        name: user.name,
+        email: user.email,
+        isSuperAdmin: user.isSuperAdmin,
+      }}
       memberships={user.memberships}
       activeOrganizationId={organization.id}
       activeNav="settings"
+      branding={branding}
     >
       <header className="dashboard-header">
         <div>

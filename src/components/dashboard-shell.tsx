@@ -4,17 +4,21 @@ import {
   CalendarDays,
   CreditCard,
   Settings,
+  Shield,
   Users,
   Video,
 } from "lucide-react";
+import { AppBrand } from "@/components/app-brand";
 import { OrgSwitcher } from "@/components/org-switcher";
+import type { PlatformBranding } from "@/lib/platform-branding";
 import type { Membership } from "@/lib/organization-helpers";
 
 type DashboardShellProps = {
-  user: { name: string; email: string };
+  user: { name: string; email: string; isSuperAdmin?: boolean };
   memberships: Membership[];
   activeOrganizationId: string;
   activeNav: "meeting" | "members" | "billing" | "calendar" | "settings";
+  branding: PlatformBranding;
   children: ReactNode;
 };
 
@@ -23,6 +27,7 @@ export function DashboardShell({
   memberships,
   activeOrganizationId,
   activeNav,
+  branding,
   children,
 }: DashboardShellProps) {
   const initials = user.name
@@ -35,10 +40,7 @@ export function DashboardShell({
   return (
     <div className="dashboard-shell">
       <aside className="dashboard-sidebar">
-        <Link className="brand dashboard-brand" href="/">
-          <span className="brand-mark"><Video size={19} /></span>
-          <span>GenMeet</span>
-        </Link>
+        <AppBrand branding={branding} className="brand dashboard-brand" markSize={19} />
 
         <OrgSwitcher
           memberships={memberships.map((membership) => ({
@@ -80,6 +82,11 @@ export function DashboardShell({
           >
             <Settings size={18} /> Pengaturan
           </Link>
+          {user.isSuperAdmin ? (
+            <Link href="/admin">
+              <Shield size={18} /> Super Admin
+            </Link>
+          ) : null}
         </nav>
 
         <div className="dashboard-user">
@@ -90,7 +97,6 @@ export function DashboardShell({
           </span>
         </div>
       </aside>
-
       <main className="dashboard-main">{children}</main>
     </div>
   );

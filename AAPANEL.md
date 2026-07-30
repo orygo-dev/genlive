@@ -117,7 +117,15 @@ LIVEKIT_API_SECRET=...
 SESSION_COOKIE_NAME=genmeet_session
 ```
 
-Opsional: Resend, Fonnte (`FONNTE_TOKEN`, `CRON_SECRET`), billing Midtrans/iPaymu/Flip.
+Opsional:
+
+```bash
+# Super Admin brand dashboard
+SUPER_ADMIN_EMAIL=anda@perusahaan.com
+
+# Email
+RESEND_API_KEY=...
+EMAIL_FROM="GenMeet <noreply@domainanda.com>"
 
 ```bash
 chmod 600 .env.production

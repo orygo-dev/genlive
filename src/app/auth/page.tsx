@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AuthExperience } from "@/components/auth-experience";
 import { getCurrentUser } from "@/lib/auth";
+import { getPlatformBranding } from "@/lib/platform-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,17 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   const { next } = await searchParams;
   const destination = safeNextPath(next);
   const user = await getCurrentUser();
+  const branding = await getPlatformBranding();
 
   if (user) {
+    if (user.isSuperAdmin && (destination.startsWith("/admin") || user.memberships.length === 0)) {
+      redirect(destination.startsWith("/admin") ? destination : "/admin");
+    }
     if (user.memberships.length === 0) {
       redirect("/dashboard/workspaces/new");
     }
     redirect(destination);
   }
 
-  return <AuthExperience nextPath={destination} />;
+  return <AuthExperience nextPath={destination} branding={branding} />;
 }

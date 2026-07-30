@@ -3,11 +3,13 @@ import { MembersPanel } from "@/components/members-panel";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
 import { canManageMembers } from "@/lib/organization-helpers";
+import { getPlatformBranding } from "@/lib/platform-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
   const context = await requireActiveMembership();
+  const branding = await getPlatformBranding();
 
   const { user, activeMembership } = context;
   const organizationId = activeMembership.organization.id;
@@ -72,10 +74,15 @@ export default async function MembersPage() {
 
   return (
     <DashboardShell
-      user={user}
+      user={{
+        name: user.name,
+        email: user.email,
+        isSuperAdmin: user.isSuperAdmin,
+      }}
       memberships={user.memberships}
       activeOrganizationId={organizationId}
       activeNav="members"
+      branding={branding}
     >
       <header className="dashboard-header">
         <div>

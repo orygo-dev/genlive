@@ -619,10 +619,6 @@ export type MeetingUncheckedUpdateManyWithoutOrganizationNestedInput = {
   deleteMany?: Prisma.MeetingScalarWhereInput | Prisma.MeetingScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type EnumMeetingStatusFieldUpdateOperationsInput = {
   set?: $Enums.MeetingStatus
 }
