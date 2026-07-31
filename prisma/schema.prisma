@@ -84,6 +84,13 @@ enum ReminderKind {
   T_MINUS_1H
 }
 
+enum PlanReminderKind {
+  T_MINUS_7D
+  T_MINUS_3D
+  T_MINUS_1D
+  EXPIRED
+}
+
 model User {
   id                String                   @id @default(uuid()) @db.Char(36)
   name              String                   @db.VarChar(80)
@@ -102,6 +109,7 @@ model User {
   invitationsSent   OrganizationInvitation[] @relation("InvitationInviter")
   auditLogs         AuditLog[]               @relation("AuditActor")
   recordingsStarted Recording[]              @relation("RecordingStarter")
+  recordingsConsented Recording[]            @relation("RecordingConsent")
   paymentOrders     PaymentOrder[]           @relation("PaymentOrderCreator")
 
   @@map("users")
@@ -139,20 +147,22 @@ model Session {
 }
 
 model Organization {
-  id            String                   @id @default(uuid()) @db.Char(36)
-  name          String                   @db.VarChar(100)
-  slug          String                   @unique @db.VarChar(120)
-  planCode      PlanCode                 @default(FREE) @map("plan_code")
-  planExpiresAt DateTime?                @map("plan_expires_at")
-  createdAt     DateTime                 @default(now()) @map("created_at")
-  updatedAt     DateTime                 @updatedAt @map("updated_at")
-  memberships   OrganizationMember[]
-  meetings      Meeting[]
-  invitations   OrganizationInvitation[]
-  auditLogs     AuditLog[]
-  sessions      Session[]
-  recordings    Recording[]
-  paymentOrders PaymentOrder[]
+  id                     String                   @id @default(uuid()) @db.Char(36)
+  name                   String                   @db.VarChar(100)
+  slug                   String                   @unique @db.VarChar(120)
+  planCode               PlanCode                 @default(FREE) @map("plan_code")
+  planExpiresAt          DateTime?                @map("plan_expires_at")
+  recordingRetentionDays Int?                     @map("recording_retention_days")
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime                 @updatedAt @map("updated_at")
+  memberships            OrganizationMember[]
+  meetings               Meeting[]
+  invitations            OrganizationInvitation[]
+  auditLogs              AuditLog[]
+  sessions               Session[]
+  recordings             Recording[]
+  paymentOrders          PaymentOrder[]
+  planReminderLogs       PlanReminderLog[]
 
   @@map("organizations")
 }
@@ -266,26 +276,42 @@ model ReminderSent {
 }
 
 model Recording {
-  id              String          @id @default(uuid()) @db.Char(36)
-  meetingId       String          @map("meeting_id") @db.Char(36)
-  organizationId  String          @map("organization_id") @db.Char(36)
-  startedById     String?         @map("started_by_id") @db.Char(36)
-  egressId        String          @unique @map("egress_id") @db.VarChar(128)
-  status          RecordingStatus @default(STARTING)
-  filepath        String?         @db.VarChar(512)
-  downloadUrl     String?         @map("download_url") @db.VarChar(1000)
-  durationSeconds Int?            @map("duration_seconds")
-  errorMessage    String?         @map("error_message") @db.VarChar(500)
-  startedAt       DateTime        @default(now()) @map("started_at")
-  endedAt         DateTime?       @map("ended_at")
-  meeting         Meeting         @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  startedBy       User?           @relation("RecordingStarter", fields: [startedById], references: [id], onDelete: SetNull)
+  id                   String          @id @default(uuid()) @db.Char(36)
+  meetingId            String          @map("meeting_id") @db.Char(36)
+  organizationId       String          @map("organization_id") @db.Char(36)
+  startedById          String?         @map("started_by_id") @db.Char(36)
+  consentAcknowledgedAt DateTime?      @map("consent_acknowledged_at")
+  consentByUserId      String?         @map("consent_by_user_id") @db.Char(36)
+  egressId             String          @unique @map("egress_id") @db.VarChar(128)
+  status               RecordingStatus @default(STARTING)
+  filepath             String?         @db.VarChar(512)
+  downloadUrl          String?         @map("download_url") @db.VarChar(1000)
+  durationSeconds      Int?            @map("duration_seconds")
+  errorMessage         String?         @map("error_message") @db.VarChar(500)
+  startedAt            DateTime        @default(now()) @map("started_at")
+  endedAt              DateTime?       @map("ended_at")
+  meeting              Meeting         @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  organization         Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startedBy            User?           @relation("RecordingStarter", fields: [startedById], references: [id], onDelete: SetNull)
+  consentBy            User?           @relation("RecordingConsent", fields: [consentByUserId], references: [id], onDelete: SetNull)
 
   @@index([meetingId, startedAt])
   @@index([organizationId, startedAt])
   @@index([status])
   @@map("recordings")
+}
+
+model PlanReminderLog {
+  id             String           @id @default(uuid()) @db.Char(36)
+  organizationId String           @map("organization_id") @db.Char(36)
+  kind           PlanReminderKind
+  periodKey      String           @map("period_key") @db.VarChar(10)
+  sentAt         DateTime         @default(now()) @map("sent_at")
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, kind, periodKey])
+  @@index([organizationId, sentAt])
+  @@map("plan_reminder_logs")
 }
 
 model PaymentOrder {

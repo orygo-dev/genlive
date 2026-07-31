@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Circle, LoaderCircle, Square } from "lucide-react";
+import { RecordingConsentModal } from "@/components/recording-consent-modal";
 import { recordingStatusLabel } from "@/lib/recording-helpers";
 
 type ActiveRecording = {
@@ -15,6 +16,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
   const [canManage, setCanManage] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [consentOpen, setConsentOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const response = await fetch(
@@ -52,19 +54,24 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     };
   }, [refresh]);
 
-  async function toggleRecording() {
-    if (!canManage || busy) {
-      return;
-    }
-
+  async function runRecordingAction(action: "start" | "stop") {
     setError("");
     setBusy(true);
-    const action = active ? "stop" : "start";
 
     try {
       const response = await fetch(
         `/api/meetings/${encodeURIComponent(roomName)}/recording?action=${action}`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers:
+            action === "start"
+              ? { "Content-Type": "application/json" }
+              : undefined,
+          body:
+            action === "start"
+              ? JSON.stringify({ consentAcknowledged: true })
+              : undefined,
+        },
       );
       const payload = (await response.json()) as {
         error?: string;
@@ -75,6 +82,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
         throw new Error(payload.error ?? "Recording belum dapat diproses.");
       }
 
+      setConsentOpen(false);
       await refresh();
     } catch (requestError) {
       setError(
@@ -87,6 +95,19 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     }
   }
 
+  function toggleRecording() {
+    if (!canManage || busy) {
+      return;
+    }
+
+    if (active) {
+      void runRecordingAction("stop");
+      return;
+    }
+
+    setConsentOpen(true);
+  }
+
   if (!canManage) {
     return null;
   }
@@ -97,27 +118,36 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     active?.status === "ENDING";
 
   return (
-    <div className="recording-controls">
-      <button
-        type="button"
-        className={isRecording ? "recording-active" : undefined}
-        disabled={busy || active?.status === "ENDING"}
-        onClick={() => void toggleRecording()}
-      >
-        {busy ? (
-          <LoaderCircle className="spin" size={16} />
-        ) : isRecording ? (
-          <Square size={14} />
-        ) : (
-          <Circle size={14} />
-        )}
-        {isRecording
-          ? active
-            ? recordingStatusLabel(active.status)
-            : "Merekam"
-          : "Rekam"}
-      </button>
-      {error ? <p className="recording-error">{error}</p> : null}
-    </div>
+    <>
+      <div className="recording-controls">
+        <button
+          type="button"
+          className={isRecording ? "recording-active" : undefined}
+          disabled={busy || active?.status === "ENDING"}
+          onClick={() => toggleRecording()}
+        >
+          {busy ? (
+            <LoaderCircle className="spin" size={16} />
+          ) : isRecording ? (
+            <Square size={14} />
+          ) : (
+            <Circle size={14} />
+          )}
+          {isRecording
+            ? active
+              ? recordingStatusLabel(active.status)
+              : "Merekam"
+            : "Rekam"}
+        </button>
+        {error ? <p className="recording-error">{error}</p> : null}
+      </div>
+
+      <RecordingConsentModal
+        open={consentOpen}
+        busy={busy}
+        onCancel={() => setConsentOpen(false)}
+        onConfirm={() => void runRecordingAction("start")}
+      />
+    </>
   );
 }

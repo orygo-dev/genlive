@@ -112,9 +112,18 @@ export async function POST(request: Request, { params }: RecordingRouteProps) {
       return NextResponse.json({ recording: result.recording });
     }
 
+    let consentAcknowledged = false;
+    try {
+      const body = (await request.json()) as { consentAcknowledged?: boolean };
+      consentAcknowledged = body.consentAcknowledged === true;
+    } catch {
+      consentAcknowledged = false;
+    }
+
     const result = await startMeetingRecording({
       meeting,
       actorId: context.user.id,
+      consentAcknowledged,
     });
     if ("error" in result && result.error) {
       return NextResponse.json(

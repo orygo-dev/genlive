@@ -228,6 +228,59 @@ export function buildPaymentInvoiceEmail(input: {
   return { subject, html, text };
 }
 
+export function buildPlanExpiryReminderEmail(input: {
+  appName: string;
+  orgName: string;
+  daysLeft: number;
+  renewUrl: string;
+  expiresAt: Date;
+  kind: "T_MINUS_7D" | "T_MINUS_3D" | "T_MINUS_1D" | "EXPIRED";
+}) {
+  const app = escapeHtml(input.appName);
+  const org = escapeHtml(input.orgName);
+  const url = escapeHtml(input.renewUrl);
+  const expires = escapeHtml(formatDateId(input.expiresAt));
+
+  const headline =
+    input.kind === "EXPIRED"
+      ? "Plan Pro workspace Anda telah berakhir"
+      : `Plan Pro workspace Anda berakhir dalam ${input.daysLeft} hari`;
+
+  const bodyText =
+    input.kind === "EXPIRED"
+      ? `Plan Pro untuk workspace ${input.orgName} telah berakhir. Perpanjang sekarang untuk tetap menggunakan fitur Pro.`
+      : `Plan Pro untuk workspace ${input.orgName} akan berakhir pada ${formatDateId(input.expiresAt)}. Perpanjang sekarang agar layanan tidak terputus.`;
+
+  const subject =
+    input.kind === "EXPIRED"
+      ? `Plan Pro ${input.orgName} telah berakhir — ${input.appName}`
+      : `Plan Pro ${input.orgName} berakhir ${input.daysLeft} hari lagi — ${input.appName}`;
+
+  const text = [
+    bodyText,
+    "",
+    `Perpanjang: ${input.renewUrl}`,
+    `Berlaku hingga: ${formatDateId(input.expiresAt)}`,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.55;color:#1f2937;max-width:560px;margin:0 auto;padding:24px">
+      <p style="margin:0 0 8px;color:#0b5cff;font-weight:700">${app}</p>
+      <h1 style="margin:0 0 12px;font-size:24px;letter-spacing:-0.03em">${escapeHtml(headline)}</h1>
+      <p style="margin:0 0 16px">${escapeHtml(bodyText)}</p>
+      <p style="margin:0 0 8px"><strong>Berlaku hingga:</strong> ${expires}</p>
+      <p style="margin:0 0 20px">
+        <a href="${url}" style="display:inline-block;background:#0b5cff;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700">
+          Perpanjang Pro
+        </a>
+      </p>
+      <p style="margin:0;color:#667085;font-size:13px">Atau buka tautan ini:<br /><a href="${url}">${url}</a></p>
+    </div>
+  `;
+
+  return { subject, html, text };
+}
+
 export function parseInviteEmails(value: unknown, max = 20) {
   const raw =
     typeof value === "string"

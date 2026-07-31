@@ -408,6 +408,7 @@ export const ModelName = {
   MeetingInvite: 'MeetingInvite',
   ReminderSent: 'ReminderSent',
   Recording: 'Recording',
+  PlanReminderLog: 'PlanReminderLog',
   PaymentOrder: 'PaymentOrder',
   MeetingParticipant: 'MeetingParticipant',
   LiveKitWebhookEvent: 'LiveKitWebhookEvent',
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "authToken" | "session" | "organization" | "organizationInvitation" | "auditLog" | "organizationMember" | "meeting" | "meetingInvite" | "reminderSent" | "recording" | "paymentOrder" | "meetingParticipant" | "liveKitWebhookEvent" | "platformSettings"
+    modelProps: "user" | "authToken" | "session" | "organization" | "organizationInvitation" | "auditLog" | "organizationMember" | "meeting" | "meetingInvite" | "reminderSent" | "recording" | "planReminderLog" | "paymentOrder" | "meetingParticipant" | "liveKitWebhookEvent" | "platformSettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1157,6 +1158,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PlanReminderLog: {
+      payload: Prisma.$PlanReminderLogPayload<ExtArgs>
+      fields: Prisma.PlanReminderLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PlanReminderLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PlanReminderLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        findFirst: {
+          args: Prisma.PlanReminderLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PlanReminderLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        findMany: {
+          args: Prisma.PlanReminderLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>[]
+        }
+        create: {
+          args: Prisma.PlanReminderLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        createMany: {
+          args: Prisma.PlanReminderLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.PlanReminderLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        update: {
+          args: Prisma.PlanReminderLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.PlanReminderLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PlanReminderLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.PlanReminderLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PlanReminderLogPayload>
+        }
+        aggregate: {
+          args: Prisma.PlanReminderLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePlanReminderLog>
+        }
+        groupBy: {
+          args: Prisma.PlanReminderLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlanReminderLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PlanReminderLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PlanReminderLogCountAggregateOutputType> | number
+        }
+      }
+    }
     PaymentOrder: {
       payload: Prisma.$PaymentOrderPayload<ExtArgs>
       fields: Prisma.PaymentOrderFieldRefs
@@ -1506,6 +1573,7 @@ export const OrganizationScalarFieldEnum = {
   slug: 'slug',
   planCode: 'planCode',
   planExpiresAt: 'planExpiresAt',
+  recordingRetentionDays: 'recordingRetentionDays',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1605,6 +1673,8 @@ export const RecordingScalarFieldEnum = {
   meetingId: 'meetingId',
   organizationId: 'organizationId',
   startedById: 'startedById',
+  consentAcknowledgedAt: 'consentAcknowledgedAt',
+  consentByUserId: 'consentByUserId',
   egressId: 'egressId',
   status: 'status',
   filepath: 'filepath',
@@ -1616,6 +1686,17 @@ export const RecordingScalarFieldEnum = {
 } as const
 
 export type RecordingScalarFieldEnum = (typeof RecordingScalarFieldEnum)[keyof typeof RecordingScalarFieldEnum]
+
+
+export const PlanReminderLogScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  kind: 'kind',
+  periodKey: 'periodKey',
+  sentAt: 'sentAt'
+} as const
+
+export type PlanReminderLogScalarFieldEnum = (typeof PlanReminderLogScalarFieldEnum)[keyof typeof PlanReminderLogScalarFieldEnum]
 
 
 export const PaymentOrderScalarFieldEnum = {
@@ -1837,6 +1918,7 @@ export const RecordingOrderByRelevanceFieldEnum = {
   meetingId: 'meetingId',
   organizationId: 'organizationId',
   startedById: 'startedById',
+  consentByUserId: 'consentByUserId',
   egressId: 'egressId',
   filepath: 'filepath',
   downloadUrl: 'downloadUrl',
@@ -1844,6 +1926,15 @@ export const RecordingOrderByRelevanceFieldEnum = {
 } as const
 
 export type RecordingOrderByRelevanceFieldEnum = (typeof RecordingOrderByRelevanceFieldEnum)[keyof typeof RecordingOrderByRelevanceFieldEnum]
+
+
+export const PlanReminderLogOrderByRelevanceFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  periodKey: 'periodKey'
+} as const
+
+export type PlanReminderLogOrderByRelevanceFieldEnum = (typeof PlanReminderLogOrderByRelevanceFieldEnum)[keyof typeof PlanReminderLogOrderByRelevanceFieldEnum]
 
 
 export const PaymentOrderOrderByRelevanceFieldEnum = {
@@ -1935,6 +2026,13 @@ export type EnumPlanCodeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
  * Reference to a field of type 'OrganizationRole'
  */
 export type EnumOrganizationRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrganizationRole'>
@@ -1991,9 +2089,9 @@ export type EnumRecordingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
 
 
 /**
- * Reference to a field of type 'Int'
+ * Reference to a field of type 'PlanReminderKind'
  */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+export type EnumPlanReminderKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PlanReminderKind'>
     
 
 
@@ -2193,6 +2291,7 @@ export type GlobalOmitConfig = {
   meetingInvite?: Prisma.MeetingInviteOmit
   reminderSent?: Prisma.ReminderSentOmit
   recording?: Prisma.RecordingOmit
+  planReminderLog?: Prisma.PlanReminderLogOmit
   paymentOrder?: Prisma.PaymentOrderOmit
   meetingParticipant?: Prisma.MeetingParticipantOmit
   liveKitWebhookEvent?: Prisma.LiveKitWebhookEventOmit

@@ -120,3 +120,13 @@ export const ReminderKind = {
 } as const
 
 export type ReminderKind = (typeof ReminderKind)[keyof typeof ReminderKind]
+
+
+export const PlanReminderKind = {
+  T_MINUS_7D: 'T_MINUS_7D',
+  T_MINUS_3D: 'T_MINUS_3D',
+  T_MINUS_1D: 'T_MINUS_1D',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type PlanReminderKind = (typeof PlanReminderKind)[keyof typeof PlanReminderKind]

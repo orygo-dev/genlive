@@ -222,6 +222,7 @@ export type UserWhereInput = {
   invitationsSent?: Prisma.OrganizationInvitationListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   recordingsStarted?: Prisma.RecordingListRelationFilter
+  recordingsConsented?: Prisma.RecordingListRelationFilter
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
 }
 
@@ -243,6 +244,7 @@ export type UserOrderByWithRelationInput = {
   invitationsSent?: Prisma.OrganizationInvitationOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   recordingsStarted?: Prisma.RecordingOrderByRelationAggregateInput
+  recordingsConsented?: Prisma.RecordingOrderByRelationAggregateInput
   paymentOrders?: Prisma.PaymentOrderOrderByRelationAggregateInput
   _relevance?: Prisma.UserOrderByRelevanceInput
 }
@@ -268,6 +270,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   invitationsSent?: Prisma.OrganizationInvitationListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   recordingsStarted?: Prisma.RecordingListRelationFilter
+  recordingsConsented?: Prisma.RecordingListRelationFilter
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
 }, "id" | "email">
 
@@ -319,6 +322,7 @@ export type UserCreateInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -340,6 +344,7 @@ export type UserUncheckedCreateInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -361,6 +366,7 @@ export type UserUpdateInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -382,6 +388,7 @@ export type UserUncheckedUpdateInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -581,6 +588,12 @@ export type UserCreateNestedOneWithoutRecordingsStartedInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
+export type UserCreateNestedOneWithoutRecordingsConsentedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecordingsConsentedInput, Prisma.UserUncheckedCreateWithoutRecordingsConsentedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecordingsConsentedInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
 export type UserUpdateOneWithoutRecordingsStartedNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutRecordingsStartedInput, Prisma.UserUncheckedCreateWithoutRecordingsStartedInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecordingsStartedInput
@@ -589,6 +602,16 @@ export type UserUpdateOneWithoutRecordingsStartedNestedInput = {
   delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRecordingsStartedInput, Prisma.UserUpdateWithoutRecordingsStartedInput>, Prisma.UserUncheckedUpdateWithoutRecordingsStartedInput>
+}
+
+export type UserUpdateOneWithoutRecordingsConsentedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecordingsConsentedInput, Prisma.UserUncheckedCreateWithoutRecordingsConsentedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecordingsConsentedInput
+  upsert?: Prisma.UserUpsertWithoutRecordingsConsentedInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRecordingsConsentedInput, Prisma.UserUpdateWithoutRecordingsConsentedInput>, Prisma.UserUncheckedUpdateWithoutRecordingsConsentedInput>
 }
 
 export type UserCreateNestedOneWithoutPaymentOrdersInput = {
@@ -638,6 +661,7 @@ export type UserCreateWithoutAuthTokensInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -658,6 +682,7 @@ export type UserUncheckedCreateWithoutAuthTokensInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -694,6 +719,7 @@ export type UserUpdateWithoutAuthTokensInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -714,6 +740,7 @@ export type UserUncheckedUpdateWithoutAuthTokensInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -734,6 +761,7 @@ export type UserCreateWithoutSessionsInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -754,6 +782,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -790,6 +819,7 @@ export type UserUpdateWithoutSessionsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -810,6 +840,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -830,6 +861,7 @@ export type UserCreateWithoutInvitationsSentInput = {
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -850,6 +882,7 @@ export type UserUncheckedCreateWithoutInvitationsSentInput = {
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -886,6 +919,7 @@ export type UserUpdateWithoutInvitationsSentInput = {
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -906,6 +940,7 @@ export type UserUncheckedUpdateWithoutInvitationsSentInput = {
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -926,6 +961,7 @@ export type UserCreateWithoutAuditLogsInput = {
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -946,6 +982,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -982,6 +1019,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1002,6 +1040,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1022,6 +1061,7 @@ export type UserCreateWithoutMembershipsInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1042,6 +1082,7 @@ export type UserUncheckedCreateWithoutMembershipsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1078,6 +1119,7 @@ export type UserUpdateWithoutMembershipsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1098,6 +1140,7 @@ export type UserUncheckedUpdateWithoutMembershipsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1118,6 +1161,7 @@ export type UserCreateWithoutMeetingsInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1138,6 +1182,7 @@ export type UserUncheckedCreateWithoutMeetingsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1174,6 +1219,7 @@ export type UserUpdateWithoutMeetingsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1194,6 +1240,7 @@ export type UserUncheckedUpdateWithoutMeetingsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1214,6 +1261,7 @@ export type UserCreateWithoutRecordingsStartedInput = {
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1234,12 +1282,60 @@ export type UserUncheckedCreateWithoutRecordingsStartedInput = {
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutRecordingsStartedInput = {
   where: Prisma.UserWhereUniqueInput
   create: Prisma.XOR<Prisma.UserCreateWithoutRecordingsStartedInput, Prisma.UserUncheckedCreateWithoutRecordingsStartedInput>
+}
+
+export type UserCreateWithoutRecordingsConsentedInput = {
+  id?: string
+  name: string
+  email: string
+  passwordHash: string
+  emailVerifiedAt?: Date | string | null
+  isSuperAdmin?: boolean
+  isDisabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
+  participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutRecordingsConsentedInput = {
+  id?: string
+  name: string
+  email: string
+  passwordHash: string
+  emailVerifiedAt?: Date | string | null
+  isSuperAdmin?: boolean
+  isDisabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
+  participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutRecordingsConsentedInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecordingsConsentedInput, Prisma.UserUncheckedCreateWithoutRecordingsConsentedInput>
 }
 
 export type UserUpsertWithoutRecordingsStartedInput = {
@@ -1270,6 +1366,7 @@ export type UserUpdateWithoutRecordingsStartedInput = {
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1290,6 +1387,60 @@ export type UserUncheckedUpdateWithoutRecordingsStartedInput = {
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUpsertWithoutRecordingsConsentedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRecordingsConsentedInput, Prisma.UserUncheckedUpdateWithoutRecordingsConsentedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecordingsConsentedInput, Prisma.UserUncheckedCreateWithoutRecordingsConsentedInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRecordingsConsentedInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRecordingsConsentedInput, Prisma.UserUncheckedUpdateWithoutRecordingsConsentedInput>
+}
+
+export type UserUpdateWithoutRecordingsConsentedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
+  participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRecordingsConsentedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
+  participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1311,6 +1462,7 @@ export type UserCreateWithoutPaymentOrdersInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
 }
 
 export type UserUncheckedCreateWithoutPaymentOrdersInput = {
@@ -1331,6 +1483,7 @@ export type UserUncheckedCreateWithoutPaymentOrdersInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
 }
 
 export type UserCreateOrConnectWithoutPaymentOrdersInput = {
@@ -1367,6 +1520,7 @@ export type UserUpdateWithoutPaymentOrdersInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPaymentOrdersInput = {
@@ -1387,6 +1541,7 @@ export type UserUncheckedUpdateWithoutPaymentOrdersInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
 }
 
 export type UserCreateWithoutParticipationsInput = {
@@ -1406,6 +1561,7 @@ export type UserCreateWithoutParticipationsInput = {
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1426,6 +1582,7 @@ export type UserUncheckedCreateWithoutParticipationsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
   recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  recordingsConsented?: Prisma.RecordingUncheckedCreateNestedManyWithoutConsentByInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
@@ -1462,6 +1619,7 @@ export type UserUpdateWithoutParticipationsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1482,6 +1640,7 @@ export type UserUncheckedUpdateWithoutParticipationsInput = {
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
   recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  recordingsConsented?: Prisma.RecordingUncheckedUpdateManyWithoutConsentByNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
@@ -1499,6 +1658,7 @@ export type UserCountOutputType = {
   invitationsSent: number
   auditLogs: number
   recordingsStarted: number
+  recordingsConsented: number
   paymentOrders: number
 }
 
@@ -1511,6 +1671,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
   recordingsStarted?: boolean | UserCountOutputTypeCountRecordingsStartedArgs
+  recordingsConsented?: boolean | UserCountOutputTypeCountRecordingsConsentedArgs
   paymentOrders?: boolean | UserCountOutputTypeCountPaymentOrdersArgs
 }
 
@@ -1583,6 +1744,13 @@ export type UserCountOutputTypeCountRecordingsStartedArgs<ExtArgs extends runtim
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountRecordingsConsentedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RecordingWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountPaymentOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PaymentOrderWhereInput
 }
@@ -1606,6 +1774,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   recordingsStarted?: boolean | Prisma.User$recordingsStartedArgs<ExtArgs>
+  recordingsConsented?: boolean | Prisma.User$recordingsConsentedArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.User$paymentOrdersArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
@@ -1634,6 +1803,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   recordingsStarted?: boolean | Prisma.User$recordingsStartedArgs<ExtArgs>
+  recordingsConsented?: boolean | Prisma.User$recordingsConsentedArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.User$paymentOrdersArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1649,6 +1819,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     invitationsSent: Prisma.$OrganizationInvitationPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     recordingsStarted: Prisma.$RecordingPayload<ExtArgs>[]
+    recordingsConsented: Prisma.$RecordingPayload<ExtArgs>[]
     paymentOrders: Prisma.$PaymentOrderPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2009,6 +2180,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationInvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   recordingsStarted<T extends Prisma.User$recordingsStartedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$recordingsStartedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecordingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  recordingsConsented<T extends Prisma.User$recordingsConsentedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$recordingsConsentedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecordingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   paymentOrders<T extends Prisma.User$paymentOrdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$paymentOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentOrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2567,6 +2739,30 @@ export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Internal
  * User.recordingsStarted
  */
 export type User$recordingsStartedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Recording
+   */
+  select?: Prisma.RecordingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Recording
+   */
+  omit?: Prisma.RecordingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RecordingInclude<ExtArgs> | null
+  where?: Prisma.RecordingWhereInput
+  orderBy?: Prisma.RecordingOrderByWithRelationInput | Prisma.RecordingOrderByWithRelationInput[]
+  cursor?: Prisma.RecordingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RecordingScalarFieldEnum | Prisma.RecordingScalarFieldEnum[]
+}
+
+/**
+ * User.recordingsConsented
+ */
+export type User$recordingsConsentedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Recording
    */

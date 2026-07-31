@@ -125,9 +125,45 @@ export function BillingPanel() {
   }
 
   const configuredProviders = data.providers.filter((item) => item.configured);
+  const daysLeft =
+    data.planCode === "PRO" && data.planExpiresAt
+      ? Math.ceil(
+          (new Date(data.planExpiresAt).getTime() - Date.now()) /
+            (24 * 60 * 60 * 1000),
+        )
+      : null;
+  const showRenewalBanner =
+    data.planCode === "PRO" &&
+    daysLeft !== null &&
+    daysLeft >= 0 &&
+    daysLeft <= 7;
 
   return (
     <div className="billing-panel">
+      {showRenewalBanner ? (
+        <section className="billing-renewal-banner" role="status">
+          <div>
+            <strong>Plan Pro segera berakhir</strong>
+            <p>
+              {daysLeft === 0
+                ? "Plan Pro berakhir hari ini."
+                : `Plan Pro berakhir dalam ${daysLeft} hari.`}{" "}
+              Perpanjang sekarang agar fitur Pro tetap aktif.
+            </p>
+          </div>
+          {data.canManageBilling ? (
+            <button
+              type="button"
+              className="btn primary"
+              disabled={busy}
+              onClick={() => void startCheckout()}
+            >
+              Perpanjang Pro
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+
       <section className="meeting-detail-card">
         <div className="dashboard-section-heading">
           <div>

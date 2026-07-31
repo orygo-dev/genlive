@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
+  BarChart3,
   CalendarDays,
   CreditCard,
   Settings,
@@ -23,7 +24,7 @@ type DashboardShellProps = {
   };
   memberships: Membership[];
   activeOrganizationId: string;
-  activeNav: "meeting" | "members" | "billing" | "calendar" | "settings";
+  activeNav: "meeting" | "members" | "billing" | "calendar" | "settings" | "analytics";
   branding: PlatformBranding;
   children: ReactNode;
 };
@@ -81,6 +82,12 @@ export function DashboardShell({
             href="/dashboard/billing"
           >
             <CreditCard size={18} /> Billing
+          </Link>
+          <Link
+            className={activeNav === "analytics" ? "active" : undefined}
+            href="/dashboard/analytics"
+          >
+            <BarChart3 size={18} /> Analytics
           </Link>
           <Link
             className={activeNav === "settings" ? "active" : undefined}

@@ -15,7 +15,7 @@ export default async function SettingsPage() {
 
   const orgDetails = await prisma.organization.findUniqueOrThrow({
     where: { id: organization.id },
-    select: { planCode: true },
+    select: { planCode: true, recordingRetentionDays: true },
   });
 
   return (
@@ -45,6 +45,7 @@ export default async function SettingsPage() {
           name: organization.name,
           slug: organization.slug,
           planCode: orgDetails.planCode,
+          recordingRetentionDays: orgDetails.recordingRetentionDays,
         }}
         currentRole={activeMembership.role}
         canManageOrg={canManageMembers(activeMembership.role)}

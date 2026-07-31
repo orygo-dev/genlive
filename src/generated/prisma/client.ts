@@ -97,6 +97,11 @@ export type ReminderSent = Prisma.ReminderSentModel
  */
 export type Recording = Prisma.RecordingModel
 /**
+ * Model PlanReminderLog
+ * 
+ */
+export type PlanReminderLog = Prisma.PlanReminderLogModel
+/**
  * Model PaymentOrder
  * 
  */

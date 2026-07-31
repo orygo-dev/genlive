@@ -62,6 +62,7 @@ export const ModelName = {
   MeetingInvite: 'MeetingInvite',
   ReminderSent: 'ReminderSent',
   Recording: 'Recording',
+  PlanReminderLog: 'PlanReminderLog',
   PaymentOrder: 'PaymentOrder',
   MeetingParticipant: 'MeetingParticipant',
   LiveKitWebhookEvent: 'LiveKitWebhookEvent',
@@ -130,6 +131,7 @@ export const OrganizationScalarFieldEnum = {
   slug: 'slug',
   planCode: 'planCode',
   planExpiresAt: 'planExpiresAt',
+  recordingRetentionDays: 'recordingRetentionDays',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -229,6 +231,8 @@ export const RecordingScalarFieldEnum = {
   meetingId: 'meetingId',
   organizationId: 'organizationId',
   startedById: 'startedById',
+  consentAcknowledgedAt: 'consentAcknowledgedAt',
+  consentByUserId: 'consentByUserId',
   egressId: 'egressId',
   status: 'status',
   filepath: 'filepath',
@@ -240,6 +244,17 @@ export const RecordingScalarFieldEnum = {
 } as const
 
 export type RecordingScalarFieldEnum = (typeof RecordingScalarFieldEnum)[keyof typeof RecordingScalarFieldEnum]
+
+
+export const PlanReminderLogScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  kind: 'kind',
+  periodKey: 'periodKey',
+  sentAt: 'sentAt'
+} as const
+
+export type PlanReminderLogScalarFieldEnum = (typeof PlanReminderLogScalarFieldEnum)[keyof typeof PlanReminderLogScalarFieldEnum]
 
 
 export const PaymentOrderScalarFieldEnum = {
@@ -461,6 +476,7 @@ export const RecordingOrderByRelevanceFieldEnum = {
   meetingId: 'meetingId',
   organizationId: 'organizationId',
   startedById: 'startedById',
+  consentByUserId: 'consentByUserId',
   egressId: 'egressId',
   filepath: 'filepath',
   downloadUrl: 'downloadUrl',
@@ -468,6 +484,15 @@ export const RecordingOrderByRelevanceFieldEnum = {
 } as const
 
 export type RecordingOrderByRelevanceFieldEnum = (typeof RecordingOrderByRelevanceFieldEnum)[keyof typeof RecordingOrderByRelevanceFieldEnum]
+
+
+export const PlanReminderLogOrderByRelevanceFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  periodKey: 'periodKey'
+} as const
+
+export type PlanReminderLogOrderByRelevanceFieldEnum = (typeof PlanReminderLogOrderByRelevanceFieldEnum)[keyof typeof PlanReminderLogOrderByRelevanceFieldEnum]
 
 
 export const PaymentOrderOrderByRelevanceFieldEnum = {

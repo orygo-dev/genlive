@@ -52,9 +52,25 @@ export const createOrganizationSchema = z.object({
   name: organizationNameSchema,
 });
 
-export const updateOrganizationSchema = z.object({
-  name: organizationNameSchema,
-});
+const recordingRetentionDaysSchema = z
+  .union([
+    z.literal(0),
+    z.literal(7),
+    z.literal(30),
+    z.literal(90),
+    z.literal(365),
+    z.null(),
+  ])
+  .optional();
+
+export const updateOrganizationSchema = z
+  .object({
+    name: organizationNameSchema.optional(),
+    recordingRetentionDays: recordingRetentionDaysSchema,
+  })
+  .refine((data) => data.name !== undefined || data.recordingRetentionDays !== undefined, {
+    message: "Tidak ada data untuk diperbarui.",
+  });
 
 export const deleteOrganizationSchema = z.object({
   confirmName: organizationNameSchema,

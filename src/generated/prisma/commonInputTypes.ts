@@ -172,6 +172,17 @@ export type EnumPlanCodeFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumPlanCodeFilter<$PrismaModel> | $Enums.PlanCode
 }
 
+export type IntNullableFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
+}
+
 export type EnumPlanCodeWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.PlanCode | Prisma.EnumPlanCodeFieldRefInput<$PrismaModel>
   in?: $Enums.PlanCode[]
@@ -180,6 +191,22 @@ export type EnumPlanCodeWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumPlanCodeFilter<$PrismaModel>
   _max?: Prisma.NestedEnumPlanCodeFilter<$PrismaModel>
+}
+
+export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
 }
 
 export type EnumOrganizationRoleFilter<$PrismaModel = never> = {
@@ -325,17 +352,6 @@ export type EnumRecordingStatusFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumRecordingStatusFilter<$PrismaModel> | $Enums.RecordingStatus
 }
 
-export type IntNullableFilter<$PrismaModel = never> = {
-  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
-  in?: number[] | null
-  notIn?: number[] | null
-  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
-}
-
 export type EnumRecordingStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.RecordingStatus | Prisma.EnumRecordingStatusFieldRefInput<$PrismaModel>
   in?: $Enums.RecordingStatus[]
@@ -346,20 +362,21 @@ export type EnumRecordingStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumRecordingStatusFilter<$PrismaModel>
 }
 
-export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
-  in?: number[] | null
-  notIn?: number[] | null
-  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
-  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
+export type EnumPlanReminderKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.PlanReminderKind | Prisma.EnumPlanReminderKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PlanReminderKind[]
+  notIn?: $Enums.PlanReminderKind[]
+  not?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel> | $Enums.PlanReminderKind
+}
+
+export type EnumPlanReminderKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PlanReminderKind | Prisma.EnumPlanReminderKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PlanReminderKind[]
+  notIn?: $Enums.PlanReminderKind[]
+  not?: Prisma.NestedEnumPlanReminderKindWithAggregatesFilter<$PrismaModel> | $Enums.PlanReminderKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel>
 }
 
 export type EnumPaymentProviderFilter<$PrismaModel = never> = {
@@ -642,6 +659,33 @@ export type NestedEnumPlanCodeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumPlanCodeFilter<$PrismaModel>
 }
 
+export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
+}
+
+export type NestedFloatNullableFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.FloatFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
+}
+
 export type NestedEnumOrganizationRoleFilter<$PrismaModel = never> = {
   equals?: $Enums.OrganizationRole | Prisma.EnumOrganizationRoleFieldRefInput<$PrismaModel>
   in?: $Enums.OrganizationRole[]
@@ -768,31 +812,21 @@ export type NestedEnumRecordingStatusWithAggregatesFilter<$PrismaModel = never> 
   _max?: Prisma.NestedEnumRecordingStatusFilter<$PrismaModel>
 }
 
-export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
-  in?: number[] | null
-  notIn?: number[] | null
-  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
-  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
+export type NestedEnumPlanReminderKindFilter<$PrismaModel = never> = {
+  equals?: $Enums.PlanReminderKind | Prisma.EnumPlanReminderKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PlanReminderKind[]
+  notIn?: $Enums.PlanReminderKind[]
+  not?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel> | $Enums.PlanReminderKind
 }
 
-export type NestedFloatNullableFilter<$PrismaModel = never> = {
-  equals?: number | Prisma.FloatFieldRefInput<$PrismaModel> | null
-  in?: number[] | null
-  notIn?: number[] | null
-  lt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
-  lte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
-  gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
-  gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
+export type NestedEnumPlanReminderKindWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PlanReminderKind | Prisma.EnumPlanReminderKindFieldRefInput<$PrismaModel>
+  in?: $Enums.PlanReminderKind[]
+  notIn?: $Enums.PlanReminderKind[]
+  not?: Prisma.NestedEnumPlanReminderKindWithAggregatesFilter<$PrismaModel> | $Enums.PlanReminderKind
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPlanReminderKindFilter<$PrismaModel>
 }
 
 export type NestedEnumPaymentProviderFilter<$PrismaModel = never> = {

@@ -20,8 +20,18 @@ export type OrganizationModel = runtime.Types.Result.DefaultSelection<Prisma.$Or
 
 export type AggregateOrganization = {
   _count: OrganizationCountAggregateOutputType | null
+  _avg: OrganizationAvgAggregateOutputType | null
+  _sum: OrganizationSumAggregateOutputType | null
   _min: OrganizationMinAggregateOutputType | null
   _max: OrganizationMaxAggregateOutputType | null
+}
+
+export type OrganizationAvgAggregateOutputType = {
+  recordingRetentionDays: number | null
+}
+
+export type OrganizationSumAggregateOutputType = {
+  recordingRetentionDays: number | null
 }
 
 export type OrganizationMinAggregateOutputType = {
@@ -30,6 +40,7 @@ export type OrganizationMinAggregateOutputType = {
   slug: string | null
   planCode: $Enums.PlanCode | null
   planExpiresAt: Date | null
+  recordingRetentionDays: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -40,6 +51,7 @@ export type OrganizationMaxAggregateOutputType = {
   slug: string | null
   planCode: $Enums.PlanCode | null
   planExpiresAt: Date | null
+  recordingRetentionDays: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,11 +62,20 @@ export type OrganizationCountAggregateOutputType = {
   slug: number
   planCode: number
   planExpiresAt: number
+  recordingRetentionDays: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type OrganizationAvgAggregateInputType = {
+  recordingRetentionDays?: true
+}
+
+export type OrganizationSumAggregateInputType = {
+  recordingRetentionDays?: true
+}
 
 export type OrganizationMinAggregateInputType = {
   id?: true
@@ -62,6 +83,7 @@ export type OrganizationMinAggregateInputType = {
   slug?: true
   planCode?: true
   planExpiresAt?: true
+  recordingRetentionDays?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -72,6 +94,7 @@ export type OrganizationMaxAggregateInputType = {
   slug?: true
   planCode?: true
   planExpiresAt?: true
+  recordingRetentionDays?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +105,7 @@ export type OrganizationCountAggregateInputType = {
   slug?: true
   planCode?: true
   planExpiresAt?: true
+  recordingRetentionDays?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -125,6 +149,18 @@ export type OrganizationAggregateArgs<ExtArgs extends runtime.Types.Extensions.I
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: OrganizationAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: OrganizationSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: OrganizationMinAggregateInputType
@@ -155,6 +191,8 @@ export type OrganizationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   _count?: OrganizationCountAggregateInputType | true
+  _avg?: OrganizationAvgAggregateInputType
+  _sum?: OrganizationSumAggregateInputType
   _min?: OrganizationMinAggregateInputType
   _max?: OrganizationMaxAggregateInputType
 }
@@ -165,9 +203,12 @@ export type OrganizationGroupByOutputType = {
   slug: string
   planCode: $Enums.PlanCode
   planExpiresAt: Date | null
+  recordingRetentionDays: number | null
   createdAt: Date
   updatedAt: Date
   _count: OrganizationCountAggregateOutputType | null
+  _avg: OrganizationAvgAggregateOutputType | null
+  _sum: OrganizationSumAggregateOutputType | null
   _min: OrganizationMinAggregateOutputType | null
   _max: OrganizationMaxAggregateOutputType | null
 }
@@ -196,6 +237,7 @@ export type OrganizationWhereInput = {
   slug?: Prisma.StringFilter<"Organization"> | string
   planCode?: Prisma.EnumPlanCodeFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableFilter<"Organization"> | Date | string | null
+  recordingRetentionDays?: Prisma.IntNullableFilter<"Organization"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
@@ -205,6 +247,7 @@ export type OrganizationWhereInput = {
   sessions?: Prisma.SessionListRelationFilter
   recordings?: Prisma.RecordingListRelationFilter
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
+  planReminderLogs?: Prisma.PlanReminderLogListRelationFilter
 }
 
 export type OrganizationOrderByWithRelationInput = {
@@ -213,6 +256,7 @@ export type OrganizationOrderByWithRelationInput = {
   slug?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  recordingRetentionDays?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   memberships?: Prisma.OrganizationMemberOrderByRelationAggregateInput
@@ -222,6 +266,7 @@ export type OrganizationOrderByWithRelationInput = {
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   recordings?: Prisma.RecordingOrderByRelationAggregateInput
   paymentOrders?: Prisma.PaymentOrderOrderByRelationAggregateInput
+  planReminderLogs?: Prisma.PlanReminderLogOrderByRelationAggregateInput
   _relevance?: Prisma.OrganizationOrderByRelevanceInput
 }
 
@@ -234,6 +279,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Organization"> | string
   planCode?: Prisma.EnumPlanCodeFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableFilter<"Organization"> | Date | string | null
+  recordingRetentionDays?: Prisma.IntNullableFilter<"Organization"> | number | null
   createdAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Organization"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
@@ -243,6 +289,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   sessions?: Prisma.SessionListRelationFilter
   recordings?: Prisma.RecordingListRelationFilter
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
+  planReminderLogs?: Prisma.PlanReminderLogListRelationFilter
 }, "id" | "slug">
 
 export type OrganizationOrderByWithAggregationInput = {
@@ -251,11 +298,14 @@ export type OrganizationOrderByWithAggregationInput = {
   slug?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  recordingRetentionDays?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OrganizationCountOrderByAggregateInput
+  _avg?: Prisma.OrganizationAvgOrderByAggregateInput
   _max?: Prisma.OrganizationMaxOrderByAggregateInput
   _min?: Prisma.OrganizationMinOrderByAggregateInput
+  _sum?: Prisma.OrganizationSumOrderByAggregateInput
 }
 
 export type OrganizationScalarWhereWithAggregatesInput = {
@@ -267,6 +317,7 @@ export type OrganizationScalarWhereWithAggregatesInput = {
   slug?: Prisma.StringWithAggregatesFilter<"Organization"> | string
   planCode?: Prisma.EnumPlanCodeWithAggregatesFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Organization"> | Date | string | null
+  recordingRetentionDays?: Prisma.IntNullableWithAggregatesFilter<"Organization"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Organization"> | Date | string
 }
@@ -277,6 +328,7 @@ export type OrganizationCreateInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -286,6 +338,7 @@ export type OrganizationCreateInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateInput = {
@@ -294,6 +347,7 @@ export type OrganizationUncheckedCreateInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -303,6 +357,7 @@ export type OrganizationUncheckedCreateInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUpdateInput = {
@@ -311,6 +366,7 @@ export type OrganizationUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -320,6 +376,7 @@ export type OrganizationUpdateInput = {
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateInput = {
@@ -328,6 +385,7 @@ export type OrganizationUncheckedUpdateInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -337,6 +395,7 @@ export type OrganizationUncheckedUpdateInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateManyInput = {
@@ -345,6 +404,7 @@ export type OrganizationCreateManyInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -355,6 +415,7 @@ export type OrganizationUpdateManyMutationInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -365,6 +426,7 @@ export type OrganizationUncheckedUpdateManyInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -386,8 +448,13 @@ export type OrganizationCountOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
+  recordingRetentionDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type OrganizationAvgOrderByAggregateInput = {
+  recordingRetentionDays?: Prisma.SortOrder
 }
 
 export type OrganizationMaxOrderByAggregateInput = {
@@ -396,6 +463,7 @@ export type OrganizationMaxOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
+  recordingRetentionDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -406,8 +474,13 @@ export type OrganizationMinOrderByAggregateInput = {
   slug?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
+  recordingRetentionDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type OrganizationSumOrderByAggregateInput = {
+  recordingRetentionDays?: Prisma.SortOrder
 }
 
 export type OrganizationScalarRelationFilter = {
@@ -433,6 +506,14 @@ export type OrganizationUpdateOneWithoutSessionsNestedInput = {
 
 export type EnumPlanCodeFieldUpdateOperationsInput = {
   set?: $Enums.PlanCode
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type OrganizationCreateNestedOneWithoutInvitationsInput = {
@@ -505,6 +586,20 @@ export type OrganizationUpdateOneRequiredWithoutRecordingsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutRecordingsInput, Prisma.OrganizationUpdateWithoutRecordingsInput>, Prisma.OrganizationUncheckedUpdateWithoutRecordingsInput>
 }
 
+export type OrganizationCreateNestedOneWithoutPlanReminderLogsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedCreateWithoutPlanReminderLogsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutPlanReminderLogsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutPlanReminderLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedCreateWithoutPlanReminderLogsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutPlanReminderLogsInput
+  upsert?: Prisma.OrganizationUpsertWithoutPlanReminderLogsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutPlanReminderLogsInput, Prisma.OrganizationUpdateWithoutPlanReminderLogsInput>, Prisma.OrganizationUncheckedUpdateWithoutPlanReminderLogsInput>
+}
+
 export type OrganizationCreateNestedOneWithoutPaymentOrdersInput = {
   create?: Prisma.XOR<Prisma.OrganizationCreateWithoutPaymentOrdersInput, Prisma.OrganizationUncheckedCreateWithoutPaymentOrdersInput>
   connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutPaymentOrdersInput
@@ -525,6 +620,7 @@ export type OrganizationCreateWithoutSessionsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -533,6 +629,7 @@ export type OrganizationCreateWithoutSessionsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutSessionsInput = {
@@ -541,6 +638,7 @@ export type OrganizationUncheckedCreateWithoutSessionsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -549,6 +647,7 @@ export type OrganizationUncheckedCreateWithoutSessionsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutSessionsInput = {
@@ -573,6 +672,7 @@ export type OrganizationUpdateWithoutSessionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -581,6 +681,7 @@ export type OrganizationUpdateWithoutSessionsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutSessionsInput = {
@@ -589,6 +690,7 @@ export type OrganizationUncheckedUpdateWithoutSessionsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -597,6 +699,7 @@ export type OrganizationUncheckedUpdateWithoutSessionsInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutInvitationsInput = {
@@ -605,6 +708,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -613,6 +717,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutInvitationsInput = {
@@ -621,6 +726,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -629,6 +735,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutInvitationsInput = {
@@ -653,6 +760,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -661,6 +769,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
@@ -669,6 +778,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -677,6 +787,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutAuditLogsInput = {
@@ -685,6 +796,7 @@ export type OrganizationCreateWithoutAuditLogsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -693,6 +805,7 @@ export type OrganizationCreateWithoutAuditLogsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutAuditLogsInput = {
@@ -701,6 +814,7 @@ export type OrganizationUncheckedCreateWithoutAuditLogsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -709,6 +823,7 @@ export type OrganizationUncheckedCreateWithoutAuditLogsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutAuditLogsInput = {
@@ -733,6 +848,7 @@ export type OrganizationUpdateWithoutAuditLogsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -741,6 +857,7 @@ export type OrganizationUpdateWithoutAuditLogsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutAuditLogsInput = {
@@ -749,6 +866,7 @@ export type OrganizationUncheckedUpdateWithoutAuditLogsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -757,6 +875,7 @@ export type OrganizationUncheckedUpdateWithoutAuditLogsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutMembershipsInput = {
@@ -765,6 +884,7 @@ export type OrganizationCreateWithoutMembershipsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
@@ -773,6 +893,7 @@ export type OrganizationCreateWithoutMembershipsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutMembershipsInput = {
@@ -781,6 +902,7 @@ export type OrganizationUncheckedCreateWithoutMembershipsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
@@ -789,6 +911,7 @@ export type OrganizationUncheckedCreateWithoutMembershipsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutMembershipsInput = {
@@ -813,6 +936,7 @@ export type OrganizationUpdateWithoutMembershipsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
@@ -821,6 +945,7 @@ export type OrganizationUpdateWithoutMembershipsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutMembershipsInput = {
@@ -829,6 +954,7 @@ export type OrganizationUncheckedUpdateWithoutMembershipsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -837,6 +963,7 @@ export type OrganizationUncheckedUpdateWithoutMembershipsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutMeetingsInput = {
@@ -845,6 +972,7 @@ export type OrganizationCreateWithoutMeetingsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -853,6 +981,7 @@ export type OrganizationCreateWithoutMeetingsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutMeetingsInput = {
@@ -861,6 +990,7 @@ export type OrganizationUncheckedCreateWithoutMeetingsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -869,6 +999,7 @@ export type OrganizationUncheckedCreateWithoutMeetingsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutMeetingsInput = {
@@ -893,6 +1024,7 @@ export type OrganizationUpdateWithoutMeetingsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -901,6 +1033,7 @@ export type OrganizationUpdateWithoutMeetingsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutMeetingsInput = {
@@ -909,6 +1042,7 @@ export type OrganizationUncheckedUpdateWithoutMeetingsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -917,6 +1051,7 @@ export type OrganizationUncheckedUpdateWithoutMeetingsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutRecordingsInput = {
@@ -925,6 +1060,7 @@ export type OrganizationCreateWithoutRecordingsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -933,6 +1069,7 @@ export type OrganizationCreateWithoutRecordingsInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutRecordingsInput = {
@@ -941,6 +1078,7 @@ export type OrganizationUncheckedCreateWithoutRecordingsInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -949,6 +1087,7 @@ export type OrganizationUncheckedCreateWithoutRecordingsInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutRecordingsInput = {
@@ -973,6 +1112,7 @@ export type OrganizationUpdateWithoutRecordingsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -981,6 +1121,7 @@ export type OrganizationUpdateWithoutRecordingsInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutRecordingsInput = {
@@ -989,6 +1130,7 @@ export type OrganizationUncheckedUpdateWithoutRecordingsInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -996,6 +1138,95 @@ export type OrganizationUncheckedUpdateWithoutRecordingsInput = {
   invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutPlanReminderLogsInput = {
+  id?: string
+  name: string
+  slug: string
+  planCode?: $Enums.PlanCode
+  planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.OrganizationInvitationCreateNestedManyWithoutOrganizationInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
+  recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
+  paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutPlanReminderLogsInput = {
+  id?: string
+  name: string
+  slug: string
+  planCode?: $Enums.PlanCode
+  planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
+  recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutPlanReminderLogsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedCreateWithoutPlanReminderLogsInput>
+}
+
+export type OrganizationUpsertWithoutPlanReminderLogsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedUpdateWithoutPlanReminderLogsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedCreateWithoutPlanReminderLogsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutPlanReminderLogsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutPlanReminderLogsInput, Prisma.OrganizationUncheckedUpdateWithoutPlanReminderLogsInput>
+}
+
+export type OrganizationUpdateWithoutPlanReminderLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
+  planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.OrganizationInvitationUpdateManyWithoutOrganizationNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
+  recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
+  paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutPlanReminderLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
+  planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
+  recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
   paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
@@ -1005,6 +1236,7 @@ export type OrganizationCreateWithoutPaymentOrdersInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutOrganizationInput
@@ -1013,6 +1245,7 @@ export type OrganizationCreateWithoutPaymentOrdersInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
   sessions?: Prisma.SessionCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutPaymentOrdersInput = {
@@ -1021,6 +1254,7 @@ export type OrganizationUncheckedCreateWithoutPaymentOrdersInput = {
   slug: string
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
+  recordingRetentionDays?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1029,6 +1263,7 @@ export type OrganizationUncheckedCreateWithoutPaymentOrdersInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutActiveOrganizationInput
   recordings?: Prisma.RecordingUncheckedCreateNestedManyWithoutOrganizationInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutPaymentOrdersInput = {
@@ -1053,6 +1288,7 @@ export type OrganizationUpdateWithoutPaymentOrdersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutOrganizationNestedInput
@@ -1061,6 +1297,7 @@ export type OrganizationUpdateWithoutPaymentOrdersInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutPaymentOrdersInput = {
@@ -1069,6 +1306,7 @@ export type OrganizationUncheckedUpdateWithoutPaymentOrdersInput = {
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1077,6 +1315,7 @@ export type OrganizationUncheckedUpdateWithoutPaymentOrdersInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutActiveOrganizationNestedInput
   recordings?: Prisma.RecordingUncheckedUpdateManyWithoutOrganizationNestedInput
+  planReminderLogs?: Prisma.PlanReminderLogUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 
@@ -1092,6 +1331,7 @@ export type OrganizationCountOutputType = {
   sessions: number
   recordings: number
   paymentOrders: number
+  planReminderLogs: number
 }
 
 export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1102,6 +1342,7 @@ export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   sessions?: boolean | OrganizationCountOutputTypeCountSessionsArgs
   recordings?: boolean | OrganizationCountOutputTypeCountRecordingsArgs
   paymentOrders?: boolean | OrganizationCountOutputTypeCountPaymentOrdersArgs
+  planReminderLogs?: boolean | OrganizationCountOutputTypeCountPlanReminderLogsArgs
 }
 
 /**
@@ -1163,6 +1404,13 @@ export type OrganizationCountOutputTypeCountPaymentOrdersArgs<ExtArgs extends ru
   where?: Prisma.PaymentOrderWhereInput
 }
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountPlanReminderLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PlanReminderLogWhereInput
+}
+
 
 export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1170,6 +1418,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   slug?: boolean
   planCode?: boolean
   planExpiresAt?: boolean
+  recordingRetentionDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   memberships?: boolean | Prisma.Organization$membershipsArgs<ExtArgs>
@@ -1179,6 +1428,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   sessions?: boolean | Prisma.Organization$sessionsArgs<ExtArgs>
   recordings?: boolean | Prisma.Organization$recordingsArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.Organization$paymentOrdersArgs<ExtArgs>
+  planReminderLogs?: boolean | Prisma.Organization$planReminderLogsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["organization"]>
 
@@ -1190,11 +1440,12 @@ export type OrganizationSelectScalar = {
   slug?: boolean
   planCode?: boolean
   planExpiresAt?: boolean
+  recordingRetentionDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "planCode" | "planExpiresAt" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
+export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "planCode" | "planExpiresAt" | "recordingRetentionDays" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.Organization$membershipsArgs<ExtArgs>
   meetings?: boolean | Prisma.Organization$meetingsArgs<ExtArgs>
@@ -1203,6 +1454,7 @@ export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.Interna
   sessions?: boolean | Prisma.Organization$sessionsArgs<ExtArgs>
   recordings?: boolean | Prisma.Organization$recordingsArgs<ExtArgs>
   paymentOrders?: boolean | Prisma.Organization$paymentOrdersArgs<ExtArgs>
+  planReminderLogs?: boolean | Prisma.Organization$planReminderLogsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -1216,6 +1468,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     sessions: Prisma.$SessionPayload<ExtArgs>[]
     recordings: Prisma.$RecordingPayload<ExtArgs>[]
     paymentOrders: Prisma.$PaymentOrderPayload<ExtArgs>[]
+    planReminderLogs: Prisma.$PlanReminderLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1223,6 +1476,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     slug: string
     planCode: $Enums.PlanCode
     planExpiresAt: Date | null
+    recordingRetentionDays: number | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["organization"]>
@@ -1572,6 +1826,7 @@ export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends run
   sessions<T extends Prisma.Organization$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   recordings<T extends Prisma.Organization$recordingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$recordingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecordingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   paymentOrders<T extends Prisma.Organization$paymentOrdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$paymentOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentOrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  planReminderLogs<T extends Prisma.Organization$planReminderLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$planReminderLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PlanReminderLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1606,6 +1861,7 @@ export interface OrganizationFieldRefs {
   readonly slug: Prisma.FieldRef<"Organization", 'String'>
   readonly planCode: Prisma.FieldRef<"Organization", 'PlanCode'>
   readonly planExpiresAt: Prisma.FieldRef<"Organization", 'DateTime'>
+  readonly recordingRetentionDays: Prisma.FieldRef<"Organization", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Organization", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Organization", 'DateTime'>
 }
@@ -2121,6 +2377,30 @@ export type Organization$paymentOrdersArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.PaymentOrderScalarFieldEnum | Prisma.PaymentOrderScalarFieldEnum[]
+}
+
+/**
+ * Organization.planReminderLogs
+ */
+export type Organization$planReminderLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PlanReminderLog
+   */
+  select?: Prisma.PlanReminderLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PlanReminderLog
+   */
+  omit?: Prisma.PlanReminderLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PlanReminderLogInclude<ExtArgs> | null
+  where?: Prisma.PlanReminderLogWhereInput
+  orderBy?: Prisma.PlanReminderLogOrderByWithRelationInput | Prisma.PlanReminderLogOrderByWithRelationInput[]
+  cursor?: Prisma.PlanReminderLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PlanReminderLogScalarFieldEnum | Prisma.PlanReminderLogScalarFieldEnum[]
 }
 
 /**

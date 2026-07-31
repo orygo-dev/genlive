@@ -28,22 +28,24 @@ export async function resolveOrganizationPlan(organizationId: string) {
   }
 
   let planCode = organization.planCode as PlanCodeValue;
+  let planExpiresAt = organization.planExpiresAt;
   if (
     planCode === "PRO" &&
-    organization.planExpiresAt &&
-    organization.planExpiresAt.getTime() < Date.now()
+    planExpiresAt &&
+    planExpiresAt.getTime() < Date.now()
   ) {
     await prisma.organization.update({
       where: { id: organizationId },
-      data: { planCode: "FREE" },
+      data: { planCode: "FREE", planExpiresAt: null },
     });
     planCode = "FREE";
+    planExpiresAt = null;
   }
 
   return {
     organizationId,
     planCode,
-    planExpiresAt: organization.planExpiresAt,
+    planExpiresAt,
     plan: await resolvePlan(planCode),
   };
 }
@@ -181,9 +183,23 @@ export async function activatePaidPlan(input: {
   provider: string;
 }) {
   const plan = await resolvePlan(input.planCode);
+  const organization = await prisma.organization.findUnique({
+    where: { id: input.organizationId },
+    select: { planCode: true, planExpiresAt: true },
+  });
+
+  let baseMs = Date.now();
+  if (
+    organization?.planCode === "PRO" &&
+    organization.planExpiresAt &&
+    organization.planExpiresAt.getTime() > Date.now()
+  ) {
+    baseMs = organization.planExpiresAt.getTime();
+  }
+
   const expiresAt =
     plan.billingPeriodDays > 0
-      ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
+      ? new Date(baseMs + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
       : null;
 
   await prisma.organization.update({

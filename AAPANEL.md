@@ -233,7 +233,7 @@ location / {
 
 ---
 
-## 9. Cron reminder WhatsApp / email
+## 9. Cron reminder WhatsApp / email / billing / retensi
 
 **Wajib di VPS/aaPanel** (tanpa ini reminder T-24h / T-1h tidak jalan).
 
@@ -241,6 +241,20 @@ aaPanel → **Cron** → tiap **15 menit** → Script:
 
 ```bash
 curl -fsS -X GET "https://genlive.guruspaceai.cloud/api/cron/meeting-reminders" \
+  -H "Authorization: Bearer CRON_SECRET_ANDA"
+```
+
+**Plan Pro expiry (Phase 2)** — tiap **15 menit**:
+
+```bash
+curl -fsS -X GET "https://genlive.guruspaceai.cloud/api/cron/plan-reminders" \
+  -H "Authorization: Bearer CRON_SECRET_ANDA"
+```
+
+**Retensi recording (Phase 2)** — sekali sehari (03:00):
+
+```bash
+curl -fsS -X GET "https://genlive.guruspaceai.cloud/api/cron/recording-retention" \
   -H "Authorization: Bearer CRON_SECRET_ANDA"
 ```
 

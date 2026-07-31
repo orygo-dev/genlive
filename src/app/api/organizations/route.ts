@@ -91,10 +91,30 @@ export async function PATCH(request: Request) {
     const organizationId = context.activeMembership.organization.id;
     const previousName = context.activeMembership.organization.name;
 
+    const updateData: {
+      name?: string;
+      recordingRetentionDays?: number | null;
+    } = {};
+
+    if (parsed.data.name !== undefined) {
+      updateData.name = parsed.data.name;
+    }
+
+    if (parsed.data.recordingRetentionDays !== undefined) {
+      const value = parsed.data.recordingRetentionDays;
+      updateData.recordingRetentionDays =
+        value === 0 || value === null ? null : value;
+    }
+
     const organization = await prisma.organization.update({
       where: { id: organizationId },
-      data: { name: parsed.data.name },
-      select: { id: true, name: true, slug: true },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        recordingRetentionDays: true,
+      },
     });
 
     await writeAuditLog({
@@ -103,7 +123,11 @@ export async function PATCH(request: Request) {
       action: "organization.updated",
       targetType: "organization",
       targetId: organizationId,
-      metadata: { previousName, nextName: organization.name },
+      metadata: {
+        previousName,
+        nextName: organization.name,
+        recordingRetentionDays: organization.recordingRetentionDays,
+      },
     });
 
     return NextResponse.json({ organization });

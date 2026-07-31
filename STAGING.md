@@ -34,6 +34,20 @@ npm run smoke -- https://staging.domainanda.com
 5. Meeting dengan jadwal → unduh ICS + Google Calendar
 6. Waiting room → host terima semua
 
+## Uji Phase 2 (Growth)
+
+1. Billing → banner perpanjang jika Pro ≤7 hari
+2. Perpanjang Pro → `planExpiresAt` ditumpuk (stack), bukan reset dari sekarang
+3. Cron plan-reminders → email Owner T-7/T-3/T-1/expired (Resend)
+4. `/dashboard/analytics` → tren 6 bulan + unduh CSV
+5. Mulai recording → modal konfirmasi persetujuan peserta
+6. Pengaturan → retensi recording (7/30/90/365 hari)
+7. Cron recording-retention → rekaman lama di-soft-delete (status ABORTED)
+
+## Phase 3 (rencana)
+
+- Google / Microsoft OAuth sign-in — **belum diimplementasi** (Phase 3)
+
 ## Catatan
 
 - Refund admin hanya mengubah status di sistem; refund gateway diproses manual di provider.

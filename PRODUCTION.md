@@ -72,6 +72,8 @@ docker compose up -d postgres
 - [ ] `CRON_SECRET` untuk proteksi cron reminder
 - [ ] Uji undangan WhatsApp dari detail meeting
 - [ ] Pastikan cron `/api/cron/meeting-reminders` aktif (Vercel Cron / eksternal)
+- [ ] Pastikan cron `/api/cron/plan-reminders` aktif (reminder perpanjang Pro)
+- [ ] Pastikan cron `/api/cron/recording-retention` aktif (harian, retensi recording)
 
 ## 4. Billing Indonesia
 
@@ -121,11 +123,13 @@ Manual:
 4. Jadwalkan meeting → undangan email/WhatsApp (jika Resend/Fonnte aktif)
 5. Unduh ICS / tambahkan ke Google Calendar dari detail meeting
 6. Pastikan reminder cron berjalan (`/api/cron/meeting-reminders`)
-7. Mulai recording (jika egress aktif)
-8. Upgrade plan Pro lewat `/dashboard/billing` → cek invoice email & halaman invoice
-9. Pastikan webhook LiveKit & payment tercatat (audit / status order)
-10. Uji `/dashboard/settings` (profil, password, workspace)
-11. Review halaman legal: `/terms`, `/privacy`, `/cookies`
+7. Pastikan cron plan-reminders & recording-retention aktif (Phase 2)
+8. Mulai recording (jika egress aktif) — wajib konfirmasi persetujuan peserta
+9. Upgrade plan Pro lewat `/dashboard/billing` → cek invoice email & halaman invoice
+10. Pastikan webhook LiveKit & payment tercatat (audit / status order)
+11. Uji `/dashboard/settings` (profil, password, workspace, retensi recording)
+12. Uji `/dashboard/analytics` + export CSV
+13. Review halaman legal: `/terms`, `/privacy`, `/cookies`
 
 ### Phase 1 commercial MVP
 
@@ -135,11 +139,21 @@ Manual:
 - [ ] Waiting room: host admit all + UI peserta lebih jelas
 - [ ] Staging checklist: lihat [`STAGING.md`](./STAGING.md)
 
+### Phase 2 Growth
+
+- [ ] Reminder email perpanjang Pro (T-7/T-3/T-1/expired) via cron plan-reminders
+- [ ] Perpanjang Pro menumpuk masa aktif (`activatePaidPlan` stack)
+- [ ] Analytics workspace + export CSV di `/dashboard/analytics`
+- [ ] Konfirmasi consent sebelum recording + retensi otomatis (cron recording-retention)
+- [ ] OAuth Google/Microsoft — **Phase 3**, belum diimplementasi
+
 ## 7. Monitoring ringan
 
 - Pantau `/api/health` dari uptime monitor (Better Stack, UptimeRobot, dll)
 - Alert jika status bukan `ok` / HTTP 503
 - Cron VPS: `GET /api/cron/meeting-reminders` tiap 15 menit + header `Authorization: Bearer $CRON_SECRET`
+- Cron VPS: `GET /api/cron/plan-reminders` tiap 15 menit (email perpanjang Pro)
+- Cron VPS: `GET /api/cron/recording-retention` sekali sehari (03:00 UTC) — retensi recording
 - Persist folder `data/uploads` (brand assets); recording sebaiknya ke S3
 - Payment: Midtrans signature + amount check; iPaymu signature VA; Flip wajib `FLIP_VALIDATION_TOKEN`
 - Pantau error log hosting (Vercel Logs / Docker logs)

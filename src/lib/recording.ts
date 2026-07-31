@@ -33,7 +33,16 @@ export async function startMeetingRecording(input: {
     title: string;
   };
   actorId: string;
+  consentAcknowledged: boolean;
 }) {
+  if (!input.consentAcknowledged) {
+    return {
+      error:
+        "Konfirmasi persetujuan recording wajib sebelum memulai rekaman.",
+      status: 400 as const,
+    };
+  }
+
   if (input.meeting.status !== "ACTIVE") {
     return {
       error: "Recording hanya dapat dimulai saat meeting aktif.",
@@ -89,12 +98,15 @@ export async function startMeetingRecording(input: {
     };
   }
 
+  const now = new Date();
   const recording = await prisma.recording.create({
     data: {
       id: recordingId,
       meetingId: input.meeting.id,
       organizationId: input.meeting.organizationId,
       startedById: input.actorId,
+      consentAcknowledgedAt: now,
+      consentByUserId: input.actorId,
       egressId: egress.egressId,
       status: mapEgressStatus(egress.status),
       filepath,

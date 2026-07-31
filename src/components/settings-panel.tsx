@@ -19,6 +19,7 @@ type SettingsPanelProps = {
     name: string;
     slug: string;
     planCode: string;
+    recordingRetentionDays: number | null;
   };
   currentRole: OrgRoleLabel;
   canManageOrg: boolean;
@@ -37,6 +38,11 @@ export function SettingsPanel({
   const router = useRouter();
   const [profileName, setProfileName] = useState(user.name);
   const [orgName, setOrgName] = useState(organization.name);
+  const [recordingRetentionDays, setRecordingRetentionDays] = useState(
+    organization.recordingRetentionDays === null
+      ? ""
+      : String(organization.recordingRetentionDays),
+  );
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [confirmDeleteName, setConfirmDeleteName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -96,6 +102,38 @@ export function SettingsPanel({
         requestError instanceof Error
           ? requestError.message
           : "Password belum dapat diubah.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function updateRecordingRetention(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setBusy("retention");
+    try {
+      const parsedValue =
+        recordingRetentionDays.trim() === ""
+          ? null
+          : Number(recordingRetentionDays);
+      const response = await fetch("/api/organizations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordingRetentionDays: parsedValue }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Retensi recording belum dapat disimpan.");
+      }
+      setMessage("Kebijakan retensi recording berhasil disimpan.");
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Retensi recording belum dapat disimpan.",
       );
     } finally {
       setBusy(null);
@@ -363,6 +401,49 @@ export function SettingsPanel({
           )}
         </form>
       </section>
+
+      {canManageOrg ? (
+        <section className="settings-card">
+          <header>
+            <span><Building2 size={18} /></span>
+            <div>
+              <h2>Retensi recording</h2>
+              <p>
+                Hapus otomatis rekaman yang sudah selesai setelah jumlah hari
+                tertentu. Kosongkan untuk menyimpan selamanya.
+              </p>
+            </div>
+          </header>
+          <form onSubmit={updateRecordingRetention} className="settings-form">
+            <label>
+              Simpan recording selama (hari)
+              <select
+                value={recordingRetentionDays}
+                onChange={(event) => setRecordingRetentionDays(event.target.value)}
+              >
+                <option value="">Simpan selamanya</option>
+                <option value="7">7 hari</option>
+                <option value="30">30 hari</option>
+                <option value="90">90 hari</option>
+                <option value="365">365 hari</option>
+              </select>
+            </label>
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={busy === "retention"}
+            >
+              {busy === "retention" ? (
+                <>
+                  <LoaderCircle className="spinner" size={16} /> Menyimpan...
+                </>
+              ) : (
+                "Simpan retensi"
+              )}
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       <section className="settings-card">
         <header>

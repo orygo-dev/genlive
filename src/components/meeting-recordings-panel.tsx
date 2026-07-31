@@ -9,6 +9,7 @@ import {
   Square,
   Video,
 } from "lucide-react";
+import { RecordingConsentModal } from "@/components/recording-consent-modal";
 import { recordingStatusLabel } from "@/lib/recording-helpers";
 
 type RecordingRow = {
@@ -37,6 +38,7 @@ export function MeetingRecordingsPanel({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [consentOpen, setConsentOpen] = useState(false);
 
   async function loadRecordings() {
     const response = await fetch(`/api/meetings/manage/${meetingId}/recording`, {
@@ -88,12 +90,23 @@ export function MeetingRecordingsPanel({
     try {
       const response = await fetch(
         `/api/meetings/manage/${meetingId}/recording?action=${action}`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers:
+            action === "start"
+              ? { "Content-Type": "application/json" }
+              : undefined,
+          body:
+            action === "start"
+              ? JSON.stringify({ consentAcknowledged: true })
+              : undefined,
+        },
       );
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
         throw new Error(payload.error ?? "Recording belum dapat diproses.");
       }
+      setConsentOpen(false);
       await loadRecordings();
       router.refresh();
     } catch (requestError) {
@@ -123,9 +136,14 @@ export function MeetingRecordingsPanel({
       {canManage && meetingStatus === "ACTIVE" ? (
         <form
           className="meeting-edit-form"
-          onSubmit={(event) =>
-            void runAction(active ? "stop" : "start", event)
-          }
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (active) {
+              void runAction("stop", event);
+            } else {
+              setConsentOpen(true);
+            }
+          }}
         >
           <button
             className={active ? "button button-ghost meeting-cancel" : "btn primary"}
@@ -143,6 +161,13 @@ export function MeetingRecordingsPanel({
           </button>
         </form>
       ) : null}
+
+      <RecordingConsentModal
+        open={consentOpen}
+        busy={busy === "start"}
+        onCancel={() => setConsentOpen(false)}
+        onConfirm={() => void runAction("start")}
+      />
 
       {error ? <p className="form-error">{error}</p> : null}
 

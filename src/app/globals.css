@@ -2068,6 +2068,110 @@ footer p {
   gap: 8px;
 }
 
+.billing-renewal-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border: 1px solid #f0c36a;
+  border-radius: 14px;
+  background: #fff8eb;
+}
+
+.billing-renewal-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.billing-renewal-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.analytics-panel {
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.analytics-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.analytics-month-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.analytics-month-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.analytics-bar-group {
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-bar-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 28px;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.analytics-bar-row span {
+  color: var(--muted);
+}
+
+.analytics-bar-row em {
+  font-style: normal;
+  text-align: right;
+  font-size: 11px;
+}
+
+.analytics-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5ebf3;
+  overflow: hidden;
+}
+
+.analytics-bar {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 2px;
+}
+
+.analytics-bar-meeting {
+  background: #0b5cff;
+}
+
+.analytics-bar-minutes {
+  background: #12b76a;
+}
+
+.analytics-bar-recording {
+  background: #7a5af8;
+}
+
+.schedule-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .email-verify-banner {
   display: flex;
   flex-wrap: wrap;

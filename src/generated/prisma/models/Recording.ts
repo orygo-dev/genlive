@@ -39,6 +39,8 @@ export type RecordingMinAggregateOutputType = {
   meetingId: string | null
   organizationId: string | null
   startedById: string | null
+  consentAcknowledgedAt: Date | null
+  consentByUserId: string | null
   egressId: string | null
   status: $Enums.RecordingStatus | null
   filepath: string | null
@@ -54,6 +56,8 @@ export type RecordingMaxAggregateOutputType = {
   meetingId: string | null
   organizationId: string | null
   startedById: string | null
+  consentAcknowledgedAt: Date | null
+  consentByUserId: string | null
   egressId: string | null
   status: $Enums.RecordingStatus | null
   filepath: string | null
@@ -69,6 +73,8 @@ export type RecordingCountAggregateOutputType = {
   meetingId: number
   organizationId: number
   startedById: number
+  consentAcknowledgedAt: number
+  consentByUserId: number
   egressId: number
   status: number
   filepath: number
@@ -94,6 +100,8 @@ export type RecordingMinAggregateInputType = {
   meetingId?: true
   organizationId?: true
   startedById?: true
+  consentAcknowledgedAt?: true
+  consentByUserId?: true
   egressId?: true
   status?: true
   filepath?: true
@@ -109,6 +117,8 @@ export type RecordingMaxAggregateInputType = {
   meetingId?: true
   organizationId?: true
   startedById?: true
+  consentAcknowledgedAt?: true
+  consentByUserId?: true
   egressId?: true
   status?: true
   filepath?: true
@@ -124,6 +134,8 @@ export type RecordingCountAggregateInputType = {
   meetingId?: true
   organizationId?: true
   startedById?: true
+  consentAcknowledgedAt?: true
+  consentByUserId?: true
   egressId?: true
   status?: true
   filepath?: true
@@ -226,6 +238,8 @@ export type RecordingGroupByOutputType = {
   meetingId: string
   organizationId: string
   startedById: string | null
+  consentAcknowledgedAt: Date | null
+  consentByUserId: string | null
   egressId: string
   status: $Enums.RecordingStatus
   filepath: string | null
@@ -264,6 +278,8 @@ export type RecordingWhereInput = {
   meetingId?: Prisma.StringFilter<"Recording"> | string
   organizationId?: Prisma.StringFilter<"Recording"> | string
   startedById?: Prisma.StringNullableFilter<"Recording"> | string | null
+  consentAcknowledgedAt?: Prisma.DateTimeNullableFilter<"Recording"> | Date | string | null
+  consentByUserId?: Prisma.StringNullableFilter<"Recording"> | string | null
   egressId?: Prisma.StringFilter<"Recording"> | string
   status?: Prisma.EnumRecordingStatusFilter<"Recording"> | $Enums.RecordingStatus
   filepath?: Prisma.StringNullableFilter<"Recording"> | string | null
@@ -275,6 +291,7 @@ export type RecordingWhereInput = {
   meeting?: Prisma.XOR<Prisma.MeetingScalarRelationFilter, Prisma.MeetingWhereInput>
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   startedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  consentBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type RecordingOrderByWithRelationInput = {
@@ -282,6 +299,8 @@ export type RecordingOrderByWithRelationInput = {
   meetingId?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
   startedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   egressId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   filepath?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -293,6 +312,7 @@ export type RecordingOrderByWithRelationInput = {
   meeting?: Prisma.MeetingOrderByWithRelationInput
   organization?: Prisma.OrganizationOrderByWithRelationInput
   startedBy?: Prisma.UserOrderByWithRelationInput
+  consentBy?: Prisma.UserOrderByWithRelationInput
   _relevance?: Prisma.RecordingOrderByRelevanceInput
 }
 
@@ -305,6 +325,8 @@ export type RecordingWhereUniqueInput = Prisma.AtLeast<{
   meetingId?: Prisma.StringFilter<"Recording"> | string
   organizationId?: Prisma.StringFilter<"Recording"> | string
   startedById?: Prisma.StringNullableFilter<"Recording"> | string | null
+  consentAcknowledgedAt?: Prisma.DateTimeNullableFilter<"Recording"> | Date | string | null
+  consentByUserId?: Prisma.StringNullableFilter<"Recording"> | string | null
   status?: Prisma.EnumRecordingStatusFilter<"Recording"> | $Enums.RecordingStatus
   filepath?: Prisma.StringNullableFilter<"Recording"> | string | null
   downloadUrl?: Prisma.StringNullableFilter<"Recording"> | string | null
@@ -315,6 +337,7 @@ export type RecordingWhereUniqueInput = Prisma.AtLeast<{
   meeting?: Prisma.XOR<Prisma.MeetingScalarRelationFilter, Prisma.MeetingWhereInput>
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   startedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  consentBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id" | "egressId">
 
 export type RecordingOrderByWithAggregationInput = {
@@ -322,6 +345,8 @@ export type RecordingOrderByWithAggregationInput = {
   meetingId?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
   startedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  consentByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   egressId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   filepath?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -345,6 +370,8 @@ export type RecordingScalarWhereWithAggregatesInput = {
   meetingId?: Prisma.StringWithAggregatesFilter<"Recording"> | string
   organizationId?: Prisma.StringWithAggregatesFilter<"Recording"> | string
   startedById?: Prisma.StringNullableWithAggregatesFilter<"Recording"> | string | null
+  consentAcknowledgedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Recording"> | Date | string | null
+  consentByUserId?: Prisma.StringNullableWithAggregatesFilter<"Recording"> | string | null
   egressId?: Prisma.StringWithAggregatesFilter<"Recording"> | string
   status?: Prisma.EnumRecordingStatusWithAggregatesFilter<"Recording"> | $Enums.RecordingStatus
   filepath?: Prisma.StringNullableWithAggregatesFilter<"Recording"> | string | null
@@ -357,6 +384,7 @@ export type RecordingScalarWhereWithAggregatesInput = {
 
 export type RecordingCreateInput = {
   id?: string
+  consentAcknowledgedAt?: Date | string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -368,6 +396,7 @@ export type RecordingCreateInput = {
   meeting: Prisma.MeetingCreateNestedOneWithoutRecordingsInput
   organization: Prisma.OrganizationCreateNestedOneWithoutRecordingsInput
   startedBy?: Prisma.UserCreateNestedOneWithoutRecordingsStartedInput
+  consentBy?: Prisma.UserCreateNestedOneWithoutRecordingsConsentedInput
 }
 
 export type RecordingUncheckedCreateInput = {
@@ -375,6 +404,8 @@ export type RecordingUncheckedCreateInput = {
   meetingId: string
   organizationId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -387,6 +418,7 @@ export type RecordingUncheckedCreateInput = {
 
 export type RecordingUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -398,6 +430,7 @@ export type RecordingUpdateInput = {
   meeting?: Prisma.MeetingUpdateOneRequiredWithoutRecordingsNestedInput
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutRecordingsNestedInput
   startedBy?: Prisma.UserUpdateOneWithoutRecordingsStartedNestedInput
+  consentBy?: Prisma.UserUpdateOneWithoutRecordingsConsentedNestedInput
 }
 
 export type RecordingUncheckedUpdateInput = {
@@ -405,6 +438,8 @@ export type RecordingUncheckedUpdateInput = {
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -420,6 +455,8 @@ export type RecordingCreateManyInput = {
   meetingId: string
   organizationId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -432,6 +469,7 @@ export type RecordingCreateManyInput = {
 
 export type RecordingUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -447,6 +485,8 @@ export type RecordingUncheckedUpdateManyInput = {
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -478,6 +518,8 @@ export type RecordingCountOrderByAggregateInput = {
   meetingId?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
   startedById?: Prisma.SortOrder
+  consentAcknowledgedAt?: Prisma.SortOrder
+  consentByUserId?: Prisma.SortOrder
   egressId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   filepath?: Prisma.SortOrder
@@ -497,6 +539,8 @@ export type RecordingMaxOrderByAggregateInput = {
   meetingId?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
   startedById?: Prisma.SortOrder
+  consentAcknowledgedAt?: Prisma.SortOrder
+  consentByUserId?: Prisma.SortOrder
   egressId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   filepath?: Prisma.SortOrder
@@ -512,6 +556,8 @@ export type RecordingMinOrderByAggregateInput = {
   meetingId?: Prisma.SortOrder
   organizationId?: Prisma.SortOrder
   startedById?: Prisma.SortOrder
+  consentAcknowledgedAt?: Prisma.SortOrder
+  consentByUserId?: Prisma.SortOrder
   egressId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   filepath?: Prisma.SortOrder
@@ -533,10 +579,24 @@ export type RecordingCreateNestedManyWithoutStartedByInput = {
   connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
 }
 
+export type RecordingCreateNestedManyWithoutConsentByInput = {
+  create?: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput> | Prisma.RecordingCreateWithoutConsentByInput[] | Prisma.RecordingUncheckedCreateWithoutConsentByInput[]
+  connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutConsentByInput | Prisma.RecordingCreateOrConnectWithoutConsentByInput[]
+  createMany?: Prisma.RecordingCreateManyConsentByInputEnvelope
+  connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+}
+
 export type RecordingUncheckedCreateNestedManyWithoutStartedByInput = {
   create?: Prisma.XOR<Prisma.RecordingCreateWithoutStartedByInput, Prisma.RecordingUncheckedCreateWithoutStartedByInput> | Prisma.RecordingCreateWithoutStartedByInput[] | Prisma.RecordingUncheckedCreateWithoutStartedByInput[]
   connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutStartedByInput | Prisma.RecordingCreateOrConnectWithoutStartedByInput[]
   createMany?: Prisma.RecordingCreateManyStartedByInputEnvelope
+  connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+}
+
+export type RecordingUncheckedCreateNestedManyWithoutConsentByInput = {
+  create?: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput> | Prisma.RecordingCreateWithoutConsentByInput[] | Prisma.RecordingUncheckedCreateWithoutConsentByInput[]
+  connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutConsentByInput | Prisma.RecordingCreateOrConnectWithoutConsentByInput[]
+  createMany?: Prisma.RecordingCreateManyConsentByInputEnvelope
   connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
 }
 
@@ -554,6 +614,20 @@ export type RecordingUpdateManyWithoutStartedByNestedInput = {
   deleteMany?: Prisma.RecordingScalarWhereInput | Prisma.RecordingScalarWhereInput[]
 }
 
+export type RecordingUpdateManyWithoutConsentByNestedInput = {
+  create?: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput> | Prisma.RecordingCreateWithoutConsentByInput[] | Prisma.RecordingUncheckedCreateWithoutConsentByInput[]
+  connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutConsentByInput | Prisma.RecordingCreateOrConnectWithoutConsentByInput[]
+  upsert?: Prisma.RecordingUpsertWithWhereUniqueWithoutConsentByInput | Prisma.RecordingUpsertWithWhereUniqueWithoutConsentByInput[]
+  createMany?: Prisma.RecordingCreateManyConsentByInputEnvelope
+  set?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  disconnect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  delete?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  update?: Prisma.RecordingUpdateWithWhereUniqueWithoutConsentByInput | Prisma.RecordingUpdateWithWhereUniqueWithoutConsentByInput[]
+  updateMany?: Prisma.RecordingUpdateManyWithWhereWithoutConsentByInput | Prisma.RecordingUpdateManyWithWhereWithoutConsentByInput[]
+  deleteMany?: Prisma.RecordingScalarWhereInput | Prisma.RecordingScalarWhereInput[]
+}
+
 export type RecordingUncheckedUpdateManyWithoutStartedByNestedInput = {
   create?: Prisma.XOR<Prisma.RecordingCreateWithoutStartedByInput, Prisma.RecordingUncheckedCreateWithoutStartedByInput> | Prisma.RecordingCreateWithoutStartedByInput[] | Prisma.RecordingUncheckedCreateWithoutStartedByInput[]
   connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutStartedByInput | Prisma.RecordingCreateOrConnectWithoutStartedByInput[]
@@ -565,6 +639,20 @@ export type RecordingUncheckedUpdateManyWithoutStartedByNestedInput = {
   connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
   update?: Prisma.RecordingUpdateWithWhereUniqueWithoutStartedByInput | Prisma.RecordingUpdateWithWhereUniqueWithoutStartedByInput[]
   updateMany?: Prisma.RecordingUpdateManyWithWhereWithoutStartedByInput | Prisma.RecordingUpdateManyWithWhereWithoutStartedByInput[]
+  deleteMany?: Prisma.RecordingScalarWhereInput | Prisma.RecordingScalarWhereInput[]
+}
+
+export type RecordingUncheckedUpdateManyWithoutConsentByNestedInput = {
+  create?: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput> | Prisma.RecordingCreateWithoutConsentByInput[] | Prisma.RecordingUncheckedCreateWithoutConsentByInput[]
+  connectOrCreate?: Prisma.RecordingCreateOrConnectWithoutConsentByInput | Prisma.RecordingCreateOrConnectWithoutConsentByInput[]
+  upsert?: Prisma.RecordingUpsertWithWhereUniqueWithoutConsentByInput | Prisma.RecordingUpsertWithWhereUniqueWithoutConsentByInput[]
+  createMany?: Prisma.RecordingCreateManyConsentByInputEnvelope
+  set?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  disconnect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  delete?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  connect?: Prisma.RecordingWhereUniqueInput | Prisma.RecordingWhereUniqueInput[]
+  update?: Prisma.RecordingUpdateWithWhereUniqueWithoutConsentByInput | Prisma.RecordingUpdateWithWhereUniqueWithoutConsentByInput[]
+  updateMany?: Prisma.RecordingUpdateManyWithWhereWithoutConsentByInput | Prisma.RecordingUpdateManyWithWhereWithoutConsentByInput[]
   deleteMany?: Prisma.RecordingScalarWhereInput | Prisma.RecordingScalarWhereInput[]
 }
 
@@ -656,16 +744,9 @@ export type EnumRecordingStatusFieldUpdateOperationsInput = {
   set?: $Enums.RecordingStatus
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type RecordingCreateWithoutStartedByInput = {
   id?: string
+  consentAcknowledgedAt?: Date | string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -676,12 +757,15 @@ export type RecordingCreateWithoutStartedByInput = {
   endedAt?: Date | string | null
   meeting: Prisma.MeetingCreateNestedOneWithoutRecordingsInput
   organization: Prisma.OrganizationCreateNestedOneWithoutRecordingsInput
+  consentBy?: Prisma.UserCreateNestedOneWithoutRecordingsConsentedInput
 }
 
 export type RecordingUncheckedCreateWithoutStartedByInput = {
   id?: string
   meetingId: string
   organizationId: string
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -699,6 +783,48 @@ export type RecordingCreateOrConnectWithoutStartedByInput = {
 
 export type RecordingCreateManyStartedByInputEnvelope = {
   data: Prisma.RecordingCreateManyStartedByInput | Prisma.RecordingCreateManyStartedByInput[]
+  skipDuplicates?: boolean
+}
+
+export type RecordingCreateWithoutConsentByInput = {
+  id?: string
+  consentAcknowledgedAt?: Date | string | null
+  egressId: string
+  status?: $Enums.RecordingStatus
+  filepath?: string | null
+  downloadUrl?: string | null
+  durationSeconds?: number | null
+  errorMessage?: string | null
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+  meeting: Prisma.MeetingCreateNestedOneWithoutRecordingsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutRecordingsInput
+  startedBy?: Prisma.UserCreateNestedOneWithoutRecordingsStartedInput
+}
+
+export type RecordingUncheckedCreateWithoutConsentByInput = {
+  id?: string
+  meetingId: string
+  organizationId: string
+  startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  egressId: string
+  status?: $Enums.RecordingStatus
+  filepath?: string | null
+  downloadUrl?: string | null
+  durationSeconds?: number | null
+  errorMessage?: string | null
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+}
+
+export type RecordingCreateOrConnectWithoutConsentByInput = {
+  where: Prisma.RecordingWhereUniqueInput
+  create: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput>
+}
+
+export type RecordingCreateManyConsentByInputEnvelope = {
+  data: Prisma.RecordingCreateManyConsentByInput | Prisma.RecordingCreateManyConsentByInput[]
   skipDuplicates?: boolean
 }
 
@@ -726,6 +852,8 @@ export type RecordingScalarWhereInput = {
   meetingId?: Prisma.StringFilter<"Recording"> | string
   organizationId?: Prisma.StringFilter<"Recording"> | string
   startedById?: Prisma.StringNullableFilter<"Recording"> | string | null
+  consentAcknowledgedAt?: Prisma.DateTimeNullableFilter<"Recording"> | Date | string | null
+  consentByUserId?: Prisma.StringNullableFilter<"Recording"> | string | null
   egressId?: Prisma.StringFilter<"Recording"> | string
   status?: Prisma.EnumRecordingStatusFilter<"Recording"> | $Enums.RecordingStatus
   filepath?: Prisma.StringNullableFilter<"Recording"> | string | null
@@ -736,8 +864,25 @@ export type RecordingScalarWhereInput = {
   endedAt?: Prisma.DateTimeNullableFilter<"Recording"> | Date | string | null
 }
 
+export type RecordingUpsertWithWhereUniqueWithoutConsentByInput = {
+  where: Prisma.RecordingWhereUniqueInput
+  update: Prisma.XOR<Prisma.RecordingUpdateWithoutConsentByInput, Prisma.RecordingUncheckedUpdateWithoutConsentByInput>
+  create: Prisma.XOR<Prisma.RecordingCreateWithoutConsentByInput, Prisma.RecordingUncheckedCreateWithoutConsentByInput>
+}
+
+export type RecordingUpdateWithWhereUniqueWithoutConsentByInput = {
+  where: Prisma.RecordingWhereUniqueInput
+  data: Prisma.XOR<Prisma.RecordingUpdateWithoutConsentByInput, Prisma.RecordingUncheckedUpdateWithoutConsentByInput>
+}
+
+export type RecordingUpdateManyWithWhereWithoutConsentByInput = {
+  where: Prisma.RecordingScalarWhereInput
+  data: Prisma.XOR<Prisma.RecordingUpdateManyMutationInput, Prisma.RecordingUncheckedUpdateManyWithoutConsentByInput>
+}
+
 export type RecordingCreateWithoutOrganizationInput = {
   id?: string
+  consentAcknowledgedAt?: Date | string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -748,12 +893,15 @@ export type RecordingCreateWithoutOrganizationInput = {
   endedAt?: Date | string | null
   meeting: Prisma.MeetingCreateNestedOneWithoutRecordingsInput
   startedBy?: Prisma.UserCreateNestedOneWithoutRecordingsStartedInput
+  consentBy?: Prisma.UserCreateNestedOneWithoutRecordingsConsentedInput
 }
 
 export type RecordingUncheckedCreateWithoutOrganizationInput = {
   id?: string
   meetingId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -792,6 +940,7 @@ export type RecordingUpdateManyWithWhereWithoutOrganizationInput = {
 
 export type RecordingCreateWithoutMeetingInput = {
   id?: string
+  consentAcknowledgedAt?: Date | string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -802,12 +951,15 @@ export type RecordingCreateWithoutMeetingInput = {
   endedAt?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutRecordingsInput
   startedBy?: Prisma.UserCreateNestedOneWithoutRecordingsStartedInput
+  consentBy?: Prisma.UserCreateNestedOneWithoutRecordingsConsentedInput
 }
 
 export type RecordingUncheckedCreateWithoutMeetingInput = {
   id?: string
   organizationId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -848,6 +1000,24 @@ export type RecordingCreateManyStartedByInput = {
   id?: string
   meetingId: string
   organizationId: string
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
+  egressId: string
+  status?: $Enums.RecordingStatus
+  filepath?: string | null
+  downloadUrl?: string | null
+  durationSeconds?: number | null
+  errorMessage?: string | null
+  startedAt?: Date | string
+  endedAt?: Date | string | null
+}
+
+export type RecordingCreateManyConsentByInput = {
+  id?: string
+  meetingId: string
+  organizationId: string
+  startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -860,6 +1030,7 @@ export type RecordingCreateManyStartedByInput = {
 
 export type RecordingUpdateWithoutStartedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -870,12 +1041,15 @@ export type RecordingUpdateWithoutStartedByInput = {
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   meeting?: Prisma.MeetingUpdateOneRequiredWithoutRecordingsNestedInput
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutRecordingsNestedInput
+  consentBy?: Prisma.UserUpdateOneWithoutRecordingsConsentedNestedInput
 }
 
 export type RecordingUncheckedUpdateWithoutStartedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -890,6 +1064,56 @@ export type RecordingUncheckedUpdateManyWithoutStartedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  egressId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
+  filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  downloadUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type RecordingUpdateWithoutConsentByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  egressId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
+  filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  downloadUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  meeting?: Prisma.MeetingUpdateOneRequiredWithoutRecordingsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutRecordingsNestedInput
+  startedBy?: Prisma.UserUpdateOneWithoutRecordingsStartedNestedInput
+}
+
+export type RecordingUncheckedUpdateWithoutConsentByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  meetingId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+  startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  egressId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
+  filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  downloadUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  durationSeconds?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type RecordingUncheckedUpdateManyWithoutConsentByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  meetingId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+  startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -904,6 +1128,8 @@ export type RecordingCreateManyOrganizationInput = {
   id?: string
   meetingId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -916,6 +1142,7 @@ export type RecordingCreateManyOrganizationInput = {
 
 export type RecordingUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -926,12 +1153,15 @@ export type RecordingUpdateWithoutOrganizationInput = {
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   meeting?: Prisma.MeetingUpdateOneRequiredWithoutRecordingsNestedInput
   startedBy?: Prisma.UserUpdateOneWithoutRecordingsStartedNestedInput
+  consentBy?: Prisma.UserUpdateOneWithoutRecordingsConsentedNestedInput
 }
 
 export type RecordingUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -946,6 +1176,8 @@ export type RecordingUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   meetingId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -960,6 +1192,8 @@ export type RecordingCreateManyMeetingInput = {
   id?: string
   organizationId: string
   startedById?: string | null
+  consentAcknowledgedAt?: Date | string | null
+  consentByUserId?: string | null
   egressId: string
   status?: $Enums.RecordingStatus
   filepath?: string | null
@@ -972,6 +1206,7 @@ export type RecordingCreateManyMeetingInput = {
 
 export type RecordingUpdateWithoutMeetingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -982,12 +1217,15 @@ export type RecordingUpdateWithoutMeetingInput = {
   endedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutRecordingsNestedInput
   startedBy?: Prisma.UserUpdateOneWithoutRecordingsStartedNestedInput
+  consentBy?: Prisma.UserUpdateOneWithoutRecordingsConsentedNestedInput
 }
 
 export type RecordingUncheckedUpdateWithoutMeetingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1002,6 +1240,8 @@ export type RecordingUncheckedUpdateManyWithoutMeetingInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   startedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  consentAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  consentByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   egressId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumRecordingStatusFieldUpdateOperationsInput | $Enums.RecordingStatus
   filepath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1019,6 +1259,8 @@ export type RecordingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   meetingId?: boolean
   organizationId?: boolean
   startedById?: boolean
+  consentAcknowledgedAt?: boolean
+  consentByUserId?: boolean
   egressId?: boolean
   status?: boolean
   filepath?: boolean
@@ -1030,6 +1272,7 @@ export type RecordingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   meeting?: boolean | Prisma.MeetingDefaultArgs<ExtArgs>
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   startedBy?: boolean | Prisma.Recording$startedByArgs<ExtArgs>
+  consentBy?: boolean | Prisma.Recording$consentByArgs<ExtArgs>
 }, ExtArgs["result"]["recording"]>
 
 
@@ -1039,6 +1282,8 @@ export type RecordingSelectScalar = {
   meetingId?: boolean
   organizationId?: boolean
   startedById?: boolean
+  consentAcknowledgedAt?: boolean
+  consentByUserId?: boolean
   egressId?: boolean
   status?: boolean
   filepath?: boolean
@@ -1049,11 +1294,12 @@ export type RecordingSelectScalar = {
   endedAt?: boolean
 }
 
-export type RecordingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "meetingId" | "organizationId" | "startedById" | "egressId" | "status" | "filepath" | "downloadUrl" | "durationSeconds" | "errorMessage" | "startedAt" | "endedAt", ExtArgs["result"]["recording"]>
+export type RecordingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "meetingId" | "organizationId" | "startedById" | "consentAcknowledgedAt" | "consentByUserId" | "egressId" | "status" | "filepath" | "downloadUrl" | "durationSeconds" | "errorMessage" | "startedAt" | "endedAt", ExtArgs["result"]["recording"]>
 export type RecordingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   meeting?: boolean | Prisma.MeetingDefaultArgs<ExtArgs>
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   startedBy?: boolean | Prisma.Recording$startedByArgs<ExtArgs>
+  consentBy?: boolean | Prisma.Recording$consentByArgs<ExtArgs>
 }
 
 export type $RecordingPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1062,12 +1308,15 @@ export type $RecordingPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     meeting: Prisma.$MeetingPayload<ExtArgs>
     organization: Prisma.$OrganizationPayload<ExtArgs>
     startedBy: Prisma.$UserPayload<ExtArgs> | null
+    consentBy: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     meetingId: string
     organizationId: string
     startedById: string | null
+    consentAcknowledgedAt: Date | null
+    consentByUserId: string | null
     egressId: string
     status: $Enums.RecordingStatus
     filepath: string | null
@@ -1419,6 +1668,7 @@ export interface Prisma__RecordingClient<T, Null = never, ExtArgs extends runtim
   meeting<T extends Prisma.MeetingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MeetingDefaultArgs<ExtArgs>>): Prisma.Prisma__MeetingClient<runtime.Types.Result.GetResult<Prisma.$MeetingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   startedBy<T extends Prisma.Recording$startedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recording$startedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  consentBy<T extends Prisma.Recording$consentByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Recording$consentByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1452,6 +1702,8 @@ export interface RecordingFieldRefs {
   readonly meetingId: Prisma.FieldRef<"Recording", 'String'>
   readonly organizationId: Prisma.FieldRef<"Recording", 'String'>
   readonly startedById: Prisma.FieldRef<"Recording", 'String'>
+  readonly consentAcknowledgedAt: Prisma.FieldRef<"Recording", 'DateTime'>
+  readonly consentByUserId: Prisma.FieldRef<"Recording", 'String'>
   readonly egressId: Prisma.FieldRef<"Recording", 'String'>
   readonly status: Prisma.FieldRef<"Recording", 'RecordingStatus'>
   readonly filepath: Prisma.FieldRef<"Recording", 'String'>
@@ -1811,6 +2063,25 @@ export type RecordingDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
  * Recording.startedBy
  */
 export type Recording$startedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
+ * Recording.consentBy
+ */
+export type Recording$consentByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the User
    */
