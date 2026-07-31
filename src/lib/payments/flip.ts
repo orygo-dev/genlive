@@ -32,7 +32,8 @@ export const flipProvider: PaymentProvider = {
   id: "FLIP",
   label: "Flip Business",
   async isConfigured() {
-    return Boolean((await flipConfig()).secretKey);
+    const { secretKey, validationToken } = await flipConfig();
+    return Boolean(secretKey && validationToken);
   },
   async createCheckout(input: CheckoutRequest): Promise<CheckoutResult> {
     const { secretKey, isProduction } = await flipConfig();
@@ -90,12 +91,18 @@ export const flipProvider: PaymentProvider = {
     headers: Headers,
   ): Promise<NormalizedPaymentEvent> {
     const { validationToken } = await flipConfig();
+    if (!validationToken?.trim()) {
+      throw new Error(
+        "FLIP_VALIDATION_TOKEN wajib dikonfigurasi untuk menerima webhook.",
+      );
+    }
+
     const tokenHeader =
       headers.get("x-callback-token") ||
       headers.get("X-Callback-Token") ||
       "";
 
-    if (validationToken && tokenHeader && tokenHeader !== validationToken) {
+    if (!tokenHeader || tokenHeader !== validationToken) {
       throw new Error("Token callback Flip tidak valid.");
     }
 

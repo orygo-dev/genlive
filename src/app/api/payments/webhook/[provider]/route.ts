@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { activatePaidPlan } from "@/lib/billing";
 import { prisma } from "@/lib/db";
 import { getPaymentProviderForWebhook, type PaymentProviderId } from "@/lib/payments";
+import { amountsMatchIdr } from "@/lib/payments/webhook-security";
 import { writeAuditLog } from "@/lib/organization";
 
 export const runtime = "nodejs";
@@ -82,6 +83,19 @@ export async function POST(request: Request, { params }: WebhookRouteProps) {
     }
 
     if (event.status === "PAID") {
+      if (!amountsMatchIdr(order.amountIdr, event.amountIdr)) {
+        console.error("Payment webhook amount mismatch", {
+          provider: providerId,
+          orderId: order.id,
+          expected: order.amountIdr,
+          reported: event.amountIdr,
+        });
+        return NextResponse.json(
+          { error: "Jumlah pembayaran tidak cocok dengan order." },
+          { status: 400 },
+        );
+      }
+
       await prisma.paymentOrder.update({
         where: { id: order.id },
         data: {

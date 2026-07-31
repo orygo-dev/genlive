@@ -127,6 +127,10 @@ Manual:
 ## 7. Monitoring ringan
 
 - Pantau `/api/health` dari uptime monitor (Better Stack, UptimeRobot, dll)
+- Alert jika status bukan `ok` / HTTP 503
+- Cron VPS: `GET /api/cron/meeting-reminders` tiap 15 menit + header `Authorization: Bearer $CRON_SECRET`
+- Persist folder `data/uploads` (brand assets); recording sebaiknya ke S3
+- Payment: Midtrans signature + amount check; iPaymu signature VA; Flip wajib `FLIP_VALIDATION_TOKEN`
 - Pantau error log hosting (Vercel Logs / Docker logs)
 - Halaman error aplikasi: `error.tsx` / `global-error.tsx`
 - Rotasi secret jika pernah bocor di `.env.example` atau chat

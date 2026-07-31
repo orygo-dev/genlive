@@ -14,7 +14,6 @@ const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
   ".webp": "image/webp",
   ".gif": "image/gif",
-  ".svg": "image/svg+xml",
 };
 
 type RouteContext = { params: Promise<{ filename: string }> };

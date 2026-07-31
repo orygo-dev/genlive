@@ -9,7 +9,6 @@ const ALLOWED_TYPES = new Map([
   ["image/png", "png"],
   ["image/webp", "webp"],
   ["image/gif", "gif"],
-  ["image/svg+xml", "svg"],
 ]);
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -61,7 +60,7 @@ export async function saveBrandAsset(file: File, kind: BrandAssetKind) {
   const extension = ALLOWED_TYPES.get(file.type);
   if (!extension) {
     throw new Error(
-      "Format gambar tidak didukung. Gunakan JPG, PNG, WEBP, GIF, atau SVG.",
+      "Format gambar tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF (SVG tidak diizinkan).",
     );
   }
 

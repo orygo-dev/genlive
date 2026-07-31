@@ -233,15 +233,37 @@ location / {
 
 ---
 
-## 9. Cron reminder WhatsApp
+## 9. Cron reminder WhatsApp / email
 
-aaPanel → **Cron** → tiap 15 menit:
+**Wajib di VPS/aaPanel** (tanpa ini reminder T-24h / T-1h tidak jalan).
+
+aaPanel → **Cron** → tiap **15 menit** → Script:
 
 ```bash
-curl -fsS -X GET "https://meet.domainanda.com/api/cron/meeting-reminders" \
+curl -fsS -X GET "https://genlive.guruspaceai.cloud/api/cron/meeting-reminders" \
   -H "Authorization: Bearer CRON_SECRET_ANDA"
 ```
 
+Pastikan `CRON_SECRET` di `.env.production` (atau `/admin` → Integrasi) sama dengan bearer di atas.
+
+Cek log cron aaPanel bila gagal (401 = secret salah; 503 = app down).
+
+Uptime: pantau `GET /api/health` (harus HTTP 200). Alert jika 503.
+
+---
+
+## 9b. Persistensi upload brand & recording
+
+Folder penting di server (jangan dihapus saat deploy):
+
+```text
+/www/wwwroot/.../data/uploads/brand
+/www/wwwroot/.../public/uploads/brand
+```
+
+Script `aapanel-pm2.sh` sudah mirror `data/uploads` → standalone. Untuk production serius, mount volume disk terpisah ke `data/uploads` atau arahkan egress recording ke S3 (`LIVEKIT_EGRESS_S3_*`).
+
+SVG **tidak** diizinkan untuk logo (cegah XSS); gunakan PNG/WebP/JPG.
 ---
 
 ## 10. Webhook

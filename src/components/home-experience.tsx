@@ -17,7 +17,13 @@ import { AppBrand } from "@/components/app-brand";
 import type { PlatformBranding } from "@/lib/platform-branding";
 import { DEFAULT_PLAN_CATALOG, formatIdr } from "@/lib/plans";
 
-export function HomeExperience({ branding }: { branding: PlatformBranding }) {
+export function HomeExperience({
+  branding,
+  maintenanceMode = false,
+}: {
+  branding: PlatformBranding;
+  maintenanceMode?: boolean;
+}) {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
@@ -44,6 +50,12 @@ export function HomeExperience({ branding }: { branding: PlatformBranding }) {
     <div className="landing">
       <div className="landing-atmosphere" aria-hidden="true" />
 
+      {maintenanceMode ? (
+        <div className="landing-maintenance" role="status">
+          Platform sedang dalam mode maintenance. Layanan pengguna sementara
+          dibatasi. Super Admin tetap dapat masuk ke /admin.
+        </div>
+      ) : null}
       <header className="landing-header">
         <AppBrand branding={branding} className="landing-brand-nav" markSize={18} />
         <nav className="landing-nav" aria-label="Navigasi utama">

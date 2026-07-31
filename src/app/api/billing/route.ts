@@ -14,6 +14,7 @@ import {
   getPaymentProvider,
   listPaymentProviders,
 } from "@/lib/payments";
+import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { getPlatformConfig } from "@/lib/platform-config";
 import { writeAuditLog } from "@/lib/organization";
 
@@ -82,6 +83,11 @@ export async function POST(request: Request) {
     if (!context?.activeMembership) {
       return NextResponse.json({ error: "Silakan masuk terlebih dahulu." }, { status: 401 });
     }
+
+    const maintenance = await maintenanceBlockResponse({
+      isSuperAdmin: context.user.isSuperAdmin,
+    });
+    if (maintenance) return maintenance;
 
     if (!canManageMembers(context.activeMembership.role)) {
       return NextResponse.json(

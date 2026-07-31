@@ -27,7 +27,7 @@ const ASSET_FIELDS: Array<{
     kind: "logo",
     key: "logoUrl",
     label: "Logo aplikasi",
-    hint: "Muncul di header, dashboard, dan auth (tanpa frame).",
+    hint: "Muncul di header, dashboard, dan auth (tanpa frame). Format: JPG/PNG/WEBP/GIF.",
   },
   {
     kind: "loginBackground",
@@ -262,7 +262,7 @@ export function AdminBrandingPanel({
                   {busy === asset.kind ? "Mengunggah..." : "Unggah gambar"}
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     hidden
                     disabled={Boolean(busy)}
                     onChange={(event) => {

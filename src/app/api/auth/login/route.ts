@@ -3,12 +3,26 @@ import { NextResponse } from "next/server";
 import { createSession } from "@/lib/auth";
 import { loginSchema } from "@/lib/auth-validation";
 import { prisma } from "@/lib/db";
+import { maintenanceBlockResponse } from "@/lib/maintenance";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { syncSuperAdminFlag } from "@/lib/super-admin";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIp(request);
+    const ipLimit = rateLimit(`login:ip:${ip}`, 20, 15 * 60_000);
+    if (!ipLimit.ok) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan login. Coba lagi nanti." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(ipLimit.retryAfterSec) },
+        },
+      );
+    }
+
     const payload: unknown = await request.json();
     const result = loginSchema.safeParse(payload);
 
@@ -16,6 +30,21 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: result.error.issues[0]?.message ?? "Data tidak valid." },
         { status: 400 },
+      );
+    }
+
+    const emailLimit = rateLimit(
+      `login:email:${result.data.email}`,
+      8,
+      15 * 60_000,
+    );
+    if (!emailLimit.ok) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan untuk email ini." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(emailLimit.retryAfterSec) },
+        },
       );
     }
 
@@ -54,6 +83,13 @@ export async function POST(request: Request) {
 
     const syncedSuperAdmin = await syncSuperAdminFlag(user.id, user.email);
     const isSuperAdmin = syncedSuperAdmin || user.isSuperAdmin;
+
+    // Non–super-admin cannot use the app during maintenance (login blocked).
+    // Super Admin may always log in to turn maintenance off.
+    if (!isSuperAdmin) {
+      const maintenance = await maintenanceBlockResponse();
+      if (maintenance) return maintenance;
+    }
 
     await createSession(user.id, user.memberships[0]?.organizationId);
 

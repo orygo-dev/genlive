@@ -7,6 +7,7 @@ import {
   type NormalizedPaymentEvent,
   type PaymentProvider,
 } from "@/lib/payments/types";
+import { verifyIpaymuNotifySignature } from "@/lib/payments/webhook-security";
 
 async function ipaymuConfig() {
   const config = await getPlatformConfig();
@@ -100,7 +101,16 @@ export const ipaymuProvider: PaymentProvider = {
     body: unknown,
     _headers: Headers,
   ): Promise<NormalizedPaymentEvent> {
+    const { va } = await ipaymuConfig();
+    if (!va) {
+      throw new Error("iPaymu belum dikonfigurasi.");
+    }
+
     const payload = body as Record<string, unknown>;
+    if (!verifyIpaymuNotifySignature(payload, va)) {
+      throw new Error("Signature webhook iPaymu tidak valid.");
+    }
+
     const orderId = String(
       payload.reference_id ||
         payload.referenceId ||

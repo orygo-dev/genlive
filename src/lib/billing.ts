@@ -117,6 +117,36 @@ export async function assertCanCreateMeeting(organizationId: string) {
       status: 402,
     };
   }
+  if (
+    resolved.plan.maxMeetingMinutesPerMonth > 0 &&
+    usage.meetingMinutes >= resolved.plan.maxMeetingMinutesPerMonth
+  ) {
+    return {
+      ok: false as const,
+      error: `Batas menit meeting bulanan plan ${resolved.plan.name} tercapai (${resolved.plan.maxMeetingMinutesPerMonth} menit).`,
+      status: 402,
+    };
+  }
+  return { ok: true as const, plan: resolved.plan };
+}
+
+/** Block new joins/tokens when monthly meeting-minute quota is exhausted. */
+export async function assertCanConsumeMeetingMinutes(organizationId: string) {
+  const resolved = await resolveOrganizationPlan(organizationId);
+  if (!resolved) {
+    return { ok: false as const, error: "Organisasi tidak ditemukan.", status: 404 };
+  }
+  if (resolved.plan.maxMeetingMinutesPerMonth <= 0) {
+    return { ok: true as const, plan: resolved.plan };
+  }
+  const usage = await getOrganizationUsage(organizationId);
+  if (usage.meetingMinutes >= resolved.plan.maxMeetingMinutesPerMonth) {
+    return {
+      ok: false as const,
+      error: `Kuota menit meeting plan ${resolved.plan.name} habis (${resolved.plan.maxMeetingMinutesPerMonth} menit/bulan). Upgrade atau tunggu reset bulanan.`,
+      status: 402,
+    };
+  }
   return { ok: true as const, plan: resolved.plan };
 }
 

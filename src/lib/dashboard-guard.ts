@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { getCurrentSessionContext } from "@/lib/auth";
+import { getMaintenanceMode } from "@/lib/maintenance";
 
 type SessionContext = NonNullable<
   Awaited<ReturnType<typeof getCurrentSessionContext>>
@@ -16,6 +17,13 @@ export async function requireActiveMembership(): Promise<ActiveDashboardContext>
 
   if (!context) {
     redirect("/auth");
+  }
+
+  if (
+    (await getMaintenanceMode()) &&
+    !context.user.isSuperAdmin
+  ) {
+    redirect("/?maintenance=1");
   }
 
   if (!context.activeMembership) {

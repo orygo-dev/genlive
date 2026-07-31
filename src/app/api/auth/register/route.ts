@@ -4,12 +4,29 @@ import { Prisma } from "@/generated/prisma/client";
 import { createSession } from "@/lib/auth";
 import { registerSchema } from "@/lib/auth-validation";
 import { prisma } from "@/lib/db";
+import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { createOrganizationSlug } from "@/lib/organization-helpers";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const maintenance = await maintenanceBlockResponse();
+    if (maintenance) return maintenance;
+
+    const ip = clientIp(request);
+    const limited = rateLimit(`register:ip:${ip}`, 5, 60 * 60_000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Terlalu banyak pendaftaran dari jaringan ini. Coba lagi nanti." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        },
+      );
+    }
+
     const payload: unknown = await request.json();
     const result = registerSchema.safeParse(payload);
 

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { parseInviteEmails } from "@/lib/email-templates";
 import { deliverMeetingInvites } from "@/lib/meeting-invites";
 import { createRoomName } from "@/lib/meeting";
+import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { isFutureStart } from "@/lib/meeting-lifecycle";
 import { writeAuditLog } from "@/lib/organization";
 import { isValidInvitePhone, parseInvitePhones } from "@/lib/phone";
@@ -138,6 +139,11 @@ export async function POST(request: Request) {
     if (!context?.activeMembership) {
       return NextResponse.json({ error: "Silakan masuk terlebih dahulu." }, { status: 401 });
     }
+
+    const maintenance = await maintenanceBlockResponse({
+      isSuperAdmin: context.user.isSuperAdmin,
+    });
+    if (maintenance) return maintenance;
 
     const payload: unknown = await request.json();
     const result = createMeetingSchema.safeParse(payload);

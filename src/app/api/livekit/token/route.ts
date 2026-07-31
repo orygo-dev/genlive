@@ -3,16 +3,31 @@ import { compare } from "bcryptjs";
 import type { ParticipantRole } from "@/generated/prisma/enums";
 import { createAdmissionToken } from "@/lib/admission";
 import { getCurrentUser } from "@/lib/auth";
+import { assertCanConsumeMeetingMinutes } from "@/lib/billing";
 import { prisma } from "@/lib/db";
 import { createParticipantToken } from "@/lib/livekit-token";
+import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { meetingRequestSchema } from "@/lib/meeting";
 import { isParticipantRoomOpen } from "@/lib/meeting-lifecycle";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 const ADMISSION_TTL_MS = 15 * 60 * 1000;
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIp(request);
+    const limited = rateLimit(`livekit-token:${ip}`, 60, 60_000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan token. Coba lagi sebentar." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec) },
+        },
+      );
+    }
+
     const body: unknown = await request.json();
     const parsed = meetingRequestSchema.safeParse(body);
 
@@ -24,6 +39,11 @@ export async function POST(request: Request) {
     }
 
     const user = await getCurrentUser();
+    const maintenance = await maintenanceBlockResponse({
+      isSuperAdmin: Boolean(user?.isSuperAdmin),
+    });
+    if (maintenance) return maintenance;
+
     const identity = `${user ? "user" : "guest"}-${crypto.randomUUID()}`;
     const meeting = await prisma.meeting.findUnique({
       where: { roomName: parsed.data.roomName },
@@ -47,6 +67,18 @@ export async function POST(request: Request) {
       );
       if (membership?.role === "OWNER" || membership?.role === "ADMIN") {
         role = "MODERATOR";
+      }
+    }
+
+    if (meeting && role === "PARTICIPANT") {
+      const minutesQuota = await assertCanConsumeMeetingMinutes(
+        meeting.organizationId,
+      );
+      if (!minutesQuota.ok) {
+        return NextResponse.json(
+          { error: minutesQuota.error },
+          { status: minutesQuota.status },
+        );
       }
     }
 
