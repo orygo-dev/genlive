@@ -89,6 +89,7 @@ export const UserScalarFieldEnum = {
   email: 'email',
   passwordHash: 'passwordHash',
   isSuperAdmin: 'isSuperAdmin',
+  isDisabled: 'isDisabled',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -284,6 +285,8 @@ export const PlatformSettingsScalarFieldEnum = {
   loginBackgroundUrl: 'loginBackgroundUrl',
   splashBackgroundUrl: 'splashBackgroundUrl',
   splashLogoUrl: 'splashLogoUrl',
+  supportEmail: 'supportEmail',
+  maintenanceMode: 'maintenanceMode',
   updatedAt: 'updatedAt',
   updatedById: 'updatedById'
 } as const
@@ -480,6 +483,7 @@ export const PlatformSettingsOrderByRelevanceFieldEnum = {
   loginBackgroundUrl: 'loginBackgroundUrl',
   splashBackgroundUrl: 'splashBackgroundUrl',
   splashLogoUrl: 'splashLogoUrl',
+  supportEmail: 'supportEmail',
   updatedById: 'updatedById'
 } as const
 

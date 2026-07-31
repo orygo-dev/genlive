@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       name: true,
       email: true,
       isSuperAdmin: true,
+      isDisabled: true,
       createdAt: true,
       memberships: {
         select: {
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
       name: user.name,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,
+      isDisabled: user.isDisabled,
       createdAt: user.createdAt,
       sessionCount: user._count.sessions,
       organizations: user.memberships.map((m) => ({

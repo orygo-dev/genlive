@@ -41,6 +41,8 @@ export type PlatformSettingsMinAggregateOutputType = {
   loginBackgroundUrl: string | null
   splashBackgroundUrl: string | null
   splashLogoUrl: string | null
+  supportEmail: string | null
+  maintenanceMode: boolean | null
   updatedAt: Date | null
   updatedById: string | null
 }
@@ -52,6 +54,8 @@ export type PlatformSettingsMaxAggregateOutputType = {
   loginBackgroundUrl: string | null
   splashBackgroundUrl: string | null
   splashLogoUrl: string | null
+  supportEmail: string | null
+  maintenanceMode: boolean | null
   updatedAt: Date | null
   updatedById: string | null
 }
@@ -63,6 +67,8 @@ export type PlatformSettingsCountAggregateOutputType = {
   loginBackgroundUrl: number
   splashBackgroundUrl: number
   splashLogoUrl: number
+  supportEmail: number
+  maintenanceMode: number
   updatedAt: number
   updatedById: number
   _all: number
@@ -84,6 +90,8 @@ export type PlatformSettingsMinAggregateInputType = {
   loginBackgroundUrl?: true
   splashBackgroundUrl?: true
   splashLogoUrl?: true
+  supportEmail?: true
+  maintenanceMode?: true
   updatedAt?: true
   updatedById?: true
 }
@@ -95,6 +103,8 @@ export type PlatformSettingsMaxAggregateInputType = {
   loginBackgroundUrl?: true
   splashBackgroundUrl?: true
   splashLogoUrl?: true
+  supportEmail?: true
+  maintenanceMode?: true
   updatedAt?: true
   updatedById?: true
 }
@@ -106,6 +116,8 @@ export type PlatformSettingsCountAggregateInputType = {
   loginBackgroundUrl?: true
   splashBackgroundUrl?: true
   splashLogoUrl?: true
+  supportEmail?: true
+  maintenanceMode?: true
   updatedAt?: true
   updatedById?: true
   _all?: true
@@ -204,6 +216,8 @@ export type PlatformSettingsGroupByOutputType = {
   loginBackgroundUrl: string | null
   splashBackgroundUrl: string | null
   splashLogoUrl: string | null
+  supportEmail: string | null
+  maintenanceMode: boolean
   updatedAt: Date
   updatedById: string | null
   _count: PlatformSettingsCountAggregateOutputType | null
@@ -238,6 +252,8 @@ export type PlatformSettingsWhereInput = {
   loginBackgroundUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   splashBackgroundUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   splashLogoUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
+  supportEmail?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
+  maintenanceMode?: Prisma.BoolFilter<"PlatformSettings"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"PlatformSettings"> | Date | string
   updatedById?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
 }
@@ -249,6 +265,8 @@ export type PlatformSettingsOrderByWithRelationInput = {
   loginBackgroundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   splashBackgroundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   splashLogoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  supportEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  maintenanceMode?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   _relevance?: Prisma.PlatformSettingsOrderByRelevanceInput
@@ -264,6 +282,8 @@ export type PlatformSettingsWhereUniqueInput = Prisma.AtLeast<{
   loginBackgroundUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   splashBackgroundUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
   splashLogoUrl?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
+  supportEmail?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
+  maintenanceMode?: Prisma.BoolFilter<"PlatformSettings"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"PlatformSettings"> | Date | string
   updatedById?: Prisma.StringNullableFilter<"PlatformSettings"> | string | null
 }, "id">
@@ -275,6 +295,8 @@ export type PlatformSettingsOrderByWithAggregationInput = {
   loginBackgroundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   splashBackgroundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   splashLogoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  supportEmail?: Prisma.SortOrderInput | Prisma.SortOrder
+  maintenanceMode?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.PlatformSettingsCountOrderByAggregateInput
@@ -294,6 +316,8 @@ export type PlatformSettingsScalarWhereWithAggregatesInput = {
   loginBackgroundUrl?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
   splashBackgroundUrl?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
   splashLogoUrl?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
+  supportEmail?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
+  maintenanceMode?: Prisma.BoolWithAggregatesFilter<"PlatformSettings"> | boolean
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"PlatformSettings"> | Date | string
   updatedById?: Prisma.StringNullableWithAggregatesFilter<"PlatformSettings"> | string | null
 }
@@ -305,6 +329,8 @@ export type PlatformSettingsCreateInput = {
   loginBackgroundUrl?: string | null
   splashBackgroundUrl?: string | null
   splashLogoUrl?: string | null
+  supportEmail?: string | null
+  maintenanceMode?: boolean
   updatedAt?: Date | string
   updatedById?: string | null
 }
@@ -316,6 +342,8 @@ export type PlatformSettingsUncheckedCreateInput = {
   loginBackgroundUrl?: string | null
   splashBackgroundUrl?: string | null
   splashLogoUrl?: string | null
+  supportEmail?: string | null
+  maintenanceMode?: boolean
   updatedAt?: Date | string
   updatedById?: string | null
 }
@@ -327,6 +355,8 @@ export type PlatformSettingsUpdateInput = {
   loginBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashLogoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  maintenanceMode?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -338,6 +368,8 @@ export type PlatformSettingsUncheckedUpdateInput = {
   loginBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashLogoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  maintenanceMode?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -349,6 +381,8 @@ export type PlatformSettingsCreateManyInput = {
   loginBackgroundUrl?: string | null
   splashBackgroundUrl?: string | null
   splashLogoUrl?: string | null
+  supportEmail?: string | null
+  maintenanceMode?: boolean
   updatedAt?: Date | string
   updatedById?: string | null
 }
@@ -360,6 +394,8 @@ export type PlatformSettingsUpdateManyMutationInput = {
   loginBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashLogoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  maintenanceMode?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -371,6 +407,8 @@ export type PlatformSettingsUncheckedUpdateManyInput = {
   loginBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashBackgroundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   splashLogoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supportEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  maintenanceMode?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -388,6 +426,8 @@ export type PlatformSettingsCountOrderByAggregateInput = {
   loginBackgroundUrl?: Prisma.SortOrder
   splashBackgroundUrl?: Prisma.SortOrder
   splashLogoUrl?: Prisma.SortOrder
+  supportEmail?: Prisma.SortOrder
+  maintenanceMode?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
 }
@@ -403,6 +443,8 @@ export type PlatformSettingsMaxOrderByAggregateInput = {
   loginBackgroundUrl?: Prisma.SortOrder
   splashBackgroundUrl?: Prisma.SortOrder
   splashLogoUrl?: Prisma.SortOrder
+  supportEmail?: Prisma.SortOrder
+  maintenanceMode?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
 }
@@ -414,6 +456,8 @@ export type PlatformSettingsMinOrderByAggregateInput = {
   loginBackgroundUrl?: Prisma.SortOrder
   splashBackgroundUrl?: Prisma.SortOrder
   splashLogoUrl?: Prisma.SortOrder
+  supportEmail?: Prisma.SortOrder
+  maintenanceMode?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
 }
@@ -431,6 +475,8 @@ export type PlatformSettingsSelect<ExtArgs extends runtime.Types.Extensions.Inte
   loginBackgroundUrl?: boolean
   splashBackgroundUrl?: boolean
   splashLogoUrl?: boolean
+  supportEmail?: boolean
+  maintenanceMode?: boolean
   updatedAt?: boolean
   updatedById?: boolean
 }, ExtArgs["result"]["platformSettings"]>
@@ -444,11 +490,13 @@ export type PlatformSettingsSelectScalar = {
   loginBackgroundUrl?: boolean
   splashBackgroundUrl?: boolean
   splashLogoUrl?: boolean
+  supportEmail?: boolean
+  maintenanceMode?: boolean
   updatedAt?: boolean
   updatedById?: boolean
 }
 
-export type PlatformSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "appName" | "logoUrl" | "loginBackgroundUrl" | "splashBackgroundUrl" | "splashLogoUrl" | "updatedAt" | "updatedById", ExtArgs["result"]["platformSettings"]>
+export type PlatformSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "appName" | "logoUrl" | "loginBackgroundUrl" | "splashBackgroundUrl" | "splashLogoUrl" | "supportEmail" | "maintenanceMode" | "updatedAt" | "updatedById", ExtArgs["result"]["platformSettings"]>
 
 export type $PlatformSettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "PlatformSettings"
@@ -460,6 +508,8 @@ export type $PlatformSettingsPayload<ExtArgs extends runtime.Types.Extensions.In
     loginBackgroundUrl: string | null
     splashBackgroundUrl: string | null
     splashLogoUrl: string | null
+    supportEmail: string | null
+    maintenanceMode: boolean
     updatedAt: Date
     updatedById: string | null
   }, ExtArgs["result"]["platformSettings"]>
@@ -837,6 +887,8 @@ export interface PlatformSettingsFieldRefs {
   readonly loginBackgroundUrl: Prisma.FieldRef<"PlatformSettings", 'String'>
   readonly splashBackgroundUrl: Prisma.FieldRef<"PlatformSettings", 'String'>
   readonly splashLogoUrl: Prisma.FieldRef<"PlatformSettings", 'String'>
+  readonly supportEmail: Prisma.FieldRef<"PlatformSettings", 'String'>
+  readonly maintenanceMode: Prisma.FieldRef<"PlatformSettings", 'Boolean'>
   readonly updatedAt: Prisma.FieldRef<"PlatformSettings", 'DateTime'>
   readonly updatedById: Prisma.FieldRef<"PlatformSettings", 'String'>
 }

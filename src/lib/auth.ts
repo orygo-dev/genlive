@@ -77,6 +77,7 @@ async function getSessionRecord() {
           name: true,
           email: true,
           isSuperAdmin: true,
+          isDisabled: true,
           memberships: {
             orderBy: { joinedAt: "asc" },
             select: {
@@ -99,6 +100,11 @@ async function getSessionRecord() {
 
   if (session.expiresAt <= new Date()) {
     await prisma.session.deleteMany({ where: { id: session.id } });
+    return null;
+  }
+
+  if (session.user.isDisabled) {
+    await prisma.session.deleteMany({ where: { userId: session.user.id } });
     return null;
   }
 

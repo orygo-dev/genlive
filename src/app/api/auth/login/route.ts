@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         email: true,
         passwordHash: true,
         isSuperAdmin: true,
+        isDisabled: true,
         memberships: {
           orderBy: { joinedAt: "asc" },
           take: 1,
@@ -41,6 +42,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Email atau password tidak sesuai." },
         { status: 401 },
+      );
+    }
+
+    if (user.isDisabled) {
+      return NextResponse.json(
+        { error: "Akun dinonaktifkan. Hubungi Super Admin." },
+        { status: 403 },
       );
     }
 

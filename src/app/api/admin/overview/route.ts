@@ -18,6 +18,10 @@ export async function GET() {
     meetingCount,
     paidOrderCount,
     pendingOrderCount,
+    recentUsers,
+    recentOrganizations,
+    recentOrders,
+    recentMeetings,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.organization.count(),
@@ -27,6 +31,40 @@ export async function GET() {
     prisma.meeting.count(),
     prisma.paymentOrder.count({ where: { status: "PAID" } }),
     prisma.paymentOrder.count({ where: { status: "PENDING" } }),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, email: true, createdAt: true, isDisabled: true },
+    }),
+    prisma.organization.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, slug: true, planCode: true, createdAt: true },
+    }),
+    prisma.paymentOrder.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        orderId: true,
+        status: true,
+        amountIdr: true,
+        createdAt: true,
+        organization: { select: { name: true } },
+      },
+    }),
+    prisma.meeting.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        roomName: true,
+        createdAt: true,
+        organization: { select: { name: true } },
+      },
+    }),
   ]);
 
   return NextResponse.json({
@@ -46,6 +84,10 @@ export async function GET() {
       ),
       paymentProvider: process.env.PAYMENT_PROVIDER || "MIDTRANS",
       appUrl: process.env.APP_URL || null,
+      recentUsers,
+      recentOrganizations,
+      recentOrders,
+      recentMeetings,
     },
   });
 }

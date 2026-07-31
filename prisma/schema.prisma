@@ -84,6 +84,7 @@ model User {
   email             String                   @unique @db.VarChar(255)
   passwordHash      String                   @map("password_hash") @db.VarChar(255)
   isSuperAdmin      Boolean                  @default(false) @map("is_super_admin")
+  isDisabled        Boolean                  @default(false) @map("is_disabled")
   createdAt         DateTime                 @default(now()) @map("created_at")
   updatedAt         DateTime                 @updatedAt @map("updated_at")
   memberships       OrganizationMember[]
@@ -329,6 +330,8 @@ model PlatformSettings {
   loginBackgroundUrl   String?  @map("login_background_url") @db.VarChar(1000)
   splashBackgroundUrl  String?  @map("splash_background_url") @db.VarChar(1000)
   splashLogoUrl        String?  @map("splash_logo_url") @db.VarChar(1000)
+  supportEmail         String?  @map("support_email") @db.VarChar(255)
+  maintenanceMode      Boolean  @default(false) @map("maintenance_mode")
   updatedAt            DateTime @updatedAt @map("updated_at")
   updatedById          String?  @map("updated_by_id") @db.Char(36)
 
