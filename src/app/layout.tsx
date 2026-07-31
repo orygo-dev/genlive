@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Plus_Jakarta_Sans, Syne } from "next/font/google";
 import "@livekit/components-styles";
 import { SplashScreen } from "@/components/splash-screen";
 import { getPlatformBranding } from "@/lib/platform-settings";
@@ -15,6 +15,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const landingSans = Plus_Jakarta_Sans({
+  variable: "--font-landing-sans",
+  subsets: ["latin"],
+});
+
+const landingDisplay = Syne({
+  variable: "--font-landing-display",
+  subsets: ["latin"],
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getPlatformBranding();
   return {
@@ -24,11 +34,11 @@ export async function generateMetadata(): Promise<Metadata> {
         : "http://localhost:3000",
     ),
     title: {
-      default: `${branding.appName} — Meeting tanpa batas`,
+      default: `${branding.appName} — Meeting video untuk bisnis`,
       template: `%s · ${branding.appName}`,
     },
     description:
-      "Pertemuan video berkualitas tinggi untuk tim modern, langsung dari browser.",
+      "Platform meeting video komersial: workspace, undangan, recording, dan billing — langsung dari browser.",
     icons: branding.logoUrl
       ? {
           icon: branding.logoUrl,
@@ -48,7 +58,7 @@ export default async function RootLayout({
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${landingSans.variable} ${landingDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SplashScreen branding={branding} />
