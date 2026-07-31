@@ -64,10 +64,23 @@ export async function POST(request: Request) {
         },
       },
     });
-    const passwordMatches =
-      user && (await compare(result.data.password, user.passwordHash));
 
-    if (!user || !passwordMatches) {
+    if (!user) {
+      return NextResponse.json(
+        { error: "Email atau password tidak sesuai." },
+        { status: 401 },
+      );
+    }
+
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: "Akun ini memakai login Google." },
+        { status: 401 },
+      );
+    }
+
+    const passwordMatches = await compare(result.data.password, user.passwordHash);
+    if (!passwordMatches) {
       return NextResponse.json(
         { error: "Email atau password tidak sesuai." },
         { status: 401 },

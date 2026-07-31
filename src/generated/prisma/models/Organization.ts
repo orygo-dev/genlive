@@ -38,6 +38,14 @@ export type OrganizationMinAggregateOutputType = {
   id: string | null
   name: string | null
   slug: string | null
+  brandName: string | null
+  logoUrl: string | null
+  primaryColor: string | null
+  customDomain: string | null
+  ssoEnabled: boolean | null
+  ssoProvider: string | null
+  ssoClientId: string | null
+  ssoTenantHint: string | null
   planCode: $Enums.PlanCode | null
   planExpiresAt: Date | null
   recordingRetentionDays: number | null
@@ -49,6 +57,14 @@ export type OrganizationMaxAggregateOutputType = {
   id: string | null
   name: string | null
   slug: string | null
+  brandName: string | null
+  logoUrl: string | null
+  primaryColor: string | null
+  customDomain: string | null
+  ssoEnabled: boolean | null
+  ssoProvider: string | null
+  ssoClientId: string | null
+  ssoTenantHint: string | null
   planCode: $Enums.PlanCode | null
   planExpiresAt: Date | null
   recordingRetentionDays: number | null
@@ -60,6 +76,14 @@ export type OrganizationCountAggregateOutputType = {
   id: number
   name: number
   slug: number
+  brandName: number
+  logoUrl: number
+  primaryColor: number
+  customDomain: number
+  ssoEnabled: number
+  ssoProvider: number
+  ssoClientId: number
+  ssoTenantHint: number
   planCode: number
   planExpiresAt: number
   recordingRetentionDays: number
@@ -81,6 +105,14 @@ export type OrganizationMinAggregateInputType = {
   id?: true
   name?: true
   slug?: true
+  brandName?: true
+  logoUrl?: true
+  primaryColor?: true
+  customDomain?: true
+  ssoEnabled?: true
+  ssoProvider?: true
+  ssoClientId?: true
+  ssoTenantHint?: true
   planCode?: true
   planExpiresAt?: true
   recordingRetentionDays?: true
@@ -92,6 +124,14 @@ export type OrganizationMaxAggregateInputType = {
   id?: true
   name?: true
   slug?: true
+  brandName?: true
+  logoUrl?: true
+  primaryColor?: true
+  customDomain?: true
+  ssoEnabled?: true
+  ssoProvider?: true
+  ssoClientId?: true
+  ssoTenantHint?: true
   planCode?: true
   planExpiresAt?: true
   recordingRetentionDays?: true
@@ -103,6 +143,14 @@ export type OrganizationCountAggregateInputType = {
   id?: true
   name?: true
   slug?: true
+  brandName?: true
+  logoUrl?: true
+  primaryColor?: true
+  customDomain?: true
+  ssoEnabled?: true
+  ssoProvider?: true
+  ssoClientId?: true
+  ssoTenantHint?: true
   planCode?: true
   planExpiresAt?: true
   recordingRetentionDays?: true
@@ -201,6 +249,14 @@ export type OrganizationGroupByOutputType = {
   id: string
   name: string
   slug: string
+  brandName: string | null
+  logoUrl: string | null
+  primaryColor: string | null
+  customDomain: string | null
+  ssoEnabled: boolean
+  ssoProvider: string | null
+  ssoClientId: string | null
+  ssoTenantHint: string | null
   planCode: $Enums.PlanCode
   planExpiresAt: Date | null
   recordingRetentionDays: number | null
@@ -235,6 +291,14 @@ export type OrganizationWhereInput = {
   id?: Prisma.StringFilter<"Organization"> | string
   name?: Prisma.StringFilter<"Organization"> | string
   slug?: Prisma.StringFilter<"Organization"> | string
+  brandName?: Prisma.StringNullableFilter<"Organization"> | string | null
+  logoUrl?: Prisma.StringNullableFilter<"Organization"> | string | null
+  primaryColor?: Prisma.StringNullableFilter<"Organization"> | string | null
+  customDomain?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoEnabled?: Prisma.BoolFilter<"Organization"> | boolean
+  ssoProvider?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoClientId?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoTenantHint?: Prisma.StringNullableFilter<"Organization"> | string | null
   planCode?: Prisma.EnumPlanCodeFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableFilter<"Organization"> | Date | string | null
   recordingRetentionDays?: Prisma.IntNullableFilter<"Organization"> | number | null
@@ -254,6 +318,14 @@ export type OrganizationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
+  brandName?: Prisma.SortOrderInput | Prisma.SortOrder
+  logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  primaryColor?: Prisma.SortOrderInput | Prisma.SortOrder
+  customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoEnabled?: Prisma.SortOrder
+  ssoProvider?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoClientId?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoTenantHint?: Prisma.SortOrderInput | Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   recordingRetentionDays?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -273,10 +345,18 @@ export type OrganizationOrderByWithRelationInput = {
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   slug?: string
+  customDomain?: string
   AND?: Prisma.OrganizationWhereInput | Prisma.OrganizationWhereInput[]
   OR?: Prisma.OrganizationWhereInput[]
   NOT?: Prisma.OrganizationWhereInput | Prisma.OrganizationWhereInput[]
   name?: Prisma.StringFilter<"Organization"> | string
+  brandName?: Prisma.StringNullableFilter<"Organization"> | string | null
+  logoUrl?: Prisma.StringNullableFilter<"Organization"> | string | null
+  primaryColor?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoEnabled?: Prisma.BoolFilter<"Organization"> | boolean
+  ssoProvider?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoClientId?: Prisma.StringNullableFilter<"Organization"> | string | null
+  ssoTenantHint?: Prisma.StringNullableFilter<"Organization"> | string | null
   planCode?: Prisma.EnumPlanCodeFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableFilter<"Organization"> | Date | string | null
   recordingRetentionDays?: Prisma.IntNullableFilter<"Organization"> | number | null
@@ -290,12 +370,20 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   recordings?: Prisma.RecordingListRelationFilter
   paymentOrders?: Prisma.PaymentOrderListRelationFilter
   planReminderLogs?: Prisma.PlanReminderLogListRelationFilter
-}, "id" | "slug">
+}, "id" | "slug" | "customDomain">
 
 export type OrganizationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
+  brandName?: Prisma.SortOrderInput | Prisma.SortOrder
+  logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  primaryColor?: Prisma.SortOrderInput | Prisma.SortOrder
+  customDomain?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoEnabled?: Prisma.SortOrder
+  ssoProvider?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoClientId?: Prisma.SortOrderInput | Prisma.SortOrder
+  ssoTenantHint?: Prisma.SortOrderInput | Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrderInput | Prisma.SortOrder
   recordingRetentionDays?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -315,6 +403,14 @@ export type OrganizationScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Organization"> | string
   name?: Prisma.StringWithAggregatesFilter<"Organization"> | string
   slug?: Prisma.StringWithAggregatesFilter<"Organization"> | string
+  brandName?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  logoUrl?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  primaryColor?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  customDomain?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  ssoEnabled?: Prisma.BoolWithAggregatesFilter<"Organization"> | boolean
+  ssoProvider?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  ssoClientId?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
+  ssoTenantHint?: Prisma.StringNullableWithAggregatesFilter<"Organization"> | string | null
   planCode?: Prisma.EnumPlanCodeWithAggregatesFilter<"Organization"> | $Enums.PlanCode
   planExpiresAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Organization"> | Date | string | null
   recordingRetentionDays?: Prisma.IntNullableWithAggregatesFilter<"Organization"> | number | null
@@ -326,6 +422,14 @@ export type OrganizationCreateInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -345,6 +449,14 @@ export type OrganizationUncheckedCreateInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -364,6 +476,14 @@ export type OrganizationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -383,6 +503,14 @@ export type OrganizationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -402,6 +530,14 @@ export type OrganizationCreateManyInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -413,6 +549,14 @@ export type OrganizationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -424,6 +568,14 @@ export type OrganizationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -446,6 +598,14 @@ export type OrganizationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
+  brandName?: Prisma.SortOrder
+  logoUrl?: Prisma.SortOrder
+  primaryColor?: Prisma.SortOrder
+  customDomain?: Prisma.SortOrder
+  ssoEnabled?: Prisma.SortOrder
+  ssoProvider?: Prisma.SortOrder
+  ssoClientId?: Prisma.SortOrder
+  ssoTenantHint?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
   recordingRetentionDays?: Prisma.SortOrder
@@ -461,6 +621,14 @@ export type OrganizationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
+  brandName?: Prisma.SortOrder
+  logoUrl?: Prisma.SortOrder
+  primaryColor?: Prisma.SortOrder
+  customDomain?: Prisma.SortOrder
+  ssoEnabled?: Prisma.SortOrder
+  ssoProvider?: Prisma.SortOrder
+  ssoClientId?: Prisma.SortOrder
+  ssoTenantHint?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
   recordingRetentionDays?: Prisma.SortOrder
@@ -472,6 +640,14 @@ export type OrganizationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
+  brandName?: Prisma.SortOrder
+  logoUrl?: Prisma.SortOrder
+  primaryColor?: Prisma.SortOrder
+  customDomain?: Prisma.SortOrder
+  ssoEnabled?: Prisma.SortOrder
+  ssoProvider?: Prisma.SortOrder
+  ssoClientId?: Prisma.SortOrder
+  ssoTenantHint?: Prisma.SortOrder
   planCode?: Prisma.SortOrder
   planExpiresAt?: Prisma.SortOrder
   recordingRetentionDays?: Prisma.SortOrder
@@ -618,6 +794,14 @@ export type OrganizationCreateWithoutSessionsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -636,6 +820,14 @@ export type OrganizationUncheckedCreateWithoutSessionsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -670,6 +862,14 @@ export type OrganizationUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -688,6 +888,14 @@ export type OrganizationUncheckedUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -706,6 +914,14 @@ export type OrganizationCreateWithoutInvitationsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -724,6 +940,14 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -758,6 +982,14 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -776,6 +1008,14 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -794,6 +1034,14 @@ export type OrganizationCreateWithoutAuditLogsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -812,6 +1060,14 @@ export type OrganizationUncheckedCreateWithoutAuditLogsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -846,6 +1102,14 @@ export type OrganizationUpdateWithoutAuditLogsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -864,6 +1128,14 @@ export type OrganizationUncheckedUpdateWithoutAuditLogsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -882,6 +1154,14 @@ export type OrganizationCreateWithoutMembershipsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -900,6 +1180,14 @@ export type OrganizationUncheckedCreateWithoutMembershipsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -934,6 +1222,14 @@ export type OrganizationUpdateWithoutMembershipsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -952,6 +1248,14 @@ export type OrganizationUncheckedUpdateWithoutMembershipsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -970,6 +1274,14 @@ export type OrganizationCreateWithoutMeetingsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -988,6 +1300,14 @@ export type OrganizationUncheckedCreateWithoutMeetingsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1022,6 +1342,14 @@ export type OrganizationUpdateWithoutMeetingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1040,6 +1368,14 @@ export type OrganizationUncheckedUpdateWithoutMeetingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1058,6 +1394,14 @@ export type OrganizationCreateWithoutRecordingsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1076,6 +1420,14 @@ export type OrganizationUncheckedCreateWithoutRecordingsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1110,6 +1462,14 @@ export type OrganizationUpdateWithoutRecordingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1128,6 +1488,14 @@ export type OrganizationUncheckedUpdateWithoutRecordingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1146,6 +1514,14 @@ export type OrganizationCreateWithoutPlanReminderLogsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1164,6 +1540,14 @@ export type OrganizationUncheckedCreateWithoutPlanReminderLogsInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1198,6 +1582,14 @@ export type OrganizationUpdateWithoutPlanReminderLogsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1216,6 +1608,14 @@ export type OrganizationUncheckedUpdateWithoutPlanReminderLogsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1234,6 +1634,14 @@ export type OrganizationCreateWithoutPaymentOrdersInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1252,6 +1660,14 @@ export type OrganizationUncheckedCreateWithoutPaymentOrdersInput = {
   id?: string
   name: string
   slug: string
+  brandName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
+  customDomain?: string | null
+  ssoEnabled?: boolean
+  ssoProvider?: string | null
+  ssoClientId?: string | null
+  ssoTenantHint?: string | null
   planCode?: $Enums.PlanCode
   planExpiresAt?: Date | string | null
   recordingRetentionDays?: number | null
@@ -1286,6 +1702,14 @@ export type OrganizationUpdateWithoutPaymentOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1304,6 +1728,14 @@ export type OrganizationUncheckedUpdateWithoutPaymentOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customDomain?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ssoProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoClientId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ssoTenantHint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   planCode?: Prisma.EnumPlanCodeFieldUpdateOperationsInput | $Enums.PlanCode
   planExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   recordingRetentionDays?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1416,6 +1848,14 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   id?: boolean
   name?: boolean
   slug?: boolean
+  brandName?: boolean
+  logoUrl?: boolean
+  primaryColor?: boolean
+  customDomain?: boolean
+  ssoEnabled?: boolean
+  ssoProvider?: boolean
+  ssoClientId?: boolean
+  ssoTenantHint?: boolean
   planCode?: boolean
   planExpiresAt?: boolean
   recordingRetentionDays?: boolean
@@ -1438,6 +1878,14 @@ export type OrganizationSelectScalar = {
   id?: boolean
   name?: boolean
   slug?: boolean
+  brandName?: boolean
+  logoUrl?: boolean
+  primaryColor?: boolean
+  customDomain?: boolean
+  ssoEnabled?: boolean
+  ssoProvider?: boolean
+  ssoClientId?: boolean
+  ssoTenantHint?: boolean
   planCode?: boolean
   planExpiresAt?: boolean
   recordingRetentionDays?: boolean
@@ -1445,7 +1893,7 @@ export type OrganizationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "planCode" | "planExpiresAt" | "recordingRetentionDays" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
+export type OrganizationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "brandName" | "logoUrl" | "primaryColor" | "customDomain" | "ssoEnabled" | "ssoProvider" | "ssoClientId" | "ssoTenantHint" | "planCode" | "planExpiresAt" | "recordingRetentionDays" | "createdAt" | "updatedAt", ExtArgs["result"]["organization"]>
 export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.Organization$membershipsArgs<ExtArgs>
   meetings?: boolean | Prisma.Organization$meetingsArgs<ExtArgs>
@@ -1474,6 +1922,14 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     id: string
     name: string
     slug: string
+    brandName: string | null
+    logoUrl: string | null
+    primaryColor: string | null
+    customDomain: string | null
+    ssoEnabled: boolean
+    ssoProvider: string | null
+    ssoClientId: string | null
+    ssoTenantHint: string | null
     planCode: $Enums.PlanCode
     planExpiresAt: Date | null
     recordingRetentionDays: number | null
@@ -1859,6 +2315,14 @@ export interface OrganizationFieldRefs {
   readonly id: Prisma.FieldRef<"Organization", 'String'>
   readonly name: Prisma.FieldRef<"Organization", 'String'>
   readonly slug: Prisma.FieldRef<"Organization", 'String'>
+  readonly brandName: Prisma.FieldRef<"Organization", 'String'>
+  readonly logoUrl: Prisma.FieldRef<"Organization", 'String'>
+  readonly primaryColor: Prisma.FieldRef<"Organization", 'String'>
+  readonly customDomain: Prisma.FieldRef<"Organization", 'String'>
+  readonly ssoEnabled: Prisma.FieldRef<"Organization", 'Boolean'>
+  readonly ssoProvider: Prisma.FieldRef<"Organization", 'String'>
+  readonly ssoClientId: Prisma.FieldRef<"Organization", 'String'>
+  readonly ssoTenantHint: Prisma.FieldRef<"Organization", 'String'>
   readonly planCode: Prisma.FieldRef<"Organization", 'PlanCode'>
   readonly planExpiresAt: Prisma.FieldRef<"Organization", 'DateTime'>
   readonly recordingRetentionDays: Prisma.FieldRef<"Organization", 'Int'>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { getCurrentSessionContext, setActiveOrganization } from "@/lib/auth";
 import {
   createOrganizationSchema,
@@ -94,6 +95,13 @@ export async function PATCH(request: Request) {
     const updateData: {
       name?: string;
       recordingRetentionDays?: number | null;
+      brandName?: string | null;
+      logoUrl?: string | null;
+      primaryColor?: string | null;
+      customDomain?: string | null;
+      ssoEnabled?: boolean;
+      ssoProvider?: string | null;
+      ssoTenantHint?: string | null;
     } = {};
 
     if (parsed.data.name !== undefined) {
@@ -106,6 +114,31 @@ export async function PATCH(request: Request) {
         value === 0 || value === null ? null : value;
     }
 
+    if (parsed.data.brandName !== undefined) {
+      updateData.brandName = parsed.data.brandName?.trim() || null;
+    }
+
+    if (parsed.data.logoUrl !== undefined) {
+      updateData.logoUrl = parsed.data.logoUrl?.trim() || null;
+    }
+
+    if (parsed.data.primaryColor !== undefined) {
+      updateData.primaryColor = parsed.data.primaryColor?.trim() || null;
+    }
+
+    if (parsed.data.customDomain !== undefined) {
+      updateData.customDomain = parsed.data.customDomain?.trim().toLowerCase() || null;
+    }
+
+    if (parsed.data.ssoEnabled !== undefined) {
+      updateData.ssoEnabled = parsed.data.ssoEnabled;
+      updateData.ssoProvider = parsed.data.ssoEnabled ? "GOOGLE_WORKSPACE" : null;
+    }
+
+    if (parsed.data.ssoTenantHint !== undefined) {
+      updateData.ssoTenantHint = parsed.data.ssoTenantHint?.trim() || null;
+    }
+
     const organization = await prisma.organization.update({
       where: { id: organizationId },
       data: updateData,
@@ -113,6 +146,13 @@ export async function PATCH(request: Request) {
         id: true,
         name: true,
         slug: true,
+        brandName: true,
+        logoUrl: true,
+        primaryColor: true,
+        customDomain: true,
+        ssoEnabled: true,
+        ssoProvider: true,
+        ssoTenantHint: true,
         recordingRetentionDays: true,
       },
     });
@@ -127,11 +167,24 @@ export async function PATCH(request: Request) {
         previousName,
         nextName: organization.name,
         recordingRetentionDays: organization.recordingRetentionDays,
+        brandName: organization.brandName,
+        ssoEnabled: organization.ssoEnabled,
+        ssoTenantHint: organization.ssoTenantHint,
       },
     });
 
     return NextResponse.json({ organization });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Domain kustom sudah dipakai workspace lain." },
+        { status: 409 },
+      );
+    }
+
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "Format data tidak valid." }, { status: 400 });
     }

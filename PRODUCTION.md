@@ -5,6 +5,8 @@ Checklist untuk merilis GenMeet ke production dengan aman.
 Deploy di **aaPanel** (Apache/Nginx + MySQL + PM2): lihat
 [`AAPANEL.md`](./AAPANEL.md).
 
+Enterprise (Google OAuth, DPA, white-label, PWA, backup/HA): [`ENTERPRISE.md`](./ENTERPRISE.md).
+
 ## 0. Verifikasi lokal sebelum deploy
 
 ```bash

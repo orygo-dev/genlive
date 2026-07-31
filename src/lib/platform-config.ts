@@ -41,6 +41,8 @@ export type PlatformIntegrations = {
   flipSecretKey?: string | null;
   flipValidationToken?: string | null;
   flipIsProduction?: boolean | null;
+  googleClientId?: string | null;
+  googleClientSecret?: string | null;
 };
 
 export type ResolvedPlatformConfig = {
@@ -70,6 +72,8 @@ export type ResolvedPlatformConfig = {
   flipSecretKey: string | null;
   flipValidationToken: string | null;
   flipIsProduction: boolean;
+  googleClientId: string | null;
+  googleClientSecret: string | null;
   planCatalog: PlanCatalog;
   encryptionConfigured: boolean;
 };
@@ -205,6 +209,11 @@ async function loadPlatformConfig(): Promise<ResolvedPlatformConfig> {
     flipIsProduction: pickBool(
       integrations.flipIsProduction,
       process.env.FLIP_IS_PRODUCTION,
+    ),
+    googleClientId: pick(integrations.googleClientId, process.env.GOOGLE_CLIENT_ID),
+    googleClientSecret: pick(
+      integrations.googleClientSecret,
+      process.env.GOOGLE_CLIENT_SECRET,
     ),
     planCatalog,
     encryptionConfigured: isEncryptionConfigured(),

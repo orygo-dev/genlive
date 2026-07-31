@@ -8,7 +8,8 @@ Panduan ini untuk memasang GenMeet di **VPS/server dengan aaPanel**, memakai:
 
 > GenMeet **bukan** aplikasi PHP. Jangan dijalankan lewat Document Root PHP biasa.
 
-Checklist go-live umum: [`PRODUCTION.md`](./PRODUCTION.md).
+Checklist go-live umum: [`PRODUCTION.md`](./PRODUCTION.md).  
+Enterprise (OAuth, DPA, PWA, HA): [`ENTERPRISE.md`](./ENTERPRISE.md).
 
 ---
 

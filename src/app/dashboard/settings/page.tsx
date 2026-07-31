@@ -15,7 +15,16 @@ export default async function SettingsPage() {
 
   const orgDetails = await prisma.organization.findUniqueOrThrow({
     where: { id: organization.id },
-    select: { planCode: true, recordingRetentionDays: true },
+    select: {
+      planCode: true,
+      recordingRetentionDays: true,
+      brandName: true,
+      logoUrl: true,
+      primaryColor: true,
+      customDomain: true,
+      ssoEnabled: true,
+      ssoTenantHint: true,
+    },
   });
 
   return (
@@ -46,10 +55,17 @@ export default async function SettingsPage() {
           slug: organization.slug,
           planCode: orgDetails.planCode,
           recordingRetentionDays: orgDetails.recordingRetentionDays,
+          brandName: orgDetails.brandName,
+          logoUrl: orgDetails.logoUrl,
+          primaryColor: orgDetails.primaryColor,
+          customDomain: orgDetails.customDomain,
+          ssoEnabled: orgDetails.ssoEnabled,
+          ssoTenantHint: orgDetails.ssoTenantHint,
         }}
         currentRole={activeMembership.role}
         canManageOrg={canManageMembers(activeMembership.role)}
         canDeleteOrg={activeMembership.role === "OWNER"}
+        isOwner={activeMembership.role === "OWNER"}
         membershipCount={user.memberships.length}
       />
     </DashboardShell>

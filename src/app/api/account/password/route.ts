@@ -31,6 +31,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Pengguna tidak ditemukan." }, { status: 404 });
     }
 
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: "Akun ini memakai login Google. Atur password dari profil jika diperlukan." },
+        { status: 400 },
+      );
+    }
+
     const matches = await compare(
       parsed.data.currentPassword,
       user.passwordHash,

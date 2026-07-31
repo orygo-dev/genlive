@@ -2457,6 +2457,36 @@ footer p {
   margin-top: 3px;
 }
 
+.auth-google {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.settings-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
 .auth-switch {
   margin: 24px 0 0;
   color: var(--muted);

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans, Syne } from "next/font/google";
 import "@livekit/components-styles";
 import { SplashScreen } from "@/components/splash-screen";
+import { PwaRegister } from "@/components/pwa-register";
 import { getPlatformBranding } from "@/lib/platform-settings";
 import "./globals.css";
 
@@ -62,6 +63,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <SplashScreen branding={branding} />
+        <PwaRegister />
         {children}
       </body>
     </html>

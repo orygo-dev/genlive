@@ -90,6 +90,7 @@ export const UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   passwordHash: 'passwordHash',
+  googleSub: 'googleSub',
   emailVerifiedAt: 'emailVerifiedAt',
   isSuperAdmin: 'isSuperAdmin',
   isDisabled: 'isDisabled',
@@ -129,6 +130,14 @@ export const OrganizationScalarFieldEnum = {
   id: 'id',
   name: 'name',
   slug: 'slug',
+  brandName: 'brandName',
+  logoUrl: 'logoUrl',
+  primaryColor: 'primaryColor',
+  customDomain: 'customDomain',
+  ssoEnabled: 'ssoEnabled',
+  ssoProvider: 'ssoProvider',
+  ssoClientId: 'ssoClientId',
+  ssoTenantHint: 'ssoTenantHint',
   planCode: 'planCode',
   planExpiresAt: 'planExpiresAt',
   recordingRetentionDays: 'recordingRetentionDays',
@@ -354,7 +363,8 @@ export const UserOrderByRelevanceFieldEnum = {
   id: 'id',
   name: 'name',
   email: 'email',
-  passwordHash: 'passwordHash'
+  passwordHash: 'passwordHash',
+  googleSub: 'googleSub'
 } as const
 
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
@@ -382,7 +392,14 @@ export type SessionOrderByRelevanceFieldEnum = (typeof SessionOrderByRelevanceFi
 export const OrganizationOrderByRelevanceFieldEnum = {
   id: 'id',
   name: 'name',
-  slug: 'slug'
+  slug: 'slug',
+  brandName: 'brandName',
+  logoUrl: 'logoUrl',
+  primaryColor: 'primaryColor',
+  customDomain: 'customDomain',
+  ssoProvider: 'ssoProvider',
+  ssoClientId: 'ssoClientId',
+  ssoTenantHint: 'ssoTenantHint'
 } as const
 
 export type OrganizationOrderByRelevanceFieldEnum = (typeof OrganizationOrderByRelevanceFieldEnum)[keyof typeof OrganizationOrderByRelevanceFieldEnum]

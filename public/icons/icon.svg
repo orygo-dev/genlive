@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GenMeet">
+  <rect width="512" height="512" rx="96" fill="#1f6feb"/>
+  <path fill="#fff" d="M128 176h256v32H128zm0 64h176v32H128zm0 64h224v32H128zm64 96H128v-32h64z"/>
+  <circle cx="352" cy="336" r="48" fill="#93c5fd"/>
+</svg>

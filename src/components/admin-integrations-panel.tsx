@@ -49,6 +49,8 @@ export function AdminIntegrationsPanel() {
         flipValidationToken: "",
         flipIsProduction: payload.integrations.flipIsProduction ? "true" : "false",
         cronSecret: "",
+        googleClientId: String(payload.integrations.googleClientId || ""),
+        googleClientSecret: "",
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat.");
@@ -93,6 +95,10 @@ export function AdminIntegrationsPanel() {
       if (form.flipSecretKey.trim()) body.flipSecretKey = form.flipSecretKey.trim();
       if (form.flipValidationToken.trim()) body.flipValidationToken = form.flipValidationToken.trim();
       if (form.cronSecret.trim()) body.cronSecret = form.cronSecret.trim();
+      if (form.googleClientId.trim()) body.googleClientId = form.googleClientId.trim();
+      if (form.googleClientSecret.trim()) {
+        body.googleClientSecret = form.googleClientSecret.trim();
+      }
 
       const response = await fetch("/api/admin/integrations", {
         method: "PATCH",
@@ -255,6 +261,32 @@ export function AdminIntegrationsPanel() {
           <label>
             Flip validation token {data?.flipValidationTokenSet ? "(tersimpan)" : ""}
             <input value={form.flipValidationToken || ""} onChange={(e) => setField("flipValidationToken", e.target.value)} type="password" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Google OAuth</legend>
+          <p className="admin-muted">
+            Alternatif env: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. Redirect URI:
+            {" "}
+            <code>{`${form.appUrl || "https://domainanda.com"}/api/auth/google/callback`}</code>
+          </p>
+          <label>
+            GOOGLE_CLIENT_ID
+            <input
+              value={form.googleClientId || ""}
+              onChange={(e) => setField("googleClientId", e.target.value)}
+              placeholder="xxxx.apps.googleusercontent.com"
+            />
+          </label>
+          <label>
+            GOOGLE_CLIENT_SECRET {data?.googleClientSecretSet ? "(tersimpan)" : ""}
+            <input
+              value={form.googleClientSecret || ""}
+              onChange={(e) => setField("googleClientSecret", e.target.value)}
+              type="password"
+              placeholder="Kosongkan jika tidak diubah"
+            />
           </label>
         </fieldset>
 

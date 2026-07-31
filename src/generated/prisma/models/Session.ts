@@ -390,10 +390,6 @@ export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.SessionScalarWhereInput | Prisma.SessionScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type SessionCreateNestedManyWithoutActiveOrganizationInput = {
   create?: Prisma.XOR<Prisma.SessionCreateWithoutActiveOrganizationInput, Prisma.SessionUncheckedCreateWithoutActiveOrganizationInput> | Prisma.SessionCreateWithoutActiveOrganizationInput[] | Prisma.SessionUncheckedCreateWithoutActiveOrganizationInput[]
   connectOrCreate?: Prisma.SessionCreateOrConnectWithoutActiveOrganizationInput | Prisma.SessionCreateOrConnectWithoutActiveOrganizationInput[]

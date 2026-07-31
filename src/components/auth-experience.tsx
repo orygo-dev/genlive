@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -27,16 +27,28 @@ function safeNextPath(nextPath?: string) {
 export function AuthExperience({
   nextPath,
   branding,
+  oauthError,
 }: {
   nextPath?: string;
   branding: PlatformBranding;
+  oauthError?: string;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [googleConfigured, setGoogleConfigured] = useState(false);
+  const [error, setError] = useState(oauthError ?? "");
   const destination = safeNextPath(nextPath);
+
+  useEffect(() => {
+    void fetch("/api/auth/google/status")
+      .then((response) => response.json())
+      .then((payload: { configured?: boolean }) => {
+        setGoogleConfigured(Boolean(payload.configured));
+      })
+      .catch(() => setGoogleConfigured(false));
+  }, []);
 
   function changeMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -224,6 +236,17 @@ export function AuthExperience({
             )}
             {error && <p className="auth-error" role="alert">{error}</p>}
 
+            {mode === "login" && googleConfigured ? (
+              <>
+                <a className="button button-ghost auth-google" href="/api/auth/google">
+                  Lanjut dengan Google
+                </a>
+                <p className="auth-divider" role="presentation">
+                  <span>atau</span>
+                </p>
+              </>
+            ) : null}
+
             <button
               className="button button-primary auth-submit"
               type="submit"
@@ -253,6 +276,7 @@ export function AuthExperience({
             <Link href="/terms">Syarat</Link>
             <Link href="/privacy">Privasi</Link>
             <Link href="/cookies">Cookie</Link>
+            <Link href="/dpa">DPA</Link>
           </p>
         </div>
       </section>

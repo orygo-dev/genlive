@@ -63,17 +63,67 @@ const recordingRetentionDaysSchema = z
   ])
   .optional();
 
+const hexColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9A-Fa-f]{3,8}$/, "Format warna harus hex (#RRGGBB).")
+  .max(20);
+
+const urlSchema = z
+  .string()
+  .trim()
+  .url("URL tidak valid.")
+  .max(1000);
+
+const domainSchema = z
+  .string()
+  .trim()
+  .max(255)
+  .regex(
+    /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i,
+    "Domain tidak valid.",
+  );
+
+const optionalUrlSchema = z
+  .union([urlSchema, z.literal(""), z.null()])
+  .optional();
+
+const optionalDomainSchema = z
+  .union([domainSchema, z.literal(""), z.null()])
+  .optional();
+
 export const updateOrganizationSchema = z
   .object({
     name: organizationNameSchema.optional(),
     recordingRetentionDays: recordingRetentionDaysSchema,
+    brandName: z.string().trim().max(100).nullable().optional(),
+    logoUrl: optionalUrlSchema,
+    primaryColor: hexColorSchema.nullable().optional(),
+    customDomain: optionalDomainSchema,
+    ssoEnabled: z.boolean().optional(),
+    ssoTenantHint: z.string().trim().max(255).nullable().optional(),
   })
-  .refine((data) => data.name !== undefined || data.recordingRetentionDays !== undefined, {
-    message: "Tidak ada data untuk diperbarui.",
-  });
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.recordingRetentionDays !== undefined ||
+      data.brandName !== undefined ||
+      data.logoUrl !== undefined ||
+      data.primaryColor !== undefined ||
+      data.customDomain !== undefined ||
+      data.ssoEnabled !== undefined ||
+      data.ssoTenantHint !== undefined,
+    {
+      message: "Tidak ada data untuk diperbarui.",
+    },
+  );
 
 export const deleteOrganizationSchema = z.object({
   confirmName: organizationNameSchema,
+});
+
+export const deleteAccountSchema = z.object({
+  confirmEmail: emailSchema,
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

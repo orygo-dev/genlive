@@ -31,6 +31,7 @@ export function LegalPage({
           <Link href="/terms">Syarat & Ketentuan</Link>
           <Link href="/privacy">Kebijakan Privasi</Link>
           <Link href="/cookies">Kebijakan Cookie</Link>
+          <Link href="/dpa">DPA</Link>
         </nav>
         <p>© {new Date().getFullYear()} {branding.appName}</p>
       </footer>

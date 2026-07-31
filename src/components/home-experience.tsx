@@ -286,6 +286,7 @@ export function HomeExperience({
           <Link href="/terms">Syarat & Ketentuan</Link>
           <Link href="/privacy">Kebijakan Privasi</Link>
           <Link href="/cookies">Cookie</Link>
+          <Link href="/dpa">DPA</Link>
         </nav>
         <span>© {new Date().getFullYear()} {branding.appName}</span>
       </footer>

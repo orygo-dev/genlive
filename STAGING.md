@@ -44,9 +44,16 @@ npm run smoke -- https://staging.domainanda.com
 6. Pengaturan → retensi recording (7/30/90/365 hari)
 7. Cron recording-retention → rekaman lama di-soft-delete (status ABORTED)
 
-## Phase 3 (rencana)
+## Phase 3 (Enterprise foundation)
 
-- Google / Microsoft OAuth sign-in — **belum diimplementasi** (Phase 3)
+Lihat [`ENTERPRISE.md`](./ENTERPRISE.md) untuk detail.
+
+1. Google OAuth — tombol "Lanjut dengan Google" di `/auth` (set `GOOGLE_CLIENT_*`)
+2. `/dpa` — Perjanjian Pemrosesan Data
+3. Pengaturan → Branding & SSO (domain hint)
+4. Pengaturan → Unduh audit log CSV / ekspor data JSON (Owner)
+5. Pengaturan → Hapus akun (danger zone)
+6. PWA — install dari browser (production + HTTPS)
 
 ## Catatan
 

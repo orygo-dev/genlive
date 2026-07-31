@@ -6,7 +6,7 @@ import { getPlatformBranding } from "@/lib/platform-settings";
 export const dynamic = "force-dynamic";
 
 type AuthPageProps = {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 };
 
 function safeNextPath(nextPath?: string) {
@@ -18,7 +18,7 @@ function safeNextPath(nextPath?: string) {
 }
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
-  const { next } = await searchParams;
+  const { next, error: oauthError } = await searchParams;
   const destination = safeNextPath(next);
   const user = await getCurrentUser();
   const branding = await getPlatformBranding();
@@ -33,5 +33,11 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
     redirect(destination);
   }
 
-  return <AuthExperience nextPath={destination} branding={branding} />;
+  return (
+    <AuthExperience
+      nextPath={destination}
+      branding={branding}
+      oauthError={oauthError}
+    />
+  );
 }

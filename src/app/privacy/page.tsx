@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LegalPage } from "@/components/legal-page";
 import { getPlatformBranding } from "@/lib/platform-settings";
 
@@ -37,9 +38,10 @@ export default async function PrivacyPage() {
 
       <h2>Retensi & hak Anda</h2>
       <p>
-        Anda dapat memperbarui profil, mengubah password, atau meminta penghapusan
-        akun melalui tim dukungan. Beberapa data dapat disimpan untuk kepatuhan
-        audit dan billing sesuai kewajiban hukum.
+        Anda dapat memperbarui profil, mengubah password, mengekspor data workspace,
+        mengunduh audit log, atau menghapus akun melalui Pengaturan. Lihat juga{" "}
+        <Link href="/dpa">Perjanjian Pemrosesan Data (DPA)</Link> untuk pelanggan
+        bisnis.
       </p>
 
       <h2>Pihak ketiga</h2>

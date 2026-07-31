@@ -43,6 +43,8 @@ const patchSchema = z.object({
   flipSecretKey: optionalString,
   flipValidationToken: optionalString,
   flipIsProduction: optionalBool,
+  googleClientId: optionalString,
+  googleClientSecret: optionalString,
   clearKeys: z.array(z.string()).optional(),
 });
 
@@ -59,6 +61,7 @@ const SECRET_KEYS = new Set([
   "ipaymuApiKey",
   "flipSecretKey",
   "flipValidationToken",
+  "googleClientSecret",
 ]);
 
 function applyPatch(
@@ -134,6 +137,9 @@ export async function GET() {
       flipValidationToken: maskSecret(resolved.flipValidationToken),
       flipValidationTokenSet: Boolean(resolved.flipValidationToken),
       flipIsProduction: resolved.flipIsProduction,
+      googleClientId: resolved.googleClientId,
+      googleClientSecret: maskSecret(resolved.googleClientSecret),
+      googleClientSecretSet: Boolean(resolved.googleClientSecret),
       storedKeys: Object.keys(stored).filter(
         (key) => (stored as Record<string, unknown>)[key] != null && (stored as Record<string, unknown>)[key] !== "",
       ),
