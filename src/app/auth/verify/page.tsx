@@ -22,7 +22,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyPageProps)
           <div className="auth-heading">
             <span className="auth-lock"><MailCheck size={20} /></span>
             <h2>Verifikasi email</h2>
-            <p>Konfirmasi alamat email untuk akun {branding.appName} Anda.</p>
+            <p>Konfirmasi alamat email akun Anda.</p>
           </div>
           <VerifyEmailClient token={token} />
           <p className="auth-legal-links">

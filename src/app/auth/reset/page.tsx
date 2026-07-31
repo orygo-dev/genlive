@@ -22,7 +22,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPageProps
           <div className="auth-heading">
             <span className="auth-lock"><LockKeyhole size={20} /></span>
             <h2>Atur password baru</h2>
-            <p>Pilih password baru untuk akun {branding.appName} Anda.</p>
+            <p>Pilih password baru untuk akun Anda.</p>
           </div>
           <ResetPasswordForm token={token} />
           <p className="auth-legal-links">

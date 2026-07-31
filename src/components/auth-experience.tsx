@@ -168,9 +168,7 @@ export function AuthExperience({
           <div className="auth-heading">
             <span className="auth-lock"><LockKeyhole size={20} /></span>
             <h2>
-              {mode === "login"
-                ? "Selamat datang kembali"
-                : `Mulai dengan ${branding.appName}`}
+              {mode === "login" ? "Selamat datang kembali" : "Buat akun baru"}
             </h2>
             <p>
               {mode === "login"

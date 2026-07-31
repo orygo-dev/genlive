@@ -54,11 +54,15 @@ export function SplashScreen({ branding }: { branding: PlatformBranding }) {
       <div className="splash-screen-inner">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="splash-logo" src={logo} alt={branding.appName} />
+          <img className="splash-logo" src={logo} alt="" />
         ) : (
-          <div className="splash-fallback">{branding.appName.slice(0, 1)}</div>
+          <div className="splash-fallback" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M15 10l4.55-2.27A1 1 0 0121 8.64v6.72a1 1 0 01-1.45.89L15 14" />
+              <rect x="3" y="6" width="12" height="12" rx="2" />
+            </svg>
+          </div>
         )}
-        <strong>{branding.appName}</strong>
         <p>Menyiapkan pengalaman meeting Anda...</p>
       </div>
     </div>

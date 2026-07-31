@@ -48,16 +48,15 @@ export function HomeExperience({
 
   return (
     <div className="landing">
-      <div className="landing-atmosphere" aria-hidden="true" />
-
       {maintenanceMode ? (
         <div className="landing-maintenance" role="status">
           Platform sedang dalam mode maintenance. Layanan pengguna sementara
           dibatasi. Super Admin tetap dapat masuk ke /admin.
         </div>
       ) : null}
+
       <header className="landing-header">
-        <AppBrand branding={branding} className="landing-brand-nav" markSize={18} />
+        <AppBrand branding={branding} className="landing-brand-nav" markSize={28} />
         <nav className="landing-nav" aria-label="Navigasi utama">
           <a href="#fitur">Fitur</a>
           <a href="#harga">Harga</a>
@@ -69,15 +68,22 @@ export function HomeExperience({
       </header>
 
       <main>
-        <section className="landing-hero" aria-labelledby="landing-brand-title">
+        <section className="landing-hero" aria-labelledby="landing-hero-title">
+          <div className="landing-hero-visual" aria-hidden="true">
+            <div className="landing-hero-mesh" />
+            <div className="landing-hero-glow landing-hero-glow-a" />
+            <div className="landing-hero-glow landing-hero-glow-b" />
+          </div>
+
           <div className="landing-hero-copy">
-            <p className="landing-brand-title" id="landing-brand-title">
-              {branding.appName}
-            </p>
-            <h1>Meeting video yang siap dipakai bisnis.</h1>
+            <AppBrand
+              branding={branding}
+              className="landing-hero-logo"
+              markSize={42}
+            />
+            <h1 id="landing-hero-title">Rapat video yang siap dipakai bisnis.</h1>
             <p className="landing-hero-lead">
-              Workspace, undangan, recording, dan billing — dalam satu platform
-              yang langsung jalan dari browser.
+              Workspace, undangan, recording, dan billing — langsung dari browser.
             </p>
 
             <div className="landing-hero-actions">
@@ -120,47 +126,12 @@ export function HomeExperience({
               </p>
             ) : null}
           </div>
-
-          <div
-            className="landing-hero-stage"
-            aria-label={`Pratinjau ruang meeting ${branding.appName}`}
-          >
-            <div className="landing-stage-frame">
-              <div className="landing-stage-bar">
-                <span className="landing-stage-live" />
-                <span>Rapat produk</span>
-                <span className="landing-stage-time">12:48</span>
-              </div>
-              <div className="landing-stage-grid">
-                <article className="landing-stage-tile landing-stage-tile-main">
-                  <span className="landing-stage-avatar landing-stage-avatar-a">AN</span>
-                  <span>Anisa · Host</span>
-                </article>
-                <article className="landing-stage-tile">
-                  <span className="landing-stage-avatar landing-stage-avatar-b">RK</span>
-                  <span>Raka</span>
-                </article>
-                <article className="landing-stage-tile">
-                  <span className="landing-stage-avatar landing-stage-avatar-c">MS</span>
-                  <span>Maya</span>
-                </article>
-              </div>
-              <div className="landing-stage-dock">
-                <span><Video size={16} /></span>
-                <span><MonitorUp size={16} /></span>
-                <span><Users size={16} /></span>
-                <span className="landing-stage-end">Akhiri</span>
-              </div>
-            </div>
-          </div>
         </section>
 
         <section className="landing-section" id="fitur">
           <div className="landing-section-head">
             <h2>Semua yang dibutuhkan meeting bisnis</h2>
-            <p>
-              Dari ruang instan hingga kontrol workspace — tanpa aplikasi ekstra.
-            </p>
+            <p>Dari ruang instan hingga kontrol workspace — tanpa aplikasi ekstra.</p>
           </div>
           <ul className="landing-feature-list">
             <li>
@@ -264,7 +235,11 @@ export function HomeExperience({
         </section>
 
         <section className="landing-closing">
-          <p className="landing-closing-brand">{branding.appName}</p>
+          <AppBrand
+            branding={branding}
+            className="landing-closing-logo"
+            markSize={36}
+          />
           <h2>Bawa meeting bisnis Anda ke satu tempat.</h2>
           <p>Daftar sekarang dan undang tim dalam hitungan menit.</p>
           <div className="landing-hero-actions">
@@ -280,15 +255,14 @@ export function HomeExperience({
       </main>
 
       <footer className="landing-footer">
-        <AppBrand branding={branding} className="landing-brand-nav" markSize={16} />
-        <p>Platform meeting untuk tim yang serius tumbuh.</p>
+        <AppBrand branding={branding} className="landing-brand-nav" markSize={22} />
         <nav className="landing-footer-links" aria-label="Dokumen legal">
           <Link href="/terms">Syarat & Ketentuan</Link>
           <Link href="/privacy">Kebijakan Privasi</Link>
           <Link href="/cookies">Cookie</Link>
           <Link href="/dpa">DPA</Link>
         </nav>
-        <span>© {new Date().getFullYear()} {branding.appName}</span>
+        <span>© {new Date().getFullYear()}</span>
       </footer>
     </div>
   );

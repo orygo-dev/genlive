@@ -18,7 +18,11 @@ export function AppBrand({
   const hasLogo = Boolean(branding.logoUrl);
 
   return (
-    <Link className={className} href={href} aria-label={`${branding.appName} beranda`}>
+    <Link
+      className={`${className} brand-logo-only`.trim()}
+      href={href}
+      aria-label={`${branding.appName} beranda`}
+    >
       {hasLogo ? (
         <span className="brand-mark brand-mark-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -29,11 +33,10 @@ export function AppBrand({
           />
         </span>
       ) : (
-        <span className="brand-mark">
+        <span className="brand-mark" aria-hidden="true">
           <Video size={markSize} />
         </span>
       )}
-      <span>{branding.appName}</span>
     </Link>
   );
 }
