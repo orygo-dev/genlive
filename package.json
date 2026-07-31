@@ -11,6 +11,8 @@
     "test": "vitest run",
     "check:env": "node scripts/check-production-env.mjs",
     "smoke": "node scripts/smoke-production.mjs",
+    "aapanel:pm2": "bash scripts/aapanel-pm2.sh",
+    "aapanel:deploy": "bash scripts/aapanel-pm2.sh --full",
     "ci": "npm run typecheck && npm test && npm run lint && npm run build",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",

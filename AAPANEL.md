@@ -163,46 +163,33 @@ npm run build
 
 ## 7. Jalankan dengan PM2
 
-Ganti `APP_DIR` dengan path situs Anda yang sebenarnya
-(contoh: `/www/wwwroot/genlive.guruspaceai.cloud`).
+Dari root proyek (path absolut otomatis — tidak perlu `$APP_DIR`):
 
 ```bash
-APP_DIR=/www/wwwroot/genlive.guruspaceai.cloud
-cd "$APP_DIR"
+cd /www/wwwroot/genlive.guruspaceai.cloud
+chmod +x scripts/aapanel-pm2.sh
 
-cp -r public .next/standalone/public 2>/dev/null || true
-cp -r .next/static .next/standalone/.next/static
-cp .env.production .next/standalone/.env.production
-cp .env.production .next/standalone/.env
+# Jika sudah build:
+bash scripts/aapanel-pm2.sh
 
-# cwd = folder standalone, jadi start "server.js" (bukan .next/standalone/server.js)
-# PORT diambil dari .env di folder standalone (samakan dengan proxy)
-pm2 delete genmeet 2>/dev/null || true
-pm2 start server.js \
-  --name genmeet \
-  --cwd "$APP_DIR/.next/standalone" \
-  --env production
-
-pm2 save
-pm2 startup
+# Install + migrasi + build + start:
+bash scripts/aapanel-pm2.sh --full
 ```
 
-> Error `Script not found: .../.next/standalone/.next/standalone/server.js`
-> artinya path digabung dua kali, atau `--cwd` masih memakai contoh `/www/wwwroot/genmeet`
-> padahal folder proyek berbeda.
+Skrip ini akan:
+1. Memakai path proyek saat ini (bukan `/www/wwwroot/genmeet` contoh)
+2. Menyalin `public`, `.next/static`, dan `.env` ke standalone
+3. Menjalankan PM2 dengan path absolut `server.js`
+4. Mengecek `http://127.0.0.1:$PORT/api/health` (`PORT` dari `.env.production`, default `3010`)
 
-Alternatif (tanpa standalone):
+Lihat log jika gagal:
 
 ```bash
-cd "$APP_DIR"
-pm2 start npm --name genmeet -- start
+pm2 logs genmeet --lines 80
 ```
 
-Uji lokal (sesuaikan port):
-
-```bash
-curl -s http://127.0.0.1:3010/api/health
-```
+Pastikan reverse proxy Apache/Nginx mengarah ke **port yang sama** dengan `PORT`
+di `.env.production`.
 ---
 
 ## 8. Apache reverse proxy
@@ -282,16 +269,9 @@ https://meet.domainanda.com/api/payments/webhook/flip
 ## 12. Update aplikasi
 
 ```bash
-APP_DIR=/www/wwwroot/genlive.guruspaceai.cloud
-cd "$APP_DIR"
+cd /www/wwwroot/genlive.guruspaceai.cloud
 git pull
-npm ci
-npm run db:deploy
-npm run build
-cp -r public .next/standalone/public 2>/dev/null || true
-cp -r .next/static .next/standalone/.next/static
-cp .env.production .next/standalone/.env
-pm2 restart genmeet
+bash scripts/aapanel-pm2.sh --full
 ```
 
 ---
