@@ -131,7 +131,9 @@ Manual:
 10. Pastikan webhook LiveKit & payment tercatat (audit / status order)
 11. Uji `/dashboard/settings` (profil, password, workspace, retensi recording)
 12. Uji `/dashboard/analytics` + export CSV
-13. Review halaman legal: `/terms`, `/privacy`, `/cookies`
+13. Review halaman legal: `/terms`, `/privacy`, `/cookies`, `/dpa`
+14. Uji Google login (jika OAuth dikonfigurasi) + `/api/auth/google/status`
+15. Cek PWA manifest (`/manifest.webmanifest`) di HTTPS
 
 ### Phase 1 commercial MVP
 
@@ -147,7 +149,20 @@ Manual:
 - [ ] Perpanjang Pro menumpuk masa aktif (`activatePaidPlan` stack)
 - [ ] Analytics workspace + export CSV di `/dashboard/analytics`
 - [ ] Konfirmasi consent sebelum recording + retensi otomatis (cron recording-retention)
-- [ ] OAuth Google/Microsoft — **Phase 3**, belum diimplementasi
+
+### Phase 3 Enterprise foundation
+
+- [ ] Migration `phase3_enterprise` ter-deploy (`npm run db:deploy`)
+- [ ] Google OAuth: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (env atau `/admin` Integrasi)
+- [ ] Redirect URI Google: `https://domain-anda.com/api/auth/google/callback`
+- [ ] `GET /api/auth/google/status` → `{ "configured": true }` setelah credential diisi
+- [ ] Uji login/register Google dari `/auth`
+- [ ] Halaman `/dpa` + legal (`/terms`, `/privacy`, `/cookies`)
+- [ ] Owner: audit CSV + data-export workspace dari Pengaturan
+- [ ] PWA: `/manifest.webmanifest` + install di Chrome (HTTPS)
+- [ ] Panduan: [`ENTERPRISE.md`](./ENTERPRISE.md)
+
+Microsoft OAuth / SAML / SCIM: **belum** (roadmap Fase 4+).
 
 ## 7. Monitoring ringan
 

@@ -16,37 +16,103 @@ try {
   process.exit(1);
 }
 
-const healthUrl = new URL("/api/health", baseUrl).toString();
-const started = Date.now();
+const checks = [
+  {
+    path: "/api/health",
+    expect: async (response, body) => {
+      if (response.status !== 200) {
+        return `health HTTP ${response.status}`;
+      }
+      if (!body || body.status !== "ok") {
+        return `health status=${body?.status ?? "missing"}`;
+      }
+      if (body.checks?.database !== "ok") {
+        return "database check failed";
+      }
+      if (body.checks?.livekitConfigured !== true) {
+        return "livekit not configured";
+      }
+      if (body.checks?.appUrlConfigured !== true) {
+        return "APP_URL not configured";
+      }
+      return null;
+    },
+  },
+  {
+    path: "/api/auth/google/status",
+    expect: async (response, body) => {
+      if (response.status !== 200) {
+        return `google status HTTP ${response.status}`;
+      }
+      if (typeof body?.configured !== "boolean") {
+        return "google status missing configured boolean";
+      }
+      return null;
+    },
+  },
+  { path: "/terms", expectStatus: [200] },
+  { path: "/privacy", expectStatus: [200] },
+  { path: "/cookies", expectStatus: [200] },
+  { path: "/dpa", expectStatus: [200] },
+  { path: "/robots.txt", expectStatus: [200] },
+  { path: "/manifest.webmanifest", expectStatus: [200] },
+];
 
-const response = await fetch(healthUrl, {
-  headers: { Accept: "application/json" },
-  redirect: "manual",
-});
+const failures = [];
 
-const latencyMs = Date.now() - started;
-let body = null;
-try {
-  body = await response.json();
-} catch {
-  body = null;
+for (const check of checks) {
+  const url = new URL(check.path, baseUrl).toString();
+  const started = Date.now();
+  let response;
+  let body = null;
+  let text = "";
+
+  try {
+    response = await fetch(url, {
+      headers: { Accept: "*/*" },
+      redirect: "manual",
+    });
+    text = await response.text();
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = null;
+    }
+  } catch (error) {
+    failures.push(`${check.path}: network error (${error.message})`);
+    console.log(`FAIL ${check.path} network`);
+    continue;
+  }
+
+  const latencyMs = Date.now() - started;
+  let error = null;
+
+  if (typeof check.expect === "function") {
+    error = await check.expect(response, body);
+  } else if (check.expectStatus && !check.expectStatus.includes(response.status)) {
+    error = `HTTP ${response.status}, expected ${check.expectStatus.join("|")}`;
+  }
+
+  if (error) {
+    failures.push(`${check.path}: ${error}`);
+    console.log(`FAIL ${check.path} status=${response.status} latencyMs=${latencyMs} — ${error}`);
+  } else {
+    const extra =
+      check.path === "/api/health"
+        ? ` status=${body?.status}`
+        : check.path === "/api/auth/google/status"
+          ? ` configured=${body?.configured}`
+          : "";
+    console.log(`OK   ${check.path} status=${response.status} latencyMs=${latencyMs}${extra}`);
+  }
 }
 
-const ok =
-  response.status === 200 &&
-  body &&
-  body.status === "ok" &&
-  body.checks?.database === "ok" &&
-  body.checks?.livekitConfigured === true &&
-  body.checks?.appUrlConfigured === true;
-
-console.log(`GET ${healthUrl}`);
-console.log(`status=${response.status} latencyMs=${latencyMs}`);
-console.log(JSON.stringify(body, null, 2));
-
-if (!ok) {
-  console.error("Smoke check gagal.");
+if (failures.length > 0) {
+  console.error("\nSmoke check gagal:");
+  for (const failure of failures) {
+    console.error(` - ${failure}`);
+  }
   process.exit(1);
 }
 
-console.log("Smoke check: OK");
+console.log("\nSmoke check: OK");

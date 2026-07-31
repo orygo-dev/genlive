@@ -298,11 +298,13 @@ https://meet.domainanda.com/api/payments/webhook/flip
 2. Meeting instan 2 browser
 3. Jadwal + undangan WA (jika Fonnte)
 4. `curl -s https://meet.domainanda.com/api/health`
-5. `npm run smoke -- https://meet.domainanda.com`
+5. `npm run smoke -- https://meet.domainanda.com` (health + legal + DPA + Google status + PWA)
+6. Pastikan **3 cron** aaPanel aktif (meeting-reminders, plan-reminders, recording-retention)
+7. Setelah OAuth: uji tombol Google di `/auth`
 
 ---
 
-## 12. Update aplikasi
+## 12. Update aplikasi (setelah Phase 3)
 
 ```bash
 cd /www/wwwroot/genlive.guruspaceai.cloud
@@ -313,10 +315,25 @@ npm run db:deploy
 bash scripts/aapanel-pm2.sh --full
 ```
 
+Opsional Google OAuth di `.env.production` (atau lewat `/admin` → Integrasi):
+
+```env
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+Di Google Cloud Console → Authorized redirect URI:
+
+```text
+https://genlive.guruspaceai.cloud/api/auth/google/callback
+```
+
 Setelah PM2 hidup:
 
 1. Login Super Admin → `/admin` → **Integrasi** → isi LiveKit → **Tes koneksi**.
-2. Buat org/user, atur katalog plan, uji force end meeting jika perlu.
+2. Isi Google OAuth + `CRON_SECRET` jika belum.
+3. Buat org/user, atur katalog plan, uji force end meeting jika perlu.
+4. Dari laptop: `npm run smoke -- https://genlive.guruspaceai.cloud`
 
 ---
 
