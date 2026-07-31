@@ -128,6 +128,10 @@ a {
   letter-spacing: -0.03em;
 }
 
+.landing-brand-nav .brand-mark-logo img {
+  height: 34px;
+}
+
 .landing-nav {
   display: flex;
   align-items: center;
@@ -696,6 +700,25 @@ footer {
   object-fit: cover;
 }
 
+.brand-mark-logo {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  overflow: visible;
+  color: inherit;
+}
+
+.brand-mark-logo img {
+  width: auto;
+  height: 32px;
+  max-width: min(160px, 42vw);
+  object-fit: contain;
+  display: block;
+}
+
 .brand-small {
   font-size: 16px;
 }
@@ -704,6 +727,16 @@ footer {
   width: 30px;
   height: 30px;
   border-radius: 9px;
+}
+
+.brand-small .brand-mark-logo {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+
+.brand-small .brand-mark-logo img {
+  height: 26px;
 }
 
 .header-nav {
@@ -1823,9 +1856,13 @@ footer p {
   color: white;
 }
 
-.auth-brand .brand-mark {
+.auth-brand .brand-mark:not(.brand-mark-logo) {
   color: var(--primary-dark);
   background: white;
+}
+
+.auth-brand .brand-mark-logo {
+  background: transparent !important;
 }
 
 .auth-aside-copy {
@@ -3698,11 +3735,12 @@ footer p {
 }
 
 .splash-logo {
-  width: min(160px, 42vw);
+  width: min(180px, 48vw);
   height: auto;
   max-height: 160px;
   object-fit: contain;
-  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.25));
+  background: transparent;
+  filter: none;
 }
 
 .splash-fallback {
@@ -4265,7 +4303,11 @@ footer p {
 .admin-asset-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background:
+    linear-gradient(45deg, #eef2f6 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(-45deg, #eef2f6 25%, transparent 25%) 0 0 / 12px 12px,
+    #fff;
 }
 
 .admin-asset-actions {

@@ -67,8 +67,31 @@ fi
 
 echo "==> Sync public/static/env ke standalone"
 mkdir -p "$STANDALONE/.next"
+mkdir -p "$ROOT/data/uploads/brand"
+mkdir -p "$ROOT/public/uploads/brand"
+
+# Jangan hilangkan upload brand saat sync public
+UPLOAD_BACKUP=""
+if [[ -d "$STANDALONE/public/uploads" ]]; then
+  UPLOAD_BACKUP="$(mktemp -d /tmp/genmeet-uploads.XXXXXX)"
+  cp -a "$STANDALONE/public/uploads/." "$UPLOAD_BACKUP/" 2>/dev/null || true
+fi
+
 rm -rf "$STANDALONE/public"
 cp -a "$ROOT/public" "$STANDALONE/public"
+mkdir -p "$STANDALONE/public/uploads/brand"
+mkdir -p "$STANDALONE/data/uploads/brand"
+
+# Mirror persistent data uploads into standalone public for static fallback
+if [[ -d "$ROOT/data/uploads/brand" ]]; then
+  cp -a "$ROOT/data/uploads/brand/." "$STANDALONE/public/uploads/brand/" 2>/dev/null || true
+  cp -a "$ROOT/data/uploads/brand/." "$STANDALONE/data/uploads/brand/" 2>/dev/null || true
+fi
+if [[ -n "$UPLOAD_BACKUP" && -d "$UPLOAD_BACKUP" ]]; then
+  cp -a "$UPLOAD_BACKUP/." "$STANDALONE/public/uploads/" 2>/dev/null || true
+  rm -rf "$UPLOAD_BACKUP"
+fi
+
 rm -rf "$STANDALONE/.next/static"
 cp -a "$ROOT/.next/static" "$STANDALONE/.next/static"
 cp -f "$ROOT/.env.production" "$STANDALONE/.env.production"

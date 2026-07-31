@@ -15,16 +15,24 @@ export function AppBrand({
   className = "brand",
   markSize = 20,
 }: AppBrandProps) {
+  const hasLogo = Boolean(branding.logoUrl);
+
   return (
     <Link className={className} href={href} aria-label={`${branding.appName} beranda`}>
-      <span className="brand-mark">
-        {branding.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={branding.logoUrl} alt="" width={markSize} height={markSize} />
-        ) : (
+      {hasLogo ? (
+        <span className="brand-mark brand-mark-logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={branding.logoUrl!}
+            alt=""
+            style={{ height: markSize + 8, width: "auto" }}
+          />
+        </span>
+      ) : (
+        <span className="brand-mark">
           <Video size={markSize} />
-        )}
-      </span>
+        </span>
+      )}
       <span>{branding.appName}</span>
     </Link>
   );

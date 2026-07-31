@@ -40,6 +40,11 @@ yarn-error.log*
 !/public/uploads/brand/
 /public/uploads/brand/*
 !/public/uploads/brand/.gitkeep
+/data/uploads/*
+!/data/uploads/.gitkeep
+!/data/uploads/brand/
+/data/uploads/brand/*
+!/data/uploads/brand/.gitkeep
 
 # vercel
 .vercel

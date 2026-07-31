@@ -27,7 +27,7 @@ const ASSET_FIELDS: Array<{
     kind: "logo",
     key: "logoUrl",
     label: "Logo aplikasi",
-    hint: "Muncul di header, dashboard, dan auth.",
+    hint: "Muncul di header, dashboard, dan auth (tanpa frame).",
   },
   {
     kind: "loginBackground",
