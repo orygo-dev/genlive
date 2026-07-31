@@ -426,6 +426,31 @@ export function AdminConsole({
     }
   }
 
+  async function orderAction(orderId: string, action: "cancel" | "refund") {
+    const label = action === "cancel" ? "membatalkan order" : "merefund order";
+    if (!window.confirm(`Yakin ingin ${label} ini?`)) return;
+
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/payment-orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? `Gagal ${label}.`);
+      }
+      setMessage(action === "cancel" ? "Order dibatalkan." : "Order direfund (status sistem).");
+      await loadOrders(orderStatus);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : `Gagal ${label}.`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function savePlans(event: FormEvent) {
     event.preventDefault();
     if (!system) return;
@@ -1037,6 +1062,7 @@ export function AdminConsole({
                 <option value="FAILED">FAILED</option>
                 <option value="EXPIRED">EXPIRED</option>
                 <option value="CANCELLED">CANCELLED</option>
+                <option value="REFUNDED">REFUNDED</option>
               </select>
             </div>
             <div className="admin-table-wrap">
@@ -1049,6 +1075,7 @@ export function AdminConsole({
                     <th>Jumlah</th>
                     <th>Status</th>
                     <th>Waktu</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1066,6 +1093,30 @@ export function AdminConsole({
                       <td>{formatIdr(order.amountIdr)}</td>
                       <td><span className="admin-badge">{order.status}</span></td>
                       <td>{formatDate(order.createdAt)}</td>
+                      <td>
+                        <div className="admin-row-actions">
+                          {order.status === "PENDING" ? (
+                            <button
+                              type="button"
+                              className="button button-ghost"
+                              disabled={busy}
+                              onClick={() => void orderAction(order.id, "cancel")}
+                            >
+                              Batalkan
+                            </button>
+                          ) : null}
+                          {order.status === "PAID" ? (
+                            <button
+                              type="button"
+                              className="button button-ghost"
+                              disabled={busy}
+                              onClick={() => void orderAction(order.id, "refund")}
+                            >
+                              Refund
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

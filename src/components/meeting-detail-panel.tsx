@@ -5,7 +5,9 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  CalendarPlus,
   Copy,
+  Download,
   LoaderCircle,
   MailPlus,
   Play,
@@ -14,6 +16,7 @@ import {
   Users,
   Video,
 } from "lucide-react";
+import { googleCalendarUrl } from "@/lib/calendar-links";
 import {
   canCancelMeeting,
   canEditMeetingFields,
@@ -85,6 +88,22 @@ export function MeetingDetailPanel({
     }
     return `${window.location.origin}/meeting/${meeting.roomName}`;
   }, [meeting.roomName]);
+
+  const calendarLinks = useMemo(() => {
+    if (!meeting.startsAt) return null;
+    const startsAt = new Date(meeting.startsAt);
+    if (Number.isNaN(startsAt.getTime())) return null;
+
+    return {
+      icsUrl: `/api/meetings/manage/${meeting.id}/ics`,
+      googleUrl: googleCalendarUrl({
+        title: meeting.title,
+        description: `Meeting ${meeting.title} — ${inviteUrl}`,
+        location: inviteUrl,
+        startsAt,
+      }),
+    };
+  }, [meeting.id, meeting.startsAt, meeting.title, inviteUrl]);
 
   async function saveChanges(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -348,6 +367,22 @@ export function MeetingDetailPanel({
 
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
+
+      {calendarLinks ? (
+        <div className="meeting-calendar-links">
+          <a className="button button-ghost" href={calendarLinks.icsUrl} download>
+            <Download size={15} /> Unduh ICS
+          </a>
+          <a
+            className="button button-ghost"
+            href={calendarLinks.googleUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <CalendarPlus size={15} /> Google Calendar
+          </a>
+        </div>
+      ) : null}
 
       <div className="meeting-detail-grid">
         <section className="meeting-detail-card">

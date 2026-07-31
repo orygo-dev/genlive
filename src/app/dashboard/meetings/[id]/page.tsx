@@ -73,6 +73,7 @@ export default async function MeetingDetailPage({
         name: context.user.name,
         email: context.user.email,
         isSuperAdmin: context.user.isSuperAdmin,
+        emailVerifiedAt: context.user.emailVerifiedAt,
       }}
       memberships={context.user.memberships}
       activeOrganizationId={context.activeMembership.organization.id}

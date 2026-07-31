@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -216,6 +217,11 @@ export function AuthExperience({
                 Gunakan huruf besar, huruf kecil, dan angka.
               </p>
             )}
+            {mode === "login" && (
+              <p className="auth-forgot">
+                <Link href="/auth/forgot">Lupa password?</Link>
+              </p>
+            )}
             {error && <p className="auth-error" role="alert">{error}</p>}
 
             <button
@@ -242,6 +248,11 @@ export function AuthExperience({
             >
               {mode === "login" ? "Daftar gratis" : "Masuk"}
             </button>
+          </p>
+          <p className="auth-legal-links">
+            <Link href="/terms">Syarat</Link>
+            <Link href="/privacy">Privasi</Link>
+            <Link href="/cookies">Cookie</Link>
           </p>
         </div>
       </section>

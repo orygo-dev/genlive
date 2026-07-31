@@ -1,12 +1,18 @@
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
+import { createAuthToken } from "@/lib/auth-tokens";
 import { createSession } from "@/lib/auth";
 import { registerSchema } from "@/lib/auth-validation";
+import { absoluteUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
+import { buildEmailVerificationEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email";
 import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { createOrganizationSlug } from "@/lib/organization-helpers";
+import { getPlatformBranding } from "@/lib/platform-settings";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -67,6 +73,31 @@ export async function POST(request: Request) {
     });
 
     await createSession(user.id, user.memberships[0]?.organizationId);
+
+    try {
+      const rawToken = await createAuthToken(user.id, "EMAIL_VERIFY");
+      const branding = await getPlatformBranding();
+      const verifyUrl = await absoluteUrl(
+        `/auth/verify?token=${encodeURIComponent(rawToken)}`,
+        request.headers.get("origin"),
+      );
+      const message = buildEmailVerificationEmail({
+        appName: branding.appName,
+        userName: user.name,
+        verifyUrl,
+      });
+      void sendEmail({ to: user.email, ...message }).catch((error) => {
+        logger.warn("Verification email failed on register", {
+          userId: user.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+    } catch (error) {
+      logger.warn("Verification token failed on register", {
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {

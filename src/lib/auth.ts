@@ -78,6 +78,7 @@ async function getSessionRecord() {
           email: true,
           isSuperAdmin: true,
           isDisabled: true,
+          emailVerifiedAt: true,
           memberships: {
             orderBy: { joinedAt: "asc" },
             select: {

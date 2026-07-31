@@ -9,12 +9,18 @@ import {
   Video,
 } from "lucide-react";
 import { AppBrand } from "@/components/app-brand";
+import { EmailVerifyBanner } from "@/components/email-verify-banner";
 import { OrgSwitcher } from "@/components/org-switcher";
 import type { PlatformBranding } from "@/lib/platform-branding";
 import type { Membership } from "@/lib/organization-helpers";
 
 type DashboardShellProps = {
-  user: { name: string; email: string; isSuperAdmin?: boolean };
+  user: {
+    name: string;
+    email: string;
+    isSuperAdmin?: boolean;
+    emailVerifiedAt?: string | Date | null;
+  };
   memberships: Membership[];
   activeOrganizationId: string;
   activeNav: "meeting" | "members" | "billing" | "calendar" | "settings";
@@ -97,7 +103,10 @@ export function DashboardShell({
           </span>
         </div>
       </aside>
-      <main className="dashboard-main">{children}</main>
+      <main className="dashboard-main">
+        <EmailVerifyBanner emailVerified={Boolean(user.emailVerifiedAt)} />
+        {children}
+      </main>
     </div>
   );
 }

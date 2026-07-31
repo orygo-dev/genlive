@@ -29,6 +29,7 @@ export type UserMinAggregateOutputType = {
   name: string | null
   email: string | null
   passwordHash: string | null
+  emailVerifiedAt: Date | null
   isSuperAdmin: boolean | null
   isDisabled: boolean | null
   createdAt: Date | null
@@ -40,6 +41,7 @@ export type UserMaxAggregateOutputType = {
   name: string | null
   email: string | null
   passwordHash: string | null
+  emailVerifiedAt: Date | null
   isSuperAdmin: boolean | null
   isDisabled: boolean | null
   createdAt: Date | null
@@ -51,6 +53,7 @@ export type UserCountAggregateOutputType = {
   name: number
   email: number
   passwordHash: number
+  emailVerifiedAt: number
   isSuperAdmin: number
   isDisabled: number
   createdAt: number
@@ -64,6 +67,7 @@ export type UserMinAggregateInputType = {
   name?: true
   email?: true
   passwordHash?: true
+  emailVerifiedAt?: true
   isSuperAdmin?: true
   isDisabled?: true
   createdAt?: true
@@ -75,6 +79,7 @@ export type UserMaxAggregateInputType = {
   name?: true
   email?: true
   passwordHash?: true
+  emailVerifiedAt?: true
   isSuperAdmin?: true
   isDisabled?: true
   createdAt?: true
@@ -86,6 +91,7 @@ export type UserCountAggregateInputType = {
   name?: true
   email?: true
   passwordHash?: true
+  emailVerifiedAt?: true
   isSuperAdmin?: true
   isDisabled?: true
   createdAt?: true
@@ -170,6 +176,7 @@ export type UserGroupByOutputType = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt: Date | null
   isSuperAdmin: boolean
   isDisabled: boolean
   createdAt: Date
@@ -202,12 +209,14 @@ export type UserWhereInput = {
   name?: Prisma.StringFilter<"User"> | string
   email?: Prisma.StringFilter<"User"> | string
   passwordHash?: Prisma.StringFilter<"User"> | string
+  emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   isSuperAdmin?: Prisma.BoolFilter<"User"> | boolean
   isDisabled?: Prisma.BoolFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
+  authTokens?: Prisma.AuthTokenListRelationFilter
   meetings?: Prisma.MeetingListRelationFilter
   participations?: Prisma.MeetingParticipantListRelationFilter
   invitationsSent?: Prisma.OrganizationInvitationListRelationFilter
@@ -221,12 +230,14 @@ export type UserOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isSuperAdmin?: Prisma.SortOrder
   isDisabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   memberships?: Prisma.OrganizationMemberOrderByRelationAggregateInput
   sessions?: Prisma.SessionOrderByRelationAggregateInput
+  authTokens?: Prisma.AuthTokenOrderByRelationAggregateInput
   meetings?: Prisma.MeetingOrderByRelationAggregateInput
   participations?: Prisma.MeetingParticipantOrderByRelationAggregateInput
   invitationsSent?: Prisma.OrganizationInvitationOrderByRelationAggregateInput
@@ -244,12 +255,14 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   name?: Prisma.StringFilter<"User"> | string
   passwordHash?: Prisma.StringFilter<"User"> | string
+  emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   isSuperAdmin?: Prisma.BoolFilter<"User"> | boolean
   isDisabled?: Prisma.BoolFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   memberships?: Prisma.OrganizationMemberListRelationFilter
   sessions?: Prisma.SessionListRelationFilter
+  authTokens?: Prisma.AuthTokenListRelationFilter
   meetings?: Prisma.MeetingListRelationFilter
   participations?: Prisma.MeetingParticipantListRelationFilter
   invitationsSent?: Prisma.OrganizationInvitationListRelationFilter
@@ -263,6 +276,7 @@ export type UserOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   isSuperAdmin?: Prisma.SortOrder
   isDisabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -280,6 +294,7 @@ export type UserScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"User"> | string
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
   passwordHash?: Prisma.StringWithAggregatesFilter<"User"> | string
+  emailVerifiedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   isSuperAdmin?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   isDisabled?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -291,12 +306,14 @@ export type UserCreateInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -310,12 +327,14 @@ export type UserUncheckedCreateInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -329,12 +348,14 @@ export type UserUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -348,12 +369,14 @@ export type UserUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -367,6 +390,7 @@ export type UserCreateManyInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
@@ -378,6 +402,7 @@ export type UserUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -389,6 +414,7 @@ export type UserUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -406,6 +432,7 @@ export type UserCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
   isSuperAdmin?: Prisma.SortOrder
   isDisabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -417,6 +444,7 @@ export type UserMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
   isSuperAdmin?: Prisma.SortOrder
   isDisabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -428,6 +456,7 @@ export type UserMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
+  emailVerifiedAt?: Prisma.SortOrder
   isSuperAdmin?: Prisma.SortOrder
   isDisabled?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -448,12 +477,30 @@ export type StringFieldUpdateOperationsInput = {
   set?: string
 }
 
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type UserCreateNestedOneWithoutAuthTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuthTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutAuthTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuthTokensInput
+  upsert?: Prisma.UserUpsertWithoutAuthTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuthTokensInput, Prisma.UserUpdateWithoutAuthTokensInput>, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
 }
 
 export type UserCreateNestedOneWithoutSessionsInput = {
@@ -574,16 +621,114 @@ export type UserUpdateOneWithoutParticipationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutParticipationsInput, Prisma.UserUpdateWithoutParticipationsInput>, Prisma.UserUncheckedUpdateWithoutParticipationsInput>
 }
 
-export type UserCreateWithoutSessionsInput = {
+export type UserCreateWithoutAuthTokensInput = {
   id?: string
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
+  participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
+  recordingsStarted?: Prisma.RecordingCreateNestedManyWithoutStartedByInput
+  paymentOrders?: Prisma.PaymentOrderCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutAuthTokensInput = {
+  id?: string
+  name: string
+  email: string
+  passwordHash: string
+  emailVerifiedAt?: Date | string | null
+  isSuperAdmin?: boolean
+  isDisabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
+  participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
+  invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
+  recordingsStarted?: Prisma.RecordingUncheckedCreateNestedManyWithoutStartedByInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutAuthTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+}
+
+export type UserUpsertWithoutAuthTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAuthTokensInput, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAuthTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAuthTokensInput, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
+}
+
+export type UserUpdateWithoutAuthTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
+  participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
+  recordingsStarted?: Prisma.RecordingUpdateManyWithoutStartedByNestedInput
+  paymentOrders?: Prisma.PaymentOrderUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAuthTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
+  participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
+  invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
+  recordingsStarted?: Prisma.RecordingUncheckedUpdateManyWithoutStartedByNestedInput
+  paymentOrders?: Prisma.PaymentOrderUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserCreateWithoutSessionsInput = {
+  id?: string
+  name: string
+  email: string
+  passwordHash: string
+  emailVerifiedAt?: Date | string | null
+  isSuperAdmin?: boolean
+  isDisabled?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -597,11 +742,13 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -631,11 +778,13 @@ export type UserUpdateWithoutSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -649,11 +798,13 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -667,12 +818,14 @@ export type UserCreateWithoutInvitationsSentInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
@@ -685,12 +838,14 @@ export type UserUncheckedCreateWithoutInvitationsSentInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
@@ -719,12 +874,14 @@ export type UserUpdateWithoutInvitationsSentInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
@@ -737,12 +894,14 @@ export type UserUncheckedUpdateWithoutInvitationsSentInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
@@ -755,12 +914,14 @@ export type UserCreateWithoutAuditLogsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -773,12 +934,14 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -807,12 +970,14 @@ export type UserUpdateWithoutAuditLogsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -825,12 +990,14 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -843,11 +1010,13 @@ export type UserCreateWithoutMembershipsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -861,11 +1030,13 @@ export type UserUncheckedCreateWithoutMembershipsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -895,11 +1066,13 @@ export type UserUpdateWithoutMembershipsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -913,11 +1086,13 @@ export type UserUncheckedUpdateWithoutMembershipsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -931,12 +1106,14 @@ export type UserCreateWithoutMeetingsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
@@ -949,12 +1126,14 @@ export type UserUncheckedCreateWithoutMeetingsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
@@ -983,12 +1162,14 @@ export type UserUpdateWithoutMeetingsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
@@ -1001,12 +1182,14 @@ export type UserUncheckedUpdateWithoutMeetingsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
@@ -1019,12 +1202,14 @@ export type UserCreateWithoutRecordingsStartedInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -1037,12 +1222,14 @@ export type UserUncheckedCreateWithoutRecordingsStartedInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -1071,12 +1258,14 @@ export type UserUpdateWithoutRecordingsStartedInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -1089,12 +1278,14 @@ export type UserUncheckedUpdateWithoutRecordingsStartedInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -1107,12 +1298,14 @@ export type UserCreateWithoutPaymentOrdersInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
@@ -1125,12 +1318,14 @@ export type UserUncheckedCreateWithoutPaymentOrdersInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   participations?: Prisma.MeetingParticipantUncheckedCreateNestedManyWithoutUserInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
@@ -1159,12 +1354,14 @@ export type UserUpdateWithoutPaymentOrdersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
@@ -1177,12 +1374,14 @@ export type UserUncheckedUpdateWithoutPaymentOrdersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   participations?: Prisma.MeetingParticipantUncheckedUpdateManyWithoutUserNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
@@ -1195,12 +1394,14 @@ export type UserCreateWithoutParticipationsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingCreateNestedManyWithoutCreatedByInput
   invitationsSent?: Prisma.OrganizationInvitationCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutActorInput
@@ -1213,12 +1414,14 @@ export type UserUncheckedCreateWithoutParticipationsInput = {
   name: string
   email: string
   passwordHash: string
+  emailVerifiedAt?: Date | string | null
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   memberships?: Prisma.OrganizationMemberUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  authTokens?: Prisma.AuthTokenUncheckedCreateNestedManyWithoutUserInput
   meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutCreatedByInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedCreateNestedManyWithoutInvitedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutActorInput
@@ -1247,12 +1450,14 @@ export type UserUpdateWithoutParticipationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUpdateManyWithoutCreatedByNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutActorNestedInput
@@ -1265,12 +1470,14 @@ export type UserUncheckedUpdateWithoutParticipationsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isDisabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   memberships?: Prisma.OrganizationMemberUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  authTokens?: Prisma.AuthTokenUncheckedUpdateManyWithoutUserNestedInput
   meetings?: Prisma.MeetingUncheckedUpdateManyWithoutCreatedByNestedInput
   invitationsSent?: Prisma.OrganizationInvitationUncheckedUpdateManyWithoutInvitedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutActorNestedInput
@@ -1286,6 +1493,7 @@ export type UserUncheckedUpdateWithoutParticipationsInput = {
 export type UserCountOutputType = {
   memberships: number
   sessions: number
+  authTokens: number
   meetings: number
   participations: number
   invitationsSent: number
@@ -1297,6 +1505,7 @@ export type UserCountOutputType = {
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | UserCountOutputTypeCountMembershipsArgs
   sessions?: boolean | UserCountOutputTypeCountSessionsArgs
+  authTokens?: boolean | UserCountOutputTypeCountAuthTokensArgs
   meetings?: boolean | UserCountOutputTypeCountMeetingsArgs
   participations?: boolean | UserCountOutputTypeCountParticipationsArgs
   invitationsSent?: boolean | UserCountOutputTypeCountInvitationsSentArgs
@@ -1327,6 +1536,13 @@ export type UserCountOutputTypeCountMembershipsArgs<ExtArgs extends runtime.Type
  */
 export type UserCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAuthTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AuthTokenWhereInput
 }
 
 /**
@@ -1377,12 +1593,14 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   name?: boolean
   email?: boolean
   passwordHash?: boolean
+  emailVerifiedAt?: boolean
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
+  authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   meetings?: boolean | Prisma.User$meetingsArgs<ExtArgs>
   participations?: boolean | Prisma.User$participationsArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
@@ -1399,16 +1617,18 @@ export type UserSelectScalar = {
   name?: boolean
   email?: boolean
   passwordHash?: boolean
+  emailVerifiedAt?: boolean
   isSuperAdmin?: boolean
   isDisabled?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordHash" | "isSuperAdmin" | "isDisabled" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordHash" | "emailVerifiedAt" | "isSuperAdmin" | "isDisabled" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
+  authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   meetings?: boolean | Prisma.User$meetingsArgs<ExtArgs>
   participations?: boolean | Prisma.User$participationsArgs<ExtArgs>
   invitationsSent?: boolean | Prisma.User$invitationsSentArgs<ExtArgs>
@@ -1423,6 +1643,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     memberships: Prisma.$OrganizationMemberPayload<ExtArgs>[]
     sessions: Prisma.$SessionPayload<ExtArgs>[]
+    authTokens: Prisma.$AuthTokenPayload<ExtArgs>[]
     meetings: Prisma.$MeetingPayload<ExtArgs>[]
     participations: Prisma.$MeetingParticipantPayload<ExtArgs>[]
     invitationsSent: Prisma.$OrganizationInvitationPayload<ExtArgs>[]
@@ -1435,6 +1656,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     name: string
     email: string
     passwordHash: string
+    emailVerifiedAt: Date | null
     isSuperAdmin: boolean
     isDisabled: boolean
     createdAt: Date
@@ -1781,6 +2003,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   memberships<T extends Prisma.User$membershipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$membershipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  authTokens<T extends Prisma.User$authTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuthTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   meetings<T extends Prisma.User$meetingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$meetingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MeetingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   participations<T extends Prisma.User$participationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$participationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MeetingParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitationsSent<T extends Prisma.User$invitationsSentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsSentArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrganizationInvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1820,6 +2043,7 @@ export interface UserFieldRefs {
   readonly name: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly passwordHash: Prisma.FieldRef<"User", 'String'>
+  readonly emailVerifiedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly isSuperAdmin: Prisma.FieldRef<"User", 'Boolean'>
   readonly isDisabled: Prisma.FieldRef<"User", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
@@ -2217,6 +2441,30 @@ export type User$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.SessionScalarFieldEnum | Prisma.SessionScalarFieldEnum[]
+}
+
+/**
+ * User.authTokens
+ */
+export type User$authTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AuthToken
+   */
+  select?: Prisma.AuthTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AuthToken
+   */
+  omit?: Prisma.AuthTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AuthTokenInclude<ExtArgs> | null
+  where?: Prisma.AuthTokenWhereInput
+  orderBy?: Prisma.AuthTokenOrderByWithRelationInput | Prisma.AuthTokenOrderByWithRelationInput[]
+  cursor?: Prisma.AuthTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AuthTokenScalarFieldEnum | Prisma.AuthTokenScalarFieldEnum[]
 }
 
 /**

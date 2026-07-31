@@ -282,6 +282,11 @@ export function HomeExperience({
       <footer className="landing-footer">
         <AppBrand branding={branding} className="landing-brand-nav" markSize={16} />
         <p>Platform meeting untuk tim yang serius tumbuh.</p>
+        <nav className="landing-footer-links" aria-label="Dokumen legal">
+          <Link href="/terms">Syarat & Ketentuan</Link>
+          <Link href="/privacy">Kebijakan Privasi</Link>
+          <Link href="/cookies">Cookie</Link>
+        </nav>
         <span>© {new Date().getFullYear()} {branding.appName}</span>
       </footer>
     </div>

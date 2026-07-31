@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { activatePaidPlan } from "@/lib/billing";
+import { absoluteUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
+import { buildPaymentInvoiceEmail } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/email";
 import { getPaymentProviderForWebhook, type PaymentProviderId } from "@/lib/payments";
 import { amountsMatchIdr } from "@/lib/payments/webhook-security";
 import { writeAuditLog } from "@/lib/organization";
+import { getPlatformBranding } from "@/lib/platform-settings";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -49,6 +54,7 @@ export async function POST(request: Request, { params }: WebhookRouteProps) {
         status: true,
         amountIdr: true,
         provider: true,
+        orderId: true,
       },
     });
 
@@ -66,6 +72,7 @@ export async function POST(request: Request, { params }: WebhookRouteProps) {
           status: true,
           amountIdr: true,
           provider: true,
+          orderId: true,
         },
       });
     }
@@ -125,6 +132,40 @@ export async function POST(request: Request, { params }: WebhookRouteProps) {
           amountIdr: order.amountIdr,
         },
       });
+
+      try {
+        const [buyer, branding] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: order.createdById },
+            select: { name: true, email: true },
+          }),
+          getPlatformBranding(),
+        ]);
+
+        if (buyer) {
+          const invoiceUrl = await absoluteUrl(
+            `/dashboard/billing/invoice/${order.id}`,
+          );
+          const message = buildPaymentInvoiceEmail({
+            appName: branding.appName,
+            userName: buyer.name,
+            planCode: order.planCode,
+            amountIdr: order.amountIdr,
+            invoiceUrl,
+          });
+          void sendEmail({ to: buyer.email, ...message }).catch((error) => {
+            logger.warn("Invoice email failed after payment", {
+              orderId: order.orderId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+        }
+      } catch (error) {
+        logger.warn("Invoice email setup failed after payment", {
+          orderId: order.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     } else if (
       event.status === "FAILED" ||
       event.status === "EXPIRED" ||

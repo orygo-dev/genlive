@@ -64,6 +64,7 @@ export default async function DashboardPage() {
         name: user.name,
         email: user.email,
         isSuperAdmin: user.isSuperAdmin,
+        emailVerifiedAt: user.emailVerifiedAt,
       }}
       memberships={user.memberships}
       activeOrganizationId={organizationId}

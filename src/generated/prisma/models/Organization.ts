@@ -435,10 +435,6 @@ export type EnumPlanCodeFieldUpdateOperationsInput = {
   set?: $Enums.PlanCode
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type OrganizationCreateNestedOneWithoutInvitationsInput = {
   create?: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitationsInput, Prisma.OrganizationUncheckedCreateWithoutInvitationsInput>
   connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutInvitationsInput

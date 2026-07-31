@@ -12,6 +12,7 @@ const STATUSES = new Set([
   "FAILED",
   "EXPIRED",
   "CANCELLED",
+  "REFUNDED",
 ]);
 
 export async function GET(request: Request) {

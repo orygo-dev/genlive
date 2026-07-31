@@ -24,6 +24,7 @@ export default async function SettingsPage() {
         name: user.name,
         email: user.email,
         isSuperAdmin: user.isSuperAdmin,
+        emailVerifiedAt: user.emailVerifiedAt,
       }}
       memberships={user.memberships}
       activeOrganizationId={organization.id}

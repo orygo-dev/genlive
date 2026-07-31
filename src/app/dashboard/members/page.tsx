@@ -78,6 +78,7 @@ export default async function MembersPage() {
         name: user.name,
         email: user.email,
         isSuperAdmin: user.isSuperAdmin,
+        emailVerifiedAt: user.emailVerifiedAt,
       }}
       memberships={user.memberships}
       activeOrganizationId={organizationId}

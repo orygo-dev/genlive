@@ -116,13 +116,24 @@ npm run smoke -- https://domain-anda.com
 Manual:
 
 1. Buka landing → daftar akun baru
-2. Buat meeting instan + gabung 2 browser
-3. Jadwalkan meeting → undangan email/WhatsApp (jika Resend/Fonnte aktif)
-4. Pastikan reminder cron berjalan (`/api/cron/meeting-reminders`)
-5. Mulai recording (jika egress aktif)
-6. Upgrade plan Pro lewat `/dashboard/billing`
-7. Pastikan webhook LiveKit & payment tercatat (audit / status order)
-8. Uji `/dashboard/settings` (profil, password, workspace)
+2. Verifikasi email (opsional) & uji lupa/reset password
+3. Buat meeting instan + gabung 2 browser
+4. Jadwalkan meeting → undangan email/WhatsApp (jika Resend/Fonnte aktif)
+5. Unduh ICS / tambahkan ke Google Calendar dari detail meeting
+6. Pastikan reminder cron berjalan (`/api/cron/meeting-reminders`)
+7. Mulai recording (jika egress aktif)
+8. Upgrade plan Pro lewat `/dashboard/billing` → cek invoice email & halaman invoice
+9. Pastikan webhook LiveKit & payment tercatat (audit / status order)
+10. Uji `/dashboard/settings` (profil, password, workspace)
+11. Review halaman legal: `/terms`, `/privacy`, `/cookies`
+
+### Phase 1 commercial MVP
+
+- [ ] Email verifikasi & reset password (Resend + `APP_URL` benar)
+- [ ] Invoice HTML tersedia untuk order PAID/REFUNDED
+- [ ] Admin dapat cancel (PENDING) / refund (PAID) order
+- [ ] Waiting room: host admit all + UI peserta lebih jelas
+- [ ] Staging checklist: lihat [`STAGING.md`](./STAGING.md)
 
 ## 7. Monitoring ringan
 

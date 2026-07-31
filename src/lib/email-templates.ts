@@ -111,6 +111,123 @@ export function buildMeetingInviteEmail(input: {
   return { subject, html, text };
 }
 
+export function buildEmailVerificationEmail(input: {
+  appName: string;
+  userName: string;
+  verifyUrl: string;
+}) {
+  const name = escapeHtml(input.userName);
+  const app = escapeHtml(input.appName);
+  const url = escapeHtml(input.verifyUrl);
+
+  const subject = `Verifikasi email Anda — ${input.appName}`;
+  const text = [
+    `Halo ${input.userName},`,
+    "",
+    `Terima kasih telah mendaftar di ${input.appName}. Verifikasi alamat email Anda:`,
+    input.verifyUrl,
+    "",
+    "Tautan berlaku 24 jam. Jika Anda tidak mendaftar, abaikan email ini.",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.55;color:#1f2937;max-width:560px;margin:0 auto;padding:24px">
+      <p style="margin:0 0 8px;color:#0b5cff;font-weight:700">${app}</p>
+      <h1 style="margin:0 0 12px;font-size:24px;letter-spacing:-0.03em">Verifikasi email</h1>
+      <p style="margin:0 0 16px">Halo <strong>${name}</strong>, terima kasih telah mendaftar. Klik tombol di bawah untuk memverifikasi alamat email Anda.</p>
+      <p style="margin:0 0 20px">
+        <a href="${url}" style="display:inline-block;background:#0b5cff;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700">
+          Verifikasi email
+        </a>
+      </p>
+      <p style="margin:0 0 8px;color:#667085;font-size:13px">Atau buka tautan ini:<br /><a href="${url}">${url}</a></p>
+      <p style="margin:0;color:#667085;font-size:13px">Tautan berlaku 24 jam.</p>
+    </div>
+  `;
+
+  return { subject, html, text };
+}
+
+export function buildPasswordResetEmail(input: {
+  appName: string;
+  userName: string;
+  resetUrl: string;
+}) {
+  const name = escapeHtml(input.userName);
+  const app = escapeHtml(input.appName);
+  const url = escapeHtml(input.resetUrl);
+
+  const subject = `Reset password — ${input.appName}`;
+  const text = [
+    `Halo ${input.userName},`,
+    "",
+    `Kami menerima permintaan reset password untuk akun ${input.appName} Anda.`,
+    `Atur password baru: ${input.resetUrl}`,
+    "",
+    "Tautan berlaku 1 jam. Jika Anda tidak meminta reset, abaikan email ini.",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.55;color:#1f2937;max-width:560px;margin:0 auto;padding:24px">
+      <p style="margin:0 0 8px;color:#0b5cff;font-weight:700">${app}</p>
+      <h1 style="margin:0 0 12px;font-size:24px;letter-spacing:-0.03em">Reset password</h1>
+      <p style="margin:0 0 16px">Halo <strong>${name}</strong>, klik tombol di bawah untuk mengatur password baru.</p>
+      <p style="margin:0 0 20px">
+        <a href="${url}" style="display:inline-block;background:#0b5cff;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700">
+          Atur password baru
+        </a>
+      </p>
+      <p style="margin:0 0 8px;color:#667085;font-size:13px">Atau buka tautan ini:<br /><a href="${url}">${url}</a></p>
+      <p style="margin:0;color:#667085;font-size:13px">Tautan berlaku 1 jam.</p>
+    </div>
+  `;
+
+  return { subject, html, text };
+}
+
+export function buildPaymentInvoiceEmail(input: {
+  appName: string;
+  userName: string;
+  planCode: string;
+  amountIdr: number;
+  invoiceUrl: string;
+}) {
+  const name = escapeHtml(input.userName);
+  const app = escapeHtml(input.appName);
+  const url = escapeHtml(input.invoiceUrl);
+  const amount = escapeHtml(
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(input.amountIdr),
+  );
+
+  const subject = `Pembayaran berhasil — ${input.appName} ${input.planCode}`;
+  const text = [
+    `Halo ${input.userName},`,
+    "",
+    `Pembayaran plan ${input.planCode} (${amount}) telah kami terima.`,
+    `Lihat invoice: ${input.invoiceUrl}`,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.55;color:#1f2937;max-width:560px;margin:0 auto;padding:24px">
+      <p style="margin:0 0 8px;color:#0b5cff;font-weight:700">${app}</p>
+      <h1 style="margin:0 0 12px;font-size:24px;letter-spacing:-0.03em">Pembayaran berhasil</h1>
+      <p style="margin:0 0 16px">Halo <strong>${name}</strong>, plan <strong>${escapeHtml(input.planCode)}</strong> (${amount}) sudah aktif.</p>
+      <p style="margin:0 0 20px">
+        <a href="${url}" style="display:inline-block;background:#0b5cff;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:700">
+          Lihat invoice
+        </a>
+      </p>
+      <p style="margin:0;color:#667085;font-size:13px">Atau buka tautan ini:<br /><a href="${url}">${url}</a></p>
+    </div>
+  `;
+
+  return { subject, html, text };
+}
+
 export function parseInviteEmails(value: unknown, max = 20) {
   const raw =
     typeof value === "string"

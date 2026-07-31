@@ -221,15 +221,30 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
           </div>
           <p className="prejoin-kicker">Waiting room</p>
           <h1>Menunggu persetujuan host</h1>
+          {participantName.trim() ? (
+            <p className="waiting-display-name">
+              Anda masuk sebagai <strong>{participantName.trim()}</strong>
+            </p>
+          ) : null}
+          <ol className="waiting-steps" aria-label="Langkah waiting room">
+            <li className="waiting-step done">Permintaan terkirim</li>
+            <li className="waiting-step active">Menunggu host menyetujui</li>
+            <li className="waiting-step">Masuk ke meeting</li>
+          </ol>
           <p className="prejoin-description">
-            Permintaan Anda sudah dikirim. Halaman ini akan masuk otomatis
-            setelah host menyetujui.
+            Halaman ini akan masuk otomatis setelah host menyetujui.
+            Biarkan tab ini terbuka.
           </p>
+          <ul className="waiting-tips">
+            <li>Matikan mic sampai Anda diizinkan masuk.</li>
+            <li>Pastikan kamera dan mic sudah diizinkan browser.</li>
+            <li>Siapkan nama tampilan yang mudah dikenali host.</li>
+          </ul>
           <button
             className="button button-ghost button-full"
             onClick={() => void cancelAdmission()}
           >
-            Batalkan
+            Batalkan permintaan
           </button>
         </section>
       </main>
