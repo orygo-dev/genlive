@@ -211,13 +211,13 @@ diberlakukan di API.
 
 ## Super Admin & brand platform
 
-Halaman `/admin` untuk Super Admin mengatur identitas visual aplikasi:
+Halaman `/admin` untuk Super Admin (ops platform SaaS):
 
-- Nama aplikasi
-- Logo aplikasi
-- Background halaman login
-- Background splash screen
-- Logo splash screen
+- **Overview** — jumlah user, organisasi, plan Free/Pro, meeting, order
+- **Organisasi** — daftar tenant + grant/downgrade plan Pro/Free
+- **Pengguna** — daftar akun dan membership workspace
+- **Pembayaran** — riwayat order (read-only)
+- **Branding** — nama aplikasi, logo, background login & splash
 
 Set email Super Admin di environment:
 
@@ -226,7 +226,8 @@ SUPER_ADMIN_EMAIL=anda@perusahaan.com
 ```
 
 Setelah login dengan email tersebut, buka `/admin` atau menu **Super Admin** di
-sidebar dashboard. Upload aset disimpan di `public/uploads/brand/`.
+sidebar. Buat akun cepat: `node scripts/create-super-admin.mjs`.
+Upload aset branding disimpan di `public/uploads/brand/`.
 
 ## Pemeriksaan kualitas
 

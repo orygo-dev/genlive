@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { AdminBrandingPanel } from "@/components/admin-branding-panel";
+import { AdminConsole } from "@/components/admin-console";
 import { AdminLogoutButton } from "@/components/admin-logout-button";
 import { AppBrand } from "@/components/app-brand";
 import { getPlatformBranding } from "@/lib/platform-settings";
@@ -26,7 +26,7 @@ export default async function AdminPage() {
         </div>
       </header>
       <main className="admin-main">
-        <AdminBrandingPanel
+        <AdminConsole
           initialBranding={branding}
           adminName={context.user.name}
         />
