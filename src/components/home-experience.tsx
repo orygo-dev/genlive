@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   LockKeyhole,
+  Mic,
   MonitorUp,
   Plus,
   ShieldCheck,
@@ -55,56 +56,89 @@ export function HomeExperience({
         </div>
       ) : null}
 
-      <header className="landing-header">
-        <AppBrand branding={branding} className="landing-brand-nav" markSize={28} />
-        <nav className="landing-nav" aria-label="Navigasi utama">
-          <a href="#fitur">Fitur</a>
-          <a href="#harga">Harga</a>
-          <Link href="/auth">Masuk</Link>
-          <Link className="button button-primary landing-nav-cta" href="/auth">
-            Mulai gratis
-          </Link>
-        </nav>
-      </header>
+      <div className="landing-top">
+        <header className="landing-header">
+          <AppBrand branding={branding} className="landing-brand-nav" markSize={26} />
+          <nav className="landing-nav" aria-label="Navigasi utama">
+            <a href="#fitur">Produk</a>
+            <a href="#harga">Harga</a>
+            <Link href="/auth">Masuk</Link>
+            <Link className="landing-nav-ghost" href="/auth">
+              Hubungi kami
+            </Link>
+            <Link className="landing-nav-cta" href="/auth">
+              Daftar gratis
+            </Link>
+          </nav>
+        </header>
 
-      <main>
         <section className="landing-hero" aria-labelledby="landing-hero-title">
-          <div className="landing-hero-visual" aria-hidden="true">
-            <div className="landing-hero-mesh" />
-            <div className="landing-hero-glow landing-hero-glow-a" />
-            <div className="landing-hero-glow landing-hero-glow-b" />
+          <h1 id="landing-hero-title">
+            Temukan apa yang mungkin saat tim terhubung
+          </h1>
+          <p className="landing-hero-lead">
+            Platform meeting video untuk bisnis — workspace, undangan, recording,
+            dan billing dalam satu tempat.
+          </p>
+          <div className="landing-hero-actions">
+            <Link className="landing-btn landing-btn-dark" href="/auth">
+              Mulai gratis
+              <ArrowRight size={18} />
+            </Link>
+            <a className="landing-btn landing-btn-light" href="#harga">
+              Lihat paket
+            </a>
           </div>
+        </section>
 
-          <div className="landing-hero-copy">
-            <AppBrand
-              branding={branding}
-              className="landing-hero-logo"
-              markSize={42}
-            />
-            <h1 id="landing-hero-title">Rapat video yang siap dipakai bisnis.</h1>
-            <p className="landing-hero-lead">
-              Workspace, undangan, recording, dan billing — langsung dari browser.
-            </p>
-
-            <div className="landing-hero-actions">
-              <Link className="button button-primary button-large" href="/auth">
-                Mulai gratis
-                <ArrowRight size={18} />
-              </Link>
-              <button
-                className="button button-ghost button-large"
-                type="button"
-                onClick={startMeeting}
-              >
-                <Plus size={18} />
-                Meeting cepat
-              </button>
+        <section className="landing-showcase" aria-label="Pratinjau produk">
+          <article className="landing-show-card landing-show-meetings">
+            <div className="landing-show-label">Meetings</div>
+            <div className="landing-show-stage">
+              <div className="landing-show-bar">
+                <span className="landing-show-live" />
+                Rapat produk
+                <span>12:48</span>
+              </div>
+              <div className="landing-show-grid">
+                <div className="landing-show-tile landing-show-tile-main">
+                  <span className="landing-show-avatar">AN</span>
+                  <span>Anisa · Host</span>
+                </div>
+                <div className="landing-show-tile">
+                  <span className="landing-show-avatar landing-show-avatar-b">RK</span>
+                  <span>Raka</span>
+                </div>
+                <div className="landing-show-tile">
+                  <span className="landing-show-avatar landing-show-avatar-c">MS</span>
+                  <span>Maya</span>
+                </div>
+              </div>
+              <div className="landing-show-dock">
+                <span><Mic size={15} /></span>
+                <span><Video size={15} /></span>
+                <span><MonitorUp size={15} /></span>
+                <span className="landing-show-end">Akhiri</span>
+              </div>
             </div>
+          </article>
 
+          <article className="landing-show-card landing-show-workspace">
+            <div className="landing-show-label">Workspace</div>
+            <ul className="landing-show-list">
+              <li><strong>Acme Indonesia</strong><span>Owner</span></li>
+              <li><strong>Tim Produk</strong><span>Admin</span></li>
+              <li><strong>Customer Success</strong><span>Member</span></li>
+            </ul>
+            <p>Undang anggota, atur peran, kelola meeting dari satu dashboard.</p>
+          </article>
+
+          <article className="landing-show-card landing-show-join">
+            <div className="landing-show-label">Gabung cepat</div>
+            <p>Masukkan kode meeting dan langsung bergabung dari browser.</p>
             <form className="landing-join" onSubmit={joinMeeting} noValidate>
               <label className="landing-join-field">
                 <span className="sr-only">Kode meeting</span>
-                <Video size={17} aria-hidden="true" />
                 <input
                   value={roomCode}
                   onChange={(event) => {
@@ -116,7 +150,7 @@ export function HomeExperience({
                   aria-describedby={error ? "join-error" : undefined}
                 />
               </label>
-              <button className="button button-primary" type="submit">
+              <button className="landing-btn landing-btn-dark" type="submit">
                 Gabung
               </button>
             </form>
@@ -125,55 +159,56 @@ export function HomeExperience({
                 {error}
               </p>
             ) : null}
-          </div>
+            <button
+              className="landing-show-quick"
+              type="button"
+              onClick={startMeeting}
+            >
+              <Plus size={16} /> Meeting cepat
+            </button>
+          </article>
         </section>
+      </div>
 
+      <main>
         <section className="landing-section" id="fitur">
-          <div className="landing-section-head">
-            <h2>Semua yang dibutuhkan meeting bisnis</h2>
-            <p>Dari ruang instan hingga kontrol workspace — tanpa aplikasi ekstra.</p>
+          <div className="landing-section-head landing-section-head-center">
+            <h2>Satu platform untuk meeting bisnis</h2>
+            <p>
+              Dari ruang instan hingga kontrol workspace — tanpa aplikasi ekstra.
+            </p>
           </div>
-          <ul className="landing-feature-list">
+          <ul className="landing-feature-grid">
             <li>
               <Video size={22} />
-              <div>
-                <strong>Video & audio adaptif</strong>
-                <p>Kualitas menyesuaikan jaringan agar percakapan tetap stabil.</p>
-              </div>
+              <strong>Video & audio adaptif</strong>
+              <p>Kualitas menyesuaikan jaringan agar percakapan tetap stabil.</p>
             </li>
             <li>
               <MonitorUp size={22} />
-              <div>
-                <strong>Berbagi layar & chat</strong>
-                <p>Presentasi dan diskusi dalam satu ruang yang fokus.</p>
-              </div>
+              <strong>Berbagi layar & chat</strong>
+              <p>Presentasi dan diskusi dalam satu ruang yang fokus.</p>
             </li>
             <li>
               <Users size={22} />
-              <div>
-                <strong>Workspace & undangan</strong>
-                <p>Kelola anggota, undang lewat email atau WhatsApp, atur peran.</p>
-              </div>
+              <strong>Workspace & undangan</strong>
+              <p>Kelola anggota, undang lewat email atau WhatsApp.</p>
             </li>
             <li>
               <ShieldCheck size={22} />
-              <div>
-                <strong>Kontrol akses</strong>
-                <p>Waiting room, password, dan token aman dari server.</p>
-              </div>
+              <strong>Kontrol akses</strong>
+              <p>Waiting room, password, dan token aman dari server.</p>
             </li>
             <li>
               <LockKeyhole size={22} />
-              <div>
-                <strong>Recording & billing</strong>
-                <p>Kuota plan Free/Pro, order otomatis, dan rekaman cloud.</p>
-              </div>
+              <strong>Recording & billing</strong>
+              <p>Kuota plan Free/Pro, order otomatis, dan rekaman cloud.</p>
             </li>
           </ul>
         </section>
 
         <section className="landing-section landing-section-muted" id="alur">
-          <div className="landing-section-head">
+          <div className="landing-section-head landing-section-head-center">
             <h2>Siap dipakai dalam tiga langkah</h2>
             <p>Onboarding singkat, hasil langsung terasa di tim Anda.</p>
           </div>
@@ -197,8 +232,8 @@ export function HomeExperience({
         </section>
 
         <section className="landing-section" id="harga">
-          <div className="landing-section-head">
-            <h2>Harga yang jelas untuk bertumbuh</h2>
+          <div className="landing-section-head landing-section-head-center">
+            <h2>Pilih paket yang sesuai</h2>
             <p>Mulai gratis, naik ke Pro saat kebutuhan tim meningkat.</p>
           </div>
           <div className="landing-pricing">
@@ -211,7 +246,7 @@ export function HomeExperience({
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
-              <Link className="button button-ghost button-full" href="/auth">
+              <Link className="landing-btn landing-btn-outline" href="/auth">
                 Pakai gratis
               </Link>
             </article>
@@ -227,7 +262,7 @@ export function HomeExperience({
                   <li key={feature}>{feature}</li>
                 ))}
               </ul>
-              <Link className="button button-primary button-full" href="/auth">
+              <Link className="landing-btn landing-btn-dark" href="/auth">
                 Upgrade Pro
               </Link>
             </article>
@@ -235,19 +270,14 @@ export function HomeExperience({
         </section>
 
         <section className="landing-closing">
-          <AppBrand
-            branding={branding}
-            className="landing-closing-logo"
-            markSize={36}
-          />
-          <h2>Bawa meeting bisnis Anda ke satu tempat.</h2>
-          <p>Daftar sekarang dan undang tim dalam hitungan menit.</p>
+          <h2>Siap menghubungkan tim Anda?</h2>
+          <p>Daftar sekarang dan undang anggota dalam hitungan menit.</p>
           <div className="landing-hero-actions">
-            <Link className="button button-primary button-large" href="/auth">
-              Mulai gratis
+            <Link className="landing-btn landing-btn-light" href="/auth">
+              Daftar gratis
               <ArrowRight size={18} />
             </Link>
-            <Link className="button button-ghost button-large" href="/auth">
+            <Link className="landing-btn landing-btn-ghost" href="/auth">
               Masuk
             </Link>
           </div>

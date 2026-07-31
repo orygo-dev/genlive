@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "@livekit/components-styles";
 import { SplashScreen } from "@/components/splash-screen";
 import { PwaRegister } from "@/components/pwa-register";
@@ -16,12 +16,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const landingSans = Instrument_Sans({
+const landingSans = Outfit({
   variable: "--font-landing-sans",
   subsets: ["latin"],
 });
 
-const landingDisplay = Fraunces({
+const landingDisplay = Outfit({
   variable: "--font-landing-display",
   subsets: ["latin"],
 });
