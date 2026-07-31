@@ -1,17 +1,19 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   LockKeyhole,
+  Menu,
   Mic,
   MonitorUp,
   Plus,
   ShieldCheck,
   Users,
   Video,
+  X,
 } from "lucide-react";
 import { createRoomName, normalizeRoomName } from "@/lib/meeting";
 import { AppBrand } from "@/components/app-brand";
@@ -28,10 +30,33 @@ export function HomeExperience({
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const free = DEFAULT_PLAN_CATALOG.FREE;
   const pro = DEFAULT_PLAN_CATALOG.PRO;
 
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
   function startMeeting() {
+    setMenuOpen(false);
     router.push(`/meeting/${createRoomName()}`);
   }
 
@@ -47,8 +72,12 @@ export function HomeExperience({
     router.push(`/meeting/${normalized}`);
   }
 
+  function closeMenu() {
+    setMenuOpen(false);
+  }
+
   return (
-    <div className="landing">
+    <div className={`landing${menuOpen ? " landing-menu-open" : ""}`}>
       {maintenanceMode ? (
         <div className="landing-maintenance" role="status">
           Platform sedang dalam mode maintenance. Layanan pengguna sementara
@@ -59,7 +88,24 @@ export function HomeExperience({
       <div className="landing-top">
         <header className="landing-header">
           <AppBrand branding={branding} className="landing-brand-nav" markSize={26} />
-          <nav className="landing-nav" aria-label="Navigasi utama">
+
+          <div className="landing-header-actions">
+            <Link className="landing-nav-cta landing-header-signup" href="/auth">
+              Daftar gratis
+            </Link>
+            <button
+              type="button"
+              className="landing-menu-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="landing-mobile-nav"
+              aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+
+          <nav className="landing-nav landing-nav-desktop" aria-label="Navigasi utama">
             <a href="#fitur">Produk</a>
             <a href="#harga">Harga</a>
             <Link href="/auth">Masuk</Link>
@@ -71,6 +117,41 @@ export function HomeExperience({
             </Link>
           </nav>
         </header>
+
+        {menuOpen ? (
+          <button
+            type="button"
+            className="landing-nav-backdrop"
+            aria-label="Tutup menu"
+            onClick={closeMenu}
+          />
+        ) : null}
+
+        <nav
+          id="landing-mobile-nav"
+          className={`landing-nav-drawer${menuOpen ? " is-open" : ""}`}
+          aria-label="Menu mobile"
+          aria-hidden={!menuOpen}
+        >
+          <a href="#fitur" onClick={closeMenu}>
+            Produk
+          </a>
+          <a href="#harga" onClick={closeMenu}>
+            Harga
+          </a>
+          <a href="#alur" onClick={closeMenu}>
+            Cara kerja
+          </a>
+          <Link href="/auth" onClick={closeMenu}>
+            Masuk
+          </Link>
+          <Link href="/auth" className="landing-nav-drawer-cta" onClick={closeMenu}>
+            Daftar gratis
+          </Link>
+          <button type="button" className="landing-nav-drawer-quick" onClick={startMeeting}>
+            <Plus size={16} /> Meeting cepat
+          </button>
+        </nav>
 
         <section className="landing-hero" aria-labelledby="landing-hero-title">
           <h1 id="landing-hero-title">
