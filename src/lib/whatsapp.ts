@@ -1,11 +1,14 @@
+import { getPlatformConfig } from "@/lib/platform-config";
+
 export type WhatsAppDelivery = "whatsapp" | "manual_link" | "whatsapp_failed";
 
 export type SendWhatsAppResult =
   | { ok: true; delivery: "whatsapp"; id?: string }
   | { ok: false; delivery: "manual_link" | "whatsapp_failed"; error?: string };
 
-export function isWhatsAppConfigured() {
-  return Boolean(process.env.FONNTE_TOKEN?.trim());
+export async function isWhatsAppConfigured() {
+  const config = await getPlatformConfig();
+  return Boolean(config.fonnteToken);
 }
 
 export async function sendWhatsAppMessage(input: {
@@ -13,7 +16,8 @@ export async function sendWhatsAppMessage(input: {
   message: string;
   scheduleUnix?: number;
 }): Promise<SendWhatsAppResult> {
-  const token = process.env.FONNTE_TOKEN?.trim();
+  const config = await getPlatformConfig();
+  const token = config.fonnteToken;
   if (!token) {
     return {
       ok: false,
@@ -23,7 +27,7 @@ export async function sendWhatsAppMessage(input: {
   }
 
   try {
-    const countryCode = process.env.FONNTE_COUNTRY_CODE?.trim() || "62";
+    const countryCode = config.fonnteCountryCode || "62";
     const body = new URLSearchParams();
     body.set("target", input.target);
     body.set("message", input.message);

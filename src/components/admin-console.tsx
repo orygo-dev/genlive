@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LoaderCircle,
   Palette,
+  PlugZap,
   RefreshCw,
   ScrollText,
   Search,
@@ -18,11 +19,13 @@ import {
   Video,
 } from "lucide-react";
 import { AdminBrandingPanel } from "@/components/admin-branding-panel";
+import { AdminIntegrationsPanel } from "@/components/admin-integrations-panel";
 import type { PlatformBranding } from "@/lib/platform-branding";
 import { formatIdr, type PlanDefinition } from "@/lib/plans";
 
 type Tab =
   | "overview"
+  | "integrations"
   | "organizations"
   | "users"
   | "meetings"
@@ -183,6 +186,7 @@ function formatDate(value: string | null | undefined) {
 
 const NAV: Array<{ id: Tab; label: string; icon: typeof LayoutDashboard; group: string }> = [
   { id: "overview", label: "Dashboard", icon: LayoutDashboard, group: "Utama" },
+  { id: "integrations", label: "Integrasi", icon: PlugZap, group: "Platform" },
   { id: "organizations", label: "Organisasi", icon: Building2, group: "Tenant" },
   { id: "users", label: "Pengguna", icon: Users, group: "Tenant" },
   { id: "meetings", label: "Meeting", icon: Video, group: "Operasional" },
@@ -309,7 +313,7 @@ export function AdminConsole({
         if (!cancelled) setBusy(false);
       }
     }
-    if (tab !== "branding") void run();
+    if (tab !== "branding" && tab !== "integrations") void run();
     return () => {
       cancelled = true;
     };
@@ -355,7 +359,17 @@ export function AdminConsole({
     }
   }
 
-  async function patchUser(userId: string, body: { isDisabled?: boolean; revokeSessions?: boolean }) {
+  async function patchUser(
+    userId: string,
+    body: {
+      name?: string;
+      email?: string;
+      password?: string;
+      isDisabled?: boolean;
+      isSuperAdmin?: boolean;
+      revokeSessions?: boolean;
+    },
+  ) {
     setBusy(true);
     setError("");
     try {
@@ -373,6 +387,107 @@ export function AdminConsole({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function deleteUser(userId: string, label: string) {
+    if (!window.confirm(`Hapus pengguna ${label}?`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Gagal menghapus pengguna.");
+      setMessage("Pengguna dihapus.");
+      await loadUsers(userQuery);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Gagal menghapus pengguna.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function meetingAction(meetingId: string, action: "end" | "cancel") {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/meetings/${meetingId}/${action}`, {
+        method: "POST",
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? `Gagal ${action === "end" ? "mengakhiri" : "membatalkan"} meeting.`);
+      }
+      setMessage(action === "end" ? "Meeting diakhiri." : "Meeting dibatalkan.");
+      await loadMeetings(meetingQuery, meetingStatus);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Aksi meeting gagal.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function savePlans(event: FormEvent) {
+    event.preventDefault();
+    if (!system) return;
+    setBusy(true);
+    setError("");
+    try {
+      const byCode = Object.fromEntries(system.plans.map((plan) => [plan.code, plan]));
+      const free = byCode.FREE;
+      const pro = byCode.PRO;
+      if (!free || !pro) throw new Error("Katalog plan tidak lengkap.");
+
+      const response = await fetch("/api/admin/plans", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          FREE: {
+            name: free.name,
+            priceIdr: free.priceIdr,
+            billingPeriodDays: free.billingPeriodDays,
+            maxMembers: free.maxMembers,
+            maxMeetingsPerMonth: free.maxMeetingsPerMonth,
+            maxMeetingMinutesPerMonth: free.maxMeetingMinutesPerMonth,
+            maxRecordingMinutesPerMonth: free.maxRecordingMinutesPerMonth,
+            features: free.features,
+          },
+          PRO: {
+            name: pro.name,
+            priceIdr: pro.priceIdr,
+            billingPeriodDays: pro.billingPeriodDays,
+            maxMembers: pro.maxMembers,
+            maxMeetingsPerMonth: pro.maxMeetingsPerMonth,
+            maxMeetingMinutesPerMonth: pro.maxMeetingMinutesPerMonth,
+            maxRecordingMinutesPerMonth: pro.maxRecordingMinutesPerMonth,
+            features: pro.features,
+          },
+        }),
+      });
+      const payload = (await response.json()) as { error?: string; plans?: PlanDefinition[] };
+      if (!response.ok) throw new Error(payload.error ?? "Gagal menyimpan plan.");
+      setMessage("Katalog plan disimpan.");
+      await loadSystem();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Gagal menyimpan plan.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updatePlanField(
+    code: "FREE" | "PRO",
+    field: keyof PlanDefinition,
+    value: string | number | string[],
+  ) {
+    setSystem((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plans: prev.plans.map((plan) =>
+          plan.code === code ? { ...plan, [field]: value } : plan,
+        ),
+      };
+    });
   }
 
   async function saveSystem(event: FormEvent) {
@@ -532,6 +647,45 @@ export function AdminConsole({
                 <button className="button button-ghost" type="submit">Cari</button>
               </form>
             </div>
+            <form
+              className="admin-inline-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                void (async () => {
+                  setBusy(true);
+                  setError("");
+                  try {
+                    const response = await fetch("/api/admin/organizations", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        name: String(data.get("name") || ""),
+                        ownerEmail: String(data.get("ownerEmail") || "") || undefined,
+                        planCode: String(data.get("planCode") || "FREE"),
+                      }),
+                    });
+                    const payload = (await response.json()) as { error?: string };
+                    if (!response.ok) throw new Error(payload.error ?? "Gagal membuat organisasi.");
+                    setMessage("Organisasi dibuat.");
+                    (event.target as HTMLFormElement).reset();
+                    await loadOrganizations(orgQuery);
+                  } catch (createError) {
+                    setError(createError instanceof Error ? createError.message : "Gagal membuat.");
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              <input name="name" placeholder="Nama organisasi" required />
+              <input name="ownerEmail" placeholder="Email owner (opsional)" />
+              <select name="planCode" defaultValue="FREE">
+                <option value="FREE">FREE</option>
+                <option value="PRO">PRO</option>
+              </select>
+              <button className="button" type="submit" disabled={busy}>Buat org</button>
+            </form>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -563,6 +717,32 @@ export function AdminConsole({
                         <button type="button" className="button button-ghost" disabled={busy} onClick={() => void setPlan(org.id, "FREE")}>
                           Set Free
                         </button>
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          disabled={busy}
+                          onClick={() => {
+                            if (!window.confirm(`Hapus organisasi ${org.name}?`)) return;
+                            void (async () => {
+                              setBusy(true);
+                              try {
+                                const response = await fetch(`/api/admin/organizations/${org.id}`, {
+                                  method: "DELETE",
+                                });
+                                const payload = (await response.json()) as { error?: string };
+                                if (!response.ok) throw new Error(payload.error ?? "Gagal hapus.");
+                                setMessage("Organisasi dihapus.");
+                                await loadOrganizations(orgQuery);
+                              } catch (deleteError) {
+                                setError(deleteError instanceof Error ? deleteError.message : "Gagal hapus.");
+                              } finally {
+                                setBusy(false);
+                              }
+                            })();
+                          }}
+                        >
+                          Hapus
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -589,6 +769,46 @@ export function AdminConsole({
                 <button className="button button-ghost" type="submit">Cari</button>
               </form>
             </div>
+            <form
+              className="admin-inline-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const data = new FormData(event.currentTarget);
+                void (async () => {
+                  setBusy(true);
+                  setError("");
+                  try {
+                    const response = await fetch("/api/admin/users", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        name: String(data.get("name") || ""),
+                        email: String(data.get("email") || ""),
+                        password: String(data.get("password") || ""),
+                        isSuperAdmin: data.get("isSuperAdmin") === "on",
+                      }),
+                    });
+                    const payload = (await response.json()) as { error?: string };
+                    if (!response.ok) throw new Error(payload.error ?? "Gagal membuat pengguna.");
+                    setMessage("Pengguna dibuat.");
+                    (event.target as HTMLFormElement).reset();
+                    await loadUsers(userQuery);
+                  } catch (createError) {
+                    setError(createError instanceof Error ? createError.message : "Gagal membuat.");
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              <input name="name" placeholder="Nama" required />
+              <input name="email" type="email" placeholder="Email" required />
+              <input name="password" type="password" placeholder="Password" required minLength={8} />
+              <label className="admin-check">
+                <input name="isSuperAdmin" type="checkbox" /> Super Admin
+              </label>
+              <button className="button" type="submit" disabled={busy}>Buat user</button>
+            </form>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -636,6 +856,26 @@ export function AdminConsole({
                         >
                           Revoke sesi
                         </button>
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          disabled={busy}
+                          onClick={() => {
+                            const password = window.prompt("Password baru (min. 8 karakter):");
+                            if (!password) return;
+                            void patchUser(user.id, { password, revokeSessions: true });
+                          }}
+                        >
+                          Reset password
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          disabled={busy}
+                          onClick={() => void deleteUser(user.id, user.email)}
+                        >
+                          Hapus
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -680,6 +920,7 @@ export function AdminConsole({
                     <th>Status</th>
                     <th>Partisipan</th>
                     <th>Dibuat</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -696,6 +937,36 @@ export function AdminConsole({
                       <td><span className="admin-badge">{meeting.status}</span></td>
                       <td>{meeting._count.participants}</td>
                       <td>{formatDate(meeting.createdAt)}</td>
+                      <td className="admin-actions">
+                        {meeting.status === "ACTIVE" || meeting.status === "SCHEDULED" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="button button-ghost"
+                              disabled={busy}
+                              onClick={() => {
+                                if (!window.confirm(`Akhiri meeting "${meeting.title}"?`)) return;
+                                void meetingAction(meeting.id, "end");
+                              }}
+                            >
+                              Force end
+                            </button>
+                            <button
+                              type="button"
+                              className="button button-ghost"
+                              disabled={busy}
+                              onClick={() => {
+                                if (!window.confirm(`Batalkan meeting "${meeting.title}"?`)) return;
+                                void meetingAction(meeting.id, "cancel");
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -807,27 +1078,127 @@ export function AdminConsole({
           <section className="admin-card">
             <div className="admin-card-head">
               <h2>Katalog plan</h2>
-              <p className="admin-muted">Definisi kuota komersial (Free / Pro).</p>
+              <p className="admin-muted">Edit kuota, harga, dan fitur Free / Pro.</p>
             </div>
-            <div className="admin-plan-grid">
-              {system.plans.map((plan) => (
-                <article key={plan.code} className="admin-plan-card">
-                  <h3>{plan.name}</h3>
-                  <p className="admin-plan-price">{formatIdr(plan.priceIdr)} / {plan.billingPeriodDays || 0} hari</p>
-                  <ul>
-                    <li>Max anggota: {plan.maxMembers}</li>
-                    <li>Meeting / bulan: {plan.maxMeetingsPerMonth}</li>
-                    <li>Menit meeting: {plan.maxMeetingMinutesPerMonth}</li>
-                    <li>Menit recording: {plan.maxRecordingMinutesPerMonth}</li>
-                  </ul>
-                  <ul>
-                    {plan.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
+            <form className="admin-plan-editor" onSubmit={savePlans}>
+              <div className="admin-plan-grid">
+                {system.plans.map((plan) => (
+                  <article key={plan.code} className="admin-plan-card">
+                    <h3>{plan.code}</h3>
+                    <label>
+                      Nama
+                      <input
+                        value={plan.name}
+                        onChange={(e) => updatePlanField(plan.code, "name", e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Harga (IDR)
+                      <input
+                        type="number"
+                        min={0}
+                        value={plan.priceIdr}
+                        onChange={(e) =>
+                          updatePlanField(plan.code, "priceIdr", Number(e.target.value) || 0)
+                        }
+                      />
+                    </label>
+                    <label>
+                      Periode (hari)
+                      <input
+                        type="number"
+                        min={0}
+                        value={plan.billingPeriodDays}
+                        onChange={(e) =>
+                          updatePlanField(
+                            plan.code,
+                            "billingPeriodDays",
+                            Number(e.target.value) || 0,
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Max anggota
+                      <input
+                        type="number"
+                        min={1}
+                        value={plan.maxMembers}
+                        onChange={(e) =>
+                          updatePlanField(plan.code, "maxMembers", Number(e.target.value) || 1)
+                        }
+                      />
+                    </label>
+                    <label>
+                      Meeting / bulan
+                      <input
+                        type="number"
+                        min={1}
+                        value={plan.maxMeetingsPerMonth}
+                        onChange={(e) =>
+                          updatePlanField(
+                            plan.code,
+                            "maxMeetingsPerMonth",
+                            Number(e.target.value) || 1,
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Menit meeting / bulan
+                      <input
+                        type="number"
+                        min={0}
+                        value={plan.maxMeetingMinutesPerMonth}
+                        onChange={(e) =>
+                          updatePlanField(
+                            plan.code,
+                            "maxMeetingMinutesPerMonth",
+                            Number(e.target.value) || 0,
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Menit recording / bulan
+                      <input
+                        type="number"
+                        min={0}
+                        value={plan.maxRecordingMinutesPerMonth}
+                        onChange={(e) =>
+                          updatePlanField(
+                            plan.code,
+                            "maxRecordingMinutesPerMonth",
+                            Number(e.target.value) || 0,
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      Fitur (satu baris = satu fitur)
+                      <textarea
+                        rows={5}
+                        value={plan.features.join("\n")}
+                        onChange={(e) =>
+                          updatePlanField(
+                            plan.code,
+                            "features",
+                            e.target.value
+                              .split("\n")
+                              .map((line) => line.trim())
+                              .filter(Boolean),
+                          )
+                        }
+                      />
+                    </label>
+                    <p className="admin-muted">Preview: {formatIdr(plan.priceIdr)}</p>
+                  </article>
+                ))}
+              </div>
+              <button className="button" type="submit" disabled={busy}>
+                Simpan katalog plan
+              </button>
+            </form>
           </section>
         ) : null}
 
@@ -921,6 +1292,8 @@ export function AdminConsole({
             </form>
           </section>
         ) : null}
+
+        {tab === "integrations" ? <AdminIntegrationsPanel /> : null}
 
         {tab === "branding" ? (
           <AdminBrandingPanel initialBranding={initialBranding} adminName={adminName} />

@@ -10,9 +10,12 @@ export const productionEnvSchema = z.object({
       message: "APP_URL production harus memakai HTTPS.",
     }),
   DATABASE_URL: z.string().min(1),
-  LIVEKIT_URL: z.string().url().startsWith("wss://"),
-  LIVEKIT_API_KEY: z.string().min(1),
-  LIVEKIT_API_SECRET: z.string().min(1),
+  APP_ENCRYPTION_KEY: z.string().min(32, {
+    message: "APP_ENCRYPTION_KEY wajib (≥32 karakter).",
+  }),
+  LIVEKIT_URL: z.string().url().startsWith("wss://").optional().or(z.literal("")),
+  LIVEKIT_API_KEY: z.string().optional().or(z.literal("")),
+  LIVEKIT_API_SECRET: z.string().optional().or(z.literal("")),
   SESSION_COOKIE_NAME: z.string().min(1).optional(),
   LIVEKIT_API_URL: optionalUrl,
   RESEND_API_KEY: z.string().optional(),
@@ -37,9 +40,10 @@ export function collectProductionEnvIssues(
   const parsed = productionEnvSchema.safeParse({
     APP_URL: env.APP_URL,
     DATABASE_URL: env.DATABASE_URL,
-    LIVEKIT_URL: env.LIVEKIT_URL,
-    LIVEKIT_API_KEY: env.LIVEKIT_API_KEY,
-    LIVEKIT_API_SECRET: env.LIVEKIT_API_SECRET,
+    APP_ENCRYPTION_KEY: env.APP_ENCRYPTION_KEY,
+    LIVEKIT_URL: env.LIVEKIT_URL || "",
+    LIVEKIT_API_KEY: env.LIVEKIT_API_KEY || "",
+    LIVEKIT_API_SECRET: env.LIVEKIT_API_SECRET || "",
     SESSION_COOKIE_NAME: env.SESSION_COOKIE_NAME,
     LIVEKIT_API_URL: env.LIVEKIT_API_URL || undefined,
     RESEND_API_KEY: env.RESEND_API_KEY || undefined,
@@ -54,6 +58,24 @@ export function collectProductionEnvIssues(
         message: issue.message,
       });
     }
+  }
+
+  if (
+    !has(env, "LIVEKIT_URL") ||
+    !has(env, "LIVEKIT_API_KEY") ||
+    !has(env, "LIVEKIT_API_SECRET")
+  ) {
+    issues.push({
+      key: "LIVEKIT",
+      optional: true,
+      message:
+        "LiveKit belum di env — isi lewat /admin → Integrasi atau set LIVEKIT_* di .env.",
+    });
+  } else if (env.LIVEKIT_URL && !env.LIVEKIT_URL.trim().startsWith("wss://")) {
+    issues.push({
+      key: "LIVEKIT_URL",
+      message: "LIVEKIT_URL harus diawali wss://.",
+    });
   }
 
   if (env.RESEND_API_KEY?.trim() && !env.EMAIL_FROM?.trim()) {
@@ -71,7 +93,7 @@ export function collectProductionEnvIssues(
         key: "MIDTRANS",
         optional: true,
         message:
-          "Untuk billing Midtrans, isi MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY (opsional jika billing belum dipakai).",
+          "Untuk billing Midtrans, isi kredensial di .env atau /admin → Integrasi.",
       });
     } else if (env.MIDTRANS_IS_PRODUCTION !== "true" && env.NODE_ENV === "production") {
       issues.push({

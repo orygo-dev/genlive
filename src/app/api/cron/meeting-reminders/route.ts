@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { processMeetingReminders } from "@/lib/meeting-reminders";
+import { getPlatformConfig } from "@/lib/platform-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function authorizeCron(request: Request) {
-  const secret = process.env.CRON_SECRET?.trim();
+async function authorizeCron(request: Request) {
+  const config = await getPlatformConfig();
+  const secret = config.cronSecret;
   if (!secret) {
     return false;
   }
@@ -20,7 +22,7 @@ function authorizeCron(request: Request) {
 }
 
 async function run(request: Request) {
-  if (!authorizeCron(request)) {
+  if (!(await authorizeCron(request))) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

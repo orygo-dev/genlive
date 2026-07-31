@@ -209,25 +209,39 @@ Halaman billing ada di `/dashboard/billing`. Setelah pembayaran sukses,
 workspace naik ke plan Pro selama 30 hari dan kuota anggota/meeting/recording
 diberlakukan di API.
 
-## Super Admin & brand platform
+## Super Admin control plane
 
 Halaman `/admin` adalah **control plane SaaS** dengan menu:
 
-- Dashboard, Organisasi, Pengguna
-- Meeting, Recording
-- Billing, Katalog Plan
+- **Integrasi** — LiveKit, email, WhatsApp, payment, `APP_URL`, cron (secret terenkripsi di DB)
+- Dashboard, Organisasi (CRUD), Pengguna (CRUD + reset password)
+- Meeting (force end / cancel), Recording
+- Billing, Katalog Plan (edit harga/kuota Free & Pro)
 - Audit Log, Sistem, Branding
 
-Fitur ops: grant/downgrade plan, nonaktifkan user, revoke sesi, mode
-maintenance, email dukungan, monitoring integrasi (LiveKit/email/WA/cron).
+Resolusi konfigurasi: nilai DB (jika ada) **mengalahkan** `.env`; kosong → fallback env.
 
-Set email Super Admin:
+Wajib di file env server (tidak diganti dari UI):
+
+```bash
+DATABASE_URL=mysql://...
+APP_ENCRYPTION_KEY=minimal-32-karakter-rahasia-anda
+```
+
+Generate kunci contoh:
+
+```bash
+openssl rand -base64 32
+```
+
+Set email Super Admin (opsional, selain flag `isSuperAdmin` di DB):
 
 ```bash
 SUPER_ADMIN_EMAIL=anda@perusahaan.com
 ```
 
 Login lalu buka `/admin`. Buat akun: `node scripts/create-super-admin.mjs`.
+Setelah deploy, isi LiveKit di **Integrasi** → Tes koneksi LiveKit.
 Aset branding di `public/uploads/brand/`.
 
 ## Pemeriksaan kualitas
@@ -248,8 +262,9 @@ langkah demi langkah: [AAPANEL.md](./AAPANEL.md).
 
 Ringkasannya:
 
-1. Set `APP_URL` HTTPS + `DATABASE_URL` (MySQL) + kredensial LiveKit production.
+1. Set `DATABASE_URL` + `APP_ENCRYPTION_KEY` (+ `APP_URL` HTTPS disarankan).
 2. Deploy (Vercel atau Docker `standalone` / aaPanel PM2).
 3. Jalankan `npm run db:deploy`.
-4. Pasang webhook LiveKit & payment gateway.
-5. Verifikasi health: `npm run smoke -- https://domain-anda.com`
+4. Isi LiveKit & payment di `/admin` → Integrasi (atau tetap di `.env`).
+5. Pasang webhook LiveKit & payment gateway.
+6. Verifikasi health: `npm run smoke -- https://domain-anda.com`

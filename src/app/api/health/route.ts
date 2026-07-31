@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getPlatformConfig } from "@/lib/platform-config";
 import { getBlockingProductionEnvIssues } from "@/lib/production-env";
 
 export const runtime = "nodejs";
@@ -15,12 +16,17 @@ export async function GET() {
     database = "error";
   }
 
+  let config;
+  try {
+    config = await getPlatformConfig();
+  } catch {
+    config = null;
+  }
+
   const livekitConfigured = Boolean(
-    process.env.LIVEKIT_URL &&
-      process.env.LIVEKIT_API_KEY &&
-      process.env.LIVEKIT_API_SECRET,
+    config?.livekitUrl && config.livekitApiKey && config.livekitApiSecret,
   );
-  const appUrlConfigured = Boolean(process.env.APP_URL?.trim());
+  const appUrlConfigured = Boolean(config?.appUrl?.trim());
   const envIssueCount =
     process.env.NODE_ENV === "production"
       ? getBlockingProductionEnvIssues().length
@@ -43,7 +49,7 @@ export async function GET() {
       livekitConfigured,
       appUrlConfigured,
       envConfigured: envIssueCount === 0,
-      paymentProvider: process.env.PAYMENT_PROVIDER || "MIDTRANS",
+      paymentProvider: config?.paymentProvider || "MIDTRANS",
     },
   };
 

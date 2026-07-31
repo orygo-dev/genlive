@@ -1,3 +1,4 @@
+import { getPlatformConfig } from "@/lib/platform-config";
 import {
   basicAuthHeader,
   type CheckoutRequest,
@@ -6,11 +7,13 @@ import {
   type PaymentProvider,
 } from "@/lib/payments/types";
 
-function flipConfig() {
-  const secretKey = process.env.FLIP_SECRET_KEY?.trim();
-  const validationToken = process.env.FLIP_VALIDATION_TOKEN?.trim();
-  const isProduction = process.env.FLIP_IS_PRODUCTION === "true";
-  return { secretKey, validationToken, isProduction };
+async function flipConfig() {
+  const config = await getPlatformConfig();
+  return {
+    secretKey: config.flipSecretKey,
+    validationToken: config.flipValidationToken,
+    isProduction: config.flipIsProduction,
+  };
 }
 
 function flipBaseUrl(isProduction: boolean) {
@@ -28,16 +31,15 @@ function toFlipExpiredDate(hoursFromNow = 24) {
 export const flipProvider: PaymentProvider = {
   id: "FLIP",
   label: "Flip Business",
-  isConfigured() {
-    return Boolean(flipConfig().secretKey);
+  async isConfigured() {
+    return Boolean((await flipConfig()).secretKey);
   },
   async createCheckout(input: CheckoutRequest): Promise<CheckoutResult> {
-    const { secretKey, isProduction } = flipConfig();
+    const { secretKey, isProduction } = await flipConfig();
     if (!secretKey) {
       throw new Error("Flip Business belum dikonfigurasi.");
     }
 
-    // Accept Payment Create Bill (form-urlencoded is common for Flip PWF).
     const form = new URLSearchParams();
     form.set("title", input.itemName.slice(0, 50));
     form.set("amount", String(input.amountIdr));
@@ -87,7 +89,7 @@ export const flipProvider: PaymentProvider = {
     body: unknown,
     headers: Headers,
   ): Promise<NormalizedPaymentEvent> {
-    const { validationToken } = flipConfig();
+    const { validationToken } = await flipConfig();
     const tokenHeader =
       headers.get("x-callback-token") ||
       headers.get("X-Callback-Token") ||

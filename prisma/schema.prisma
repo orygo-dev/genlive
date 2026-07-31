@@ -332,6 +332,8 @@ model PlatformSettings {
   splashLogoUrl        String?  @map("splash_logo_url") @db.VarChar(1000)
   supportEmail         String?  @map("support_email") @db.VarChar(255)
   maintenanceMode      Boolean  @default(false) @map("maintenance_mode")
+  integrationsCipher   String?  @map("integrations_cipher") @db.LongText
+  planCatalog          Json?    @map("plan_catalog")
   updatedAt            DateTime @updatedAt @map("updated_at")
   updatedById          String?  @map("updated_by_id") @db.Char(36)
 

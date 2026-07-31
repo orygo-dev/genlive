@@ -14,7 +14,7 @@ function eventTime(timestamp: bigint) {
 }
 
 export async function POST(request: Request) {
-  const environment = getLiveKitEnvironment();
+  const environment = await getLiveKitEnvironment();
   const receiver = new WebhookReceiver(
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,

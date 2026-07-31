@@ -1,7 +1,8 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { getPlan, type PlanCodeValue } from "@/lib/plans";
+import { resolvePlan } from "@/lib/platform-config";
+import type { PlanCodeValue } from "@/lib/plans";
 import { writeAuditLog } from "@/lib/organization";
 
 function monthWindow(now = new Date()) {
@@ -43,7 +44,7 @@ export async function resolveOrganizationPlan(organizationId: string) {
     organizationId,
     planCode,
     planExpiresAt: organization.planExpiresAt,
-    plan: getPlan(planCode),
+    plan: await resolvePlan(planCode),
   };
 }
 
@@ -149,7 +150,7 @@ export async function activatePaidPlan(input: {
   orderId: string;
   provider: string;
 }) {
-  const plan = getPlan(input.planCode);
+  const plan = await resolvePlan(input.planCode);
   const expiresAt =
     plan.billingPeriodDays > 0
       ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)

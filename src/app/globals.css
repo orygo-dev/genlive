@@ -3407,6 +3407,79 @@ footer p {
   font-size: 13px;
 }
 
+.admin-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-soft) 35%, white);
+}
+
+.admin-inline-form input,
+.admin-inline-form select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  min-width: 160px;
+}
+
+.admin-integrations-form {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-integrations-form fieldset {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-integrations-form legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.admin-integrations-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.admin-integrations-form input,
+.admin-integrations-form select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.admin-plan-editor {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-plan-card label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.admin-plan-card input,
+.admin-plan-card textarea {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .admin-system-form {
   display: grid;
   gap: 12px;

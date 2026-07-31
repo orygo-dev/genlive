@@ -104,30 +104,29 @@ cp .env.example .env.production
 nano .env.production
 ```
 
-Wajib:
+Wajib di file env (tidak diganti dari UI):
 
 ```bash
 NODE_ENV=production
 PORT=3010
 HOSTNAME=0.0.0.0
 
-APP_URL=https://meet.domainanda.com
 DATABASE_URL=mysql://genmeet:PASSWORD@127.0.0.1:3306/genmeet
+# openssl rand -base64 32
+APP_ENCRYPTION_KEY=ganti-dengan-kunci-rahasia-minimal-32-karakter
 
+SESSION_COOKIE_NAME=genmeet_session
+APP_URL=https://meet.domainanda.com
+```
+
+Opsional di `.env` **atau** isi nanti dari `/admin` → **Integrasi**:
+
+```bash
 LIVEKIT_URL=wss://xxxx.livekit.cloud
 LIVEKIT_API_KEY=...
 LIVEKIT_API_SECRET=...
 
-SESSION_COOKIE_NAME=genmeet_session
-```
-
-Opsional:
-
-```bash
-# Super Admin brand dashboard
 SUPER_ADMIN_EMAIL=anda@perusahaan.com
-
-# Email
 RESEND_API_KEY=...
 EMAIL_FROM="GenMeet <noreply@domainanda.com>"
 ```
@@ -271,8 +270,16 @@ https://meet.domainanda.com/api/payments/webhook/flip
 ```bash
 cd /www/wwwroot/genlive.guruspaceai.cloud
 git pull
+# pastikan APP_ENCRYPTION_KEY ada di .env.production (≥32 karakter)
+grep ^APP_ENCRYPTION_KEY .env.production || echo "TAMBAHKAN APP_ENCRYPTION_KEY dulu"
+npm run db:deploy
 bash scripts/aapanel-pm2.sh --full
 ```
+
+Setelah PM2 hidup:
+
+1. Login Super Admin → `/admin` → **Integrasi** → isi LiveKit → **Tes koneksi**.
+2. Buat org/user, atur katalog plan, uji force end meeting jika perlu.
 
 ---
 

@@ -30,17 +30,30 @@ requireValue(
       return false;
     }
   },
-  "APP_URL production harus URL HTTPS yang valid.",
+  "APP_URL production harus URL HTTPS yang valid (boleh diganti lewat /admin → Integrasi).",
 );
 
 requireValue("DATABASE_URL", null, "DATABASE_URL wajib diisi.");
 requireValue(
-  "LIVEKIT_URL",
-  (value) => value.startsWith("wss://"),
-  "LIVEKIT_URL harus diawali wss://.",
+  "APP_ENCRYPTION_KEY",
+  (value) => value.length >= 32,
+  "APP_ENCRYPTION_KEY wajib (≥32 karakter) untuk menyimpan secret integrasi di database.",
 );
-requireValue("LIVEKIT_API_KEY", null, "LIVEKIT_API_KEY wajib diisi.");
-requireValue("LIVEKIT_API_SECRET", null, "LIVEKIT_API_SECRET wajib diisi.");
+
+if (!has("LIVEKIT_URL") || !has("LIVEKIT_API_KEY") || !has("LIVEKIT_API_SECRET")) {
+  issues.push({
+    key: "LIVEKIT",
+    optional: true,
+    message:
+      "LiveKit belum di .env — isi lewat /admin → Integrasi setelah deploy, atau set LIVEKIT_URL / API_KEY / API_SECRET di env.",
+  });
+} else if (!process.env.LIVEKIT_URL.trim().startsWith("wss://")) {
+  issues.push({
+    key: "LIVEKIT_URL",
+    optional: false,
+    message: "LIVEKIT_URL harus diawali wss://.",
+  });
+}
 
 if (has("RESEND_API_KEY") && !has("EMAIL_FROM")) {
   issues.push({
@@ -59,7 +72,7 @@ if (provider === "MIDTRANS") {
       key: "MIDTRANS",
       optional: true,
       message:
-        "Untuk billing Midtrans, isi MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY (opsional jika billing belum dipakai).",
+        "Untuk billing Midtrans, isi kredensial di .env atau /admin → Integrasi (opsional jika billing belum dipakai).",
     });
   } else if (
     process.env.MIDTRANS_IS_PRODUCTION !== "true" &&

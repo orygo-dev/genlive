@@ -4,7 +4,7 @@ import {
   buildMemberInviteEmail,
   parseInviteEmails,
 } from "./email-templates";
-import { summarizeDeliveries } from "./email";
+import { summarizeDeliveries } from "./email-delivery";
 
 describe("email templates", () => {
   it("builds a member invite with safe html and text", () => {

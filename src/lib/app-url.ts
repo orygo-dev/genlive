@@ -1,5 +1,8 @@
-export function getAppUrl(requestOrigin?: string | null) {
-  const configured = process.env.APP_URL?.trim().replace(/\/$/, "");
+import { getPlatformConfig } from "@/lib/platform-config";
+
+export async function getAppUrl(requestOrigin?: string | null) {
+  const config = await getPlatformConfig();
+  const configured = config.appUrl?.replace(/\/$/, "");
   if (configured) {
     return configured;
   }
@@ -11,8 +14,8 @@ export function getAppUrl(requestOrigin?: string | null) {
   return "http://localhost:3000";
 }
 
-export function absoluteUrl(path: string, requestOrigin?: string | null) {
-  const base = getAppUrl(requestOrigin);
+export async function absoluteUrl(path: string, requestOrigin?: string | null) {
+  const base = await getAppUrl(requestOrigin);
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${base}${normalized}`;
 }

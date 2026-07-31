@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdminApi } from "@/lib/admin-api";
 import { prisma } from "@/lib/db";
+import { getPlatformConfig } from "@/lib/platform-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export async function GET() {
     recentOrganizations,
     recentOrders,
     recentMeetings,
+    config,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.organization.count(),
@@ -65,6 +67,7 @@ export async function GET() {
         organization: { select: { name: true } },
       },
     }),
+    getPlatformConfig(),
   ]);
 
   return NextResponse.json({
@@ -78,12 +81,10 @@ export async function GET() {
       paidOrderCount,
       pendingOrderCount,
       livekitConfigured: Boolean(
-        process.env.LIVEKIT_URL &&
-          process.env.LIVEKIT_API_KEY &&
-          process.env.LIVEKIT_API_SECRET,
+        config.livekitUrl && config.livekitApiKey && config.livekitApiSecret,
       ),
-      paymentProvider: process.env.PAYMENT_PROVIDER || "MIDTRANS",
-      appUrl: process.env.APP_URL || null,
+      paymentProvider: config.paymentProvider || "MIDTRANS",
+      appUrl: config.appUrl || null,
       recentUsers,
       recentOrganizations,
       recentOrders,

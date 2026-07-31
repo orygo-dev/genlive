@@ -12,7 +12,7 @@ type ParticipantTokenInput = {
 };
 
 export async function createParticipantToken(input: ParticipantTokenInput) {
-  const environment = getLiveKitEnvironment();
+  const environment = await getLiveKitEnvironment();
   const token = new AccessToken(
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,

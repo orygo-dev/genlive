@@ -7,6 +7,7 @@ import {
   S3Upload,
 } from "livekit-server-sdk";
 import { getLiveKitEnvironment } from "@/lib/livekit";
+import { getPlatformConfig } from "@/lib/platform-config";
 
 export {
   buildRecordingFilepath,
@@ -15,49 +16,51 @@ export {
   recordingStatusLabel,
 } from "@/lib/recording-helpers";
 
-export function getLiveKitApiHost() {
-  const configured = process.env.LIVEKIT_API_URL?.trim();
+export async function getLiveKitApiHost() {
+  const config = await getPlatformConfig();
+  const configured = config.livekitApiUrl;
   if (configured) {
     return configured.replace(/\/$/, "");
   }
 
-  const { LIVEKIT_URL } = getLiveKitEnvironment();
+  const { LIVEKIT_URL } = await getLiveKitEnvironment();
   return LIVEKIT_URL.replace(/^wss:/, "https:").replace(/^ws:/, "http:");
 }
 
-export function getEgressClient() {
-  const environment = getLiveKitEnvironment();
+export async function getEgressClient() {
+  const environment = await getLiveKitEnvironment();
   return new EgressClient(
-    getLiveKitApiHost(),
+    await getLiveKitApiHost(),
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,
   );
 }
 
-export function isEgressS3Configured() {
+export async function isEgressS3Configured() {
+  const config = await getPlatformConfig();
   return Boolean(
-    process.env.LIVEKIT_EGRESS_S3_ACCESS_KEY?.trim() &&
-      process.env.LIVEKIT_EGRESS_S3_SECRET?.trim() &&
-      process.env.LIVEKIT_EGRESS_S3_BUCKET?.trim() &&
-      process.env.LIVEKIT_EGRESS_S3_REGION?.trim(),
+    config.livekitEgressS3AccessKey &&
+      config.livekitEgressS3Secret &&
+      config.livekitEgressS3Bucket &&
+      config.livekitEgressS3Region,
   );
 }
 
-export function buildEncodedFileOutput(filepath: string) {
-  if (isEgressS3Configured()) {
+export async function buildEncodedFileOutput(filepath: string) {
+  const config = await getPlatformConfig();
+  if (await isEgressS3Configured()) {
     return new EncodedFileOutput({
       fileType: EncodedFileType.MP4,
       filepath,
       output: {
         case: "s3",
         value: new S3Upload({
-          accessKey: process.env.LIVEKIT_EGRESS_S3_ACCESS_KEY!.trim(),
-          secret: process.env.LIVEKIT_EGRESS_S3_SECRET!.trim(),
-          bucket: process.env.LIVEKIT_EGRESS_S3_BUCKET!.trim(),
-          region: process.env.LIVEKIT_EGRESS_S3_REGION!.trim(),
-          endpoint: process.env.LIVEKIT_EGRESS_S3_ENDPOINT?.trim() || undefined,
-          forcePathStyle:
-            process.env.LIVEKIT_EGRESS_S3_FORCE_PATH_STYLE === "true",
+          accessKey: config.livekitEgressS3AccessKey!,
+          secret: config.livekitEgressS3Secret!,
+          bucket: config.livekitEgressS3Bucket!,
+          region: config.livekitEgressS3Region!,
+          endpoint: config.livekitEgressS3Endpoint || undefined,
+          forcePathStyle: config.livekitEgressS3ForcePathStyle,
         }),
       },
     });
@@ -73,15 +76,15 @@ export async function startRoomRecording(input: {
   roomName: string;
   filepath: string;
 }) {
-  const client = getEgressClient();
+  const client = await getEgressClient();
   return client.startRoomCompositeEgress(
     input.roomName,
-    { file: buildEncodedFileOutput(input.filepath) },
+    { file: await buildEncodedFileOutput(input.filepath) },
     { layout: "grid" },
   );
 }
 
 export async function stopRoomRecording(egressId: string) {
-  const client = getEgressClient();
+  const client = await getEgressClient();
   return client.stopEgress(egressId);
 }

@@ -164,7 +164,7 @@ export async function POST(request: Request) {
     });
 
     const acceptPath = `/invite/${invite.token}`;
-    const inviteUrl = absoluteUrl(acceptPath, new URL(request.url).origin);
+    const inviteUrl = await absoluteUrl(acceptPath, new URL(request.url).origin);
     const template = buildMemberInviteEmail({
       organizationName: context.activeMembership.organization.name,
       inviterName: context.user.name,

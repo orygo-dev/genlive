@@ -1,3 +1,4 @@
+import { getPlatformConfig } from "@/lib/platform-config";
 import {
   basicAuthHeader,
   sha512Hex,
@@ -7,22 +8,24 @@ import {
   type PaymentProvider,
 } from "@/lib/payments/types";
 
-function midtransConfig() {
-  const serverKey = process.env.MIDTRANS_SERVER_KEY?.trim();
-  const clientKey = process.env.MIDTRANS_CLIENT_KEY?.trim();
-  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
-  return { serverKey, clientKey, isProduction };
+async function midtransConfig() {
+  const config = await getPlatformConfig();
+  return {
+    serverKey: config.midtransServerKey,
+    clientKey: config.midtransClientKey,
+    isProduction: config.midtransIsProduction,
+  };
 }
 
 export const midtransProvider: PaymentProvider = {
   id: "MIDTRANS",
   label: "Midtrans",
-  isConfigured() {
-    const { serverKey, clientKey } = midtransConfig();
+  async isConfigured() {
+    const { serverKey, clientKey } = await midtransConfig();
     return Boolean(serverKey && clientKey);
   },
   async createCheckout(input: CheckoutRequest): Promise<CheckoutResult> {
-    const { serverKey, isProduction } = midtransConfig();
+    const { serverKey, isProduction } = await midtransConfig();
     if (!serverKey) {
       throw new Error("Midtrans belum dikonfigurasi.");
     }
@@ -87,8 +90,11 @@ export const midtransProvider: PaymentProvider = {
       raw: payload,
     };
   },
-  async parseWebhook(body: unknown): Promise<NormalizedPaymentEvent> {
-    const { serverKey } = midtransConfig();
+  async parseWebhook(
+    body: unknown,
+    _headers: Headers,
+  ): Promise<NormalizedPaymentEvent> {
+    const { serverKey } = await midtransConfig();
     if (!serverKey) {
       throw new Error("Midtrans belum dikonfigurasi.");
     }

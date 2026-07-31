@@ -14,7 +14,7 @@ import {
   getPaymentProvider,
   listPaymentProviders,
 } from "@/lib/payments";
-import { PLANS } from "@/lib/plans";
+import { getPlatformConfig } from "@/lib/platform-config";
 import { writeAuditLog } from "@/lib/organization";
 
 export const runtime = "nodejs";
@@ -56,17 +56,21 @@ export async function GET() {
     }),
   ]);
 
+  const providers = await listPaymentProviders();
+  const defaultProvider = await getDefaultPaymentProviderId();
+  const config = await getPlatformConfig();
+
   return NextResponse.json(
     {
       plan: resolved.plan,
       planCode: resolved.planCode,
       planExpiresAt: resolved.planExpiresAt,
       usage,
-      providers: listPaymentProviders(),
-      defaultProvider: getDefaultPaymentProviderId(),
+      providers,
+      defaultProvider,
       canManageBilling: canManageMembers(context.activeMembership.role),
       orders,
-      catalog: [PLANS.FREE, PLANS.PRO],
+      catalog: [config.planCatalog.FREE, config.planCatalog.PRO],
     },
     { headers: { "Cache-Control": "no-store" } },
   );
@@ -92,7 +96,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Data checkout tidak valid." }, { status: 400 });
     }
 
-    const plan = PLANS[parsed.data.planCode];
+    const config = await getPlatformConfig();
+    const plan = config.planCatalog[parsed.data.planCode];
     if (plan.priceIdr <= 0) {
       return NextResponse.json(
         { error: "Plan gratis tidak memerlukan pembayaran." },
@@ -101,18 +106,18 @@ export async function POST(request: Request) {
     }
 
     const organizationId = context.activeMembership.organization.id;
-    const provider = getPaymentProvider(parsed.data.provider);
+    const provider = await getPaymentProvider(parsed.data.provider);
     const orderId = createMerchantOrderId("GMPRO");
     const origin = new URL(request.url).origin;
-    const returnUrl = absoluteUrl(
+    const returnUrl = await absoluteUrl(
       `/dashboard/billing?status=return&orderId=${orderId}`,
       origin,
     );
-    const cancelUrl = absoluteUrl(
+    const cancelUrl = await absoluteUrl(
       `/dashboard/billing?status=cancel&orderId=${orderId}`,
       origin,
     );
-    const notifyUrl = absoluteUrl(
+    const notifyUrl = await absoluteUrl(
       `/api/payments/webhook/${provider.id.toLowerCase()}`,
       origin,
     );

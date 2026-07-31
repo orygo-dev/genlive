@@ -29,7 +29,7 @@ export async function deliverMeetingInvites(input: {
   requestOrigin: string;
 }) {
   const invitePath = `/meeting/${input.meeting.roomName}`;
-  const inviteUrl = absoluteUrl(invitePath, input.requestOrigin);
+  const inviteUrl = await absoluteUrl(invitePath, input.requestOrigin);
   const common = {
     meetingTitle: input.meeting.title,
     hostName: input.hostName,

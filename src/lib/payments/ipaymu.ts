@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { getPlatformConfig } from "@/lib/platform-config";
 import {
   hmacSha256Hex,
   type CheckoutRequest,
@@ -7,11 +8,13 @@ import {
   type PaymentProvider,
 } from "@/lib/payments/types";
 
-function ipaymuConfig() {
-  const va = process.env.IPAYMU_VA?.trim();
-  const apiKey = process.env.IPAYMU_API_KEY?.trim();
-  const isProduction = process.env.IPAYMU_IS_PRODUCTION === "true";
-  return { va, apiKey, isProduction };
+async function ipaymuConfig() {
+  const config = await getPlatformConfig();
+  return {
+    va: config.ipaymuVa,
+    apiKey: config.ipaymuApiKey,
+    isProduction: config.ipaymuIsProduction,
+  };
 }
 
 function ipaymuBaseUrl(isProduction: boolean) {
@@ -27,12 +30,12 @@ function sha256Hex(value: string) {
 export const ipaymuProvider: PaymentProvider = {
   id: "IPAYMU",
   label: "iPaymu",
-  isConfigured() {
-    const { va, apiKey } = ipaymuConfig();
+  async isConfigured() {
+    const { va, apiKey } = await ipaymuConfig();
     return Boolean(va && apiKey);
   },
   async createCheckout(input: CheckoutRequest): Promise<CheckoutResult> {
-    const { va, apiKey, isProduction } = ipaymuConfig();
+    const { va, apiKey, isProduction } = await ipaymuConfig();
     if (!va || !apiKey) {
       throw new Error("iPaymu belum dikonfigurasi.");
     }
@@ -93,7 +96,10 @@ export const ipaymuProvider: PaymentProvider = {
       raw: payload,
     };
   },
-  async parseWebhook(body: unknown): Promise<NormalizedPaymentEvent> {
+  async parseWebhook(
+    body: unknown,
+    _headers: Headers,
+  ): Promise<NormalizedPaymentEvent> {
     const payload = body as Record<string, unknown>;
     const orderId = String(
       payload.reference_id ||

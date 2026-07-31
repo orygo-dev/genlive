@@ -34,7 +34,7 @@ export type NormalizedPaymentEvent = {
 export type PaymentProvider = {
   id: PaymentProviderId;
   label: string;
-  isConfigured: () => boolean;
+  isConfigured: () => Promise<boolean>;
   createCheckout: (input: CheckoutRequest) => Promise<CheckoutResult>;
   parseWebhook: (
     body: unknown,

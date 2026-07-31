@@ -12,7 +12,9 @@ export type PlanDefinition = {
   features: string[];
 };
 
-export const PLANS: Record<PlanCodeValue, PlanDefinition> = {
+export type PlanCatalog = Record<PlanCodeValue, PlanDefinition>;
+
+export const DEFAULT_PLAN_CATALOG: PlanCatalog = {
   FREE: {
     code: "FREE",
     name: "Gratis",
@@ -48,11 +50,65 @@ export const PLANS: Record<PlanCodeValue, PlanDefinition> = {
   },
 };
 
+/** @deprecated Prefer DEFAULT_PLAN_CATALOG; kept for compatibility */
+export const PLANS = DEFAULT_PLAN_CATALOG;
+
+function asPlan(
+  code: PlanCodeValue,
+  value: unknown,
+  fallback: PlanDefinition,
+): PlanDefinition {
+  if (!value || typeof value !== "object") return fallback;
+  const raw = value as Partial<PlanDefinition>;
+  return {
+    code,
+    name: typeof raw.name === "string" && raw.name.trim() ? raw.name : fallback.name,
+    priceIdr:
+      typeof raw.priceIdr === "number" && raw.priceIdr >= 0
+        ? Math.round(raw.priceIdr)
+        : fallback.priceIdr,
+    billingPeriodDays:
+      typeof raw.billingPeriodDays === "number" && raw.billingPeriodDays >= 0
+        ? Math.round(raw.billingPeriodDays)
+        : fallback.billingPeriodDays,
+    maxMembers:
+      typeof raw.maxMembers === "number" && raw.maxMembers > 0
+        ? Math.round(raw.maxMembers)
+        : fallback.maxMembers,
+    maxMeetingsPerMonth:
+      typeof raw.maxMeetingsPerMonth === "number" && raw.maxMeetingsPerMonth > 0
+        ? Math.round(raw.maxMeetingsPerMonth)
+        : fallback.maxMeetingsPerMonth,
+    maxMeetingMinutesPerMonth:
+      typeof raw.maxMeetingMinutesPerMonth === "number" &&
+      raw.maxMeetingMinutesPerMonth >= 0
+        ? Math.round(raw.maxMeetingMinutesPerMonth)
+        : fallback.maxMeetingMinutesPerMonth,
+    maxRecordingMinutesPerMonth:
+      typeof raw.maxRecordingMinutesPerMonth === "number" &&
+      raw.maxRecordingMinutesPerMonth >= 0
+        ? Math.round(raw.maxRecordingMinutesPerMonth)
+        : fallback.maxRecordingMinutesPerMonth,
+    features: Array.isArray(raw.features)
+      ? raw.features.filter((item): item is string => typeof item === "string")
+      : fallback.features,
+  };
+}
+
+export function normalizePlanCatalog(input: unknown): PlanCatalog {
+  const raw =
+    input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  return {
+    FREE: asPlan("FREE", raw.FREE, DEFAULT_PLAN_CATALOG.FREE),
+    PRO: asPlan("PRO", raw.PRO, DEFAULT_PLAN_CATALOG.PRO),
+  };
+}
+
 export function getPlan(code: string | null | undefined): PlanDefinition {
   if (code === "PRO") {
-    return PLANS.PRO;
+    return DEFAULT_PLAN_CATALOG.PRO;
   }
-  return PLANS.FREE;
+  return DEFAULT_PLAN_CATALOG.FREE;
 }
 
 export function formatIdr(amount: number) {

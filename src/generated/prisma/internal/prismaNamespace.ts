@@ -1597,6 +1597,8 @@ export const PlatformSettingsScalarFieldEnum = {
   splashLogoUrl: 'splashLogoUrl',
   supportEmail: 'supportEmail',
   maintenanceMode: 'maintenanceMode',
+  integrationsCipher: 'integrationsCipher',
+  planCatalog: 'planCatalog',
   updatedAt: 'updatedAt',
   updatedById: 'updatedById'
 } as const
@@ -1794,6 +1796,7 @@ export const PlatformSettingsOrderByRelevanceFieldEnum = {
   splashBackgroundUrl: 'splashBackgroundUrl',
   splashLogoUrl: 'splashLogoUrl',
   supportEmail: 'supportEmail',
+  integrationsCipher: 'integrationsCipher',
   updatedById: 'updatedById'
 } as const
 

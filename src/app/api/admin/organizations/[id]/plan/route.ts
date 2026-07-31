@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSuperAdminApi } from "@/lib/admin-api";
 import { prisma } from "@/lib/db";
 import { writeAuditLog } from "@/lib/organization";
-import { getPlan } from "@/lib/plans";
+import { resolvePlan } from "@/lib/platform-config";
 
 export const runtime = "nodejs";
 
@@ -40,7 +40,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   let expiresAt: Date | null = null;
 
   if (planCode === "PRO") {
-    const plan = getPlan("PRO");
+    const plan = await resolvePlan("PRO");
     const days = parsed.data.periodDays ?? plan.billingPeriodDays;
     expiresAt = days > 0 ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null;
   }

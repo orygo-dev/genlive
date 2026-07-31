@@ -16,7 +16,7 @@ function windowForOffset(now: Date, offsetMs: number) {
 }
 
 export async function processMeetingReminders(now = new Date()) {
-  if (!isWhatsAppConfigured()) {
+  if (!(await isWhatsAppConfigured())) {
     return {
       skipped: true,
       reason: "WhatsApp (Fonnte) belum dikonfigurasi.",
@@ -66,7 +66,7 @@ export async function processMeetingReminders(now = new Date()) {
     });
 
     for (const meeting of meetings) {
-      const inviteUrl = absoluteUrl(`/meeting/${meeting.roomName}`);
+      const inviteUrl = await absoluteUrl(`/meeting/${meeting.roomName}`);
       for (const invite of meeting.invites) {
         const recipient = invite.phoneE164 || invite.recipient;
         const existing = await prisma.reminderSent.findUnique({
