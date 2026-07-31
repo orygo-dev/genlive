@@ -27,9 +27,13 @@ Port lokal:
 
 | Layanan | Port |
 |---------|------|
-| GenMeet (Node) | `3000` (localhost saja) |
+| GenMeet (Node) | `3010` (localhost saja; ubah jika bentrok) |
 | MySQL | `3306` |
 | Apache | `80` / `443` |
+
+> Port `3000` sering sudah dipakai app lain di aaPanel. Panduan ini memakai
+> **`3010`**. Kalau diganti, samakan di `.env.production` (`PORT=...`) dan
+> reverse proxy Apache/Nginx.
 
 ---
 
@@ -104,7 +108,7 @@ Wajib:
 
 ```bash
 NODE_ENV=production
-PORT=3000
+PORT=3010
 HOSTNAME=0.0.0.0
 
 APP_URL=https://meet.domainanda.com
@@ -159,35 +163,46 @@ npm run build
 
 ## 7. Jalankan dengan PM2
 
+Ganti `APP_DIR` dengan path situs Anda yang sebenarnya
+(contoh: `/www/wwwroot/genlive.guruspaceai.cloud`).
+
 ```bash
-cd /www/wwwroot/genmeet
+APP_DIR=/www/wwwroot/genlive.guruspaceai.cloud
+cd "$APP_DIR"
 
 cp -r public .next/standalone/public 2>/dev/null || true
 cp -r .next/static .next/standalone/.next/static
 cp .env.production .next/standalone/.env.production
 cp .env.production .next/standalone/.env
 
-pm2 start .next/standalone/server.js \
+# cwd = folder standalone, jadi start "server.js" (bukan .next/standalone/server.js)
+# PORT diambil dari .env di folder standalone (samakan dengan proxy)
+pm2 delete genmeet 2>/dev/null || true
+pm2 start server.js \
   --name genmeet \
-  --cwd /www/wwwroot/genmeet/.next/standalone \
+  --cwd "$APP_DIR/.next/standalone" \
   --env production
 
 pm2 save
 pm2 startup
 ```
 
-Alternatif:
+> Error `Script not found: .../.next/standalone/.next/standalone/server.js`
+> artinya path digabung dua kali, atau `--cwd` masih memakai contoh `/www/wwwroot/genmeet`
+> padahal folder proyek berbeda.
+
+Alternatif (tanpa standalone):
 
 ```bash
+cd "$APP_DIR"
 pm2 start npm --name genmeet -- start
 ```
 
-Uji lokal:
+Uji lokal (sesuaikan port):
 
 ```bash
-curl -s http://127.0.0.1:3000/api/health
+curl -s http://127.0.0.1:3010/api/health
 ```
-
 ---
 
 ## 8. Apache reverse proxy
@@ -206,19 +221,19 @@ ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
 
-ProxyPass / http://127.0.0.1:3000/
-ProxyPassReverse / http://127.0.0.1:3000/
+ProxyPass / http://127.0.0.1:3010/
+ProxyPassReverse / http://127.0.0.1:3010/
 
 RewriteEngine On
 RewriteCond %{HTTP:Upgrade} =websocket [NC]
-RewriteRule /(.*) ws://127.0.0.1:3000/$1 [P,L]
+RewriteRule /(.*) ws://127.0.0.1:3010/$1 [P,L]
 ```
 
 ### Nginx (jika dipakai)
 
 ```nginx
 location / {
-  proxy_pass http://127.0.0.1:3000;
+  proxy_pass http://127.0.0.1:3010;
   proxy_http_version 1.1;
   proxy_set_header Upgrade $http_upgrade;
   proxy_set_header Connection "upgrade";
@@ -267,7 +282,8 @@ https://meet.domainanda.com/api/payments/webhook/flip
 ## 12. Update aplikasi
 
 ```bash
-cd /www/wwwroot/genmeet
+APP_DIR=/www/wwwroot/genlive.guruspaceai.cloud
+cd "$APP_DIR"
 git pull
 npm ci
 npm run db:deploy
@@ -284,7 +300,7 @@ pm2 restart genmeet
 
 | Gejala | Periksa |
 |--------|---------|
-| 502 | `pm2 status`, `curl 127.0.0.1:3000/api/health` |
+| 502 | `pm2 status`, `curl 127.0.0.1:3010/api/health`, cek port proxy = `PORT` |
 | DB error | `DATABASE_URL` mysql://..., user, host `127.0.0.1` |
 | Access denied MySQL | Hak user hanya `localhost`; password benar |
 | Cookie / redirect | `APP_URL` HTTPS + `X-Forwarded-Proto` |
@@ -301,6 +317,6 @@ mysqldump -ugenmeet -p genmeet > /www/backup/genmeet-$(date +%F).sql
 ## Arsitektur
 
 ```text
-Internet → Apache/Nginx (:443) → PM2 GenMeet (:3000) → MySQL (:3306)
+Internet → Apache/Nginx (:443) → PM2 GenMeet (:3010) → MySQL (:3306)
 Browser  ←──WebRTC──→ LiveKit Cloud
 ```
