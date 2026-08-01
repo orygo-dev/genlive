@@ -13,6 +13,7 @@
     "smoke": "node scripts/smoke-production.mjs",
     "aapanel:pm2": "bash scripts/aapanel-pm2.sh",
     "aapanel:deploy": "bash scripts/aapanel-pm2.sh --full",
+    "aapanel:keepalive": "bash scripts/pm2-keepalive.sh",
     "admin:create": "node scripts/create-super-admin.mjs",
     "ci": "npm run typecheck && npm test && npm run lint && npm run build",
     "postinstall": "prisma generate",

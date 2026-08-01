@@ -47,17 +47,37 @@ if [[ "$APP_URL" != https://* ]]; then
   echo "Perbaiki: nano .env.production  →  APP_URL=https://domain-anda.com"
   exit 1
 fi
-if [[ "$(read_env LIVEKIT_URL)" != wss://* ]]; then
+if [[ -z "$(read_env LIVEKIT_URL)" || "$(read_env LIVEKIT_URL)" != wss://* ]]; then
   echo "ERROR: LIVEKIT_URL harus diawali wss://"
   exit 1
 fi
+
+ENC_KEY="$(read_env APP_ENCRYPTION_KEY)"
+if [[ -z "$ENC_KEY" || ${#ENC_KEY} -lt 32 ]]; then
+  echo "ERROR: APP_ENCRYPTION_KEY wajib di .env.production (≥32 karakter)."
+  echo "Tanpa ini proses Node crash terus dan PM2 masuk status errored."
+  exit 1
+fi
+
+ensure_deps() {
+  if [[ ! -x "$ROOT/node_modules/.bin/prisma" || ! -d "$ROOT/node_modules/next" ]]; then
+    echo "==> node_modules tidak lengkap — menjalankan npm ci"
+    npm ci
+  fi
+}
 
 if [[ "$MODE" == "--full" ]]; then
   npm ci
   npm run db:deploy
   npm run build
 elif [[ "$MODE" == "--build" ]]; then
+  ensure_deps
   npm run build
+else
+  # start saja: tetap pastikan binary prisma/next ada bila perlu rebuild lokal
+  if [[ ! -f "$SERVER_JS" ]]; then
+    ensure_deps
+  fi
 fi
 
 if [[ ! -f "$SERVER_JS" ]]; then
@@ -117,15 +137,34 @@ export GENMEET_APP_URL="$APP_URL"
 
 node <<'NODE'
 const fs = require("fs");
+const path = require("path");
+const standalone = process.env.GENMEET_STANDALONE;
+const logsDir = path.join(standalone, "logs");
+fs.mkdirSync(logsDir, { recursive: true });
+
 const cfg = {
   apps: [
     {
       name: process.env.GENMEET_APP_NAME,
       script: process.env.GENMEET_SERVER_JS,
-      cwd: process.env.GENMEET_STANDALONE,
+      cwd: standalone,
       node_args: `--env-file=${process.env.GENMEET_ENV_FILE}`,
       instances: 1,
       exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      // Hindari status "errored" cepat: restart dengan backoff, reset counter setelah stabil.
+      max_restarts: 80,
+      min_uptime: "10s",
+      exp_backoff_restart_delay: 200,
+      restart_delay: 3000,
+      max_memory_restart: "1024M",
+      kill_timeout: 8000,
+      listen_timeout: 12000,
+      time: true,
+      merge_logs: true,
+      error_file: path.join(logsDir, "genmeet-error.log"),
+      out_file: path.join(logsDir, "genmeet-out.log"),
       env: {
         NODE_ENV: "production",
         PORT: process.env.GENMEET_PORT,
@@ -136,7 +175,7 @@ const cfg = {
   ],
 };
 fs.writeFileSync(
-  `${process.env.GENMEET_STANDALONE}/ecosystem.config.cjs`,
+  `${standalone}/ecosystem.config.cjs`,
   `module.exports = ${JSON.stringify(cfg, null, 2)};\n`,
 );
 NODE
@@ -146,9 +185,14 @@ pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
 pm2 start "$ECOSYSTEM"
 pm2 save
 
+# Pastikan PM2 hidup lagi setelah reboot (aman dipanggil berulang)
+if command -v systemctl >/dev/null 2>&1; then
+  pm2 startup systemd -u root --hp /root >/tmp/genmeet-pm2-startup.txt 2>&1 || true
+fi
+
 echo "==> Menunggu health check..."
 ok=0
-for _ in $(seq 1 12); do
+for _ in $(seq 1 20); do
   if curl -fsS "http://127.0.0.1:${PORT}/api/health" >/tmp/genmeet-health.json 2>/dev/null; then
     ok=1
     break
@@ -161,6 +205,7 @@ if [[ "$ok" -eq 1 ]]; then
   cat /tmp/genmeet-health.json
   echo
   echo "OK: GenMeet di port $PORT — proxy Apache/Nginx ke http://127.0.0.1:${PORT}"
+  echo "Tip: aktifkan keepalive cron: bash scripts/pm2-keepalive.sh (lihat AAPANEL.md)"
   exit 0
 fi
 

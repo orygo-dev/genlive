@@ -178,14 +178,43 @@ bash scripts/aapanel-pm2.sh --full
 
 Skrip ini akan:
 1. Memakai path proyek saat ini (bukan `/www/wwwroot/genmeet` contoh)
-2. Menyalin `public`, `.next/static`, dan `.env` ke standalone
-3. Menjalankan PM2 dengan path absolut `server.js`
-4. Mengecek `http://127.0.0.1:$PORT/api/health` (`PORT` dari `.env.production`, default `3010`)
+2. Preflight: `DATABASE_URL`, `APP_URL`, `LIVEKIT_URL`, `APP_ENCRYPTION_KEY`
+3. Auto `npm ci` jika `node_modules`/prisma hilang (saat `--build`)
+4. Menyalin `public`, `.next/static`, dan `.env` ke standalone
+5. Menjalankan PM2 dengan restart agresif (autorestart + backoff)
+6. Mengecek `http://127.0.0.1:$PORT/api/health`
 
 Lihat log jika gagal:
 
 ```bash
 pm2 logs genmeet --lines 80
+# atau file:
+tail -n 80 .next/standalone/logs/genmeet-error.log
+```
+
+### Agar PM2 tidak mudah mati
+
+1. **Boot persistence** (sekali saja di server):
+
+```bash
+pm2 startup
+# jalankan perintah yang dicetak PM2 (systemd), lalu:
+pm2 save
+```
+
+2. **Cron keepalive** (aaPanel → Cron → tiap 1 menit):
+
+```bash
+bash /www/wwwroot/genlive.guruspaceai.cloud/scripts/pm2-keepalive.sh >> /var/log/genmeet-keepalive.log 2>&1
+```
+
+Skrip mengecek status PM2 + `/api/health`; jika down, `pm2 restart` / start ulang.
+
+3. Setelah update kode, selalu:
+
+```bash
+bash scripts/aapanel-pm2.sh --build
+# atau --full jika node_modules perlu di-install ulang
 ```
 
 Pastikan reverse proxy Apache/Nginx mengarah ke **port yang sama** dengan `PORT`
