@@ -1608,6 +1608,10 @@ footer p {
   text-align: center;
 }
 
+.prejoin-card-wide {
+  width: min(560px, 100%);
+}
+
 .prejoin-brand {
   display: inline-flex;
   align-items: center;
@@ -1926,6 +1930,194 @@ footer p {
   font-size: 11px;
   text-align: right;
 }
+
+
+.bg-effects-prejoin {
+  margin: 18px 0 8px;
+  text-align: left;
+}
+
+.bg-effects-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #0f172a;
+  aspect-ratio: 16 / 10;
+}
+
+.bg-effects-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  background: #0f172a;
+}
+
+.bg-effects-preview p {
+  position: absolute;
+  inset: auto 12px 12px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.72);
+  font-size: 12px;
+}
+
+.bg-effects-picker {
+  margin-top: 12px;
+}
+
+.bg-effects-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.bg-effects-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bg-effects-options button {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.bg-effects-options button.is-active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+
+.bg-effects-options button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bg-effects-swatch {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.bg-effects-swatch-none {
+  color: var(--muted);
+  background: repeating-linear-gradient(
+    -45deg,
+    #eef2f7,
+    #eef2f7 6px,
+    #e2e8f0 6px,
+    #e2e8f0 12px
+  );
+}
+
+.bg-effects-swatch-blur {
+  background: linear-gradient(145deg, #64748b, #cbd5e1);
+  filter: none;
+}
+
+.bg-effects-swatch-blur-strong {
+  background: linear-gradient(145deg, #334155, #94a3b8);
+}
+
+.bg-effects-unsupported {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.bg-effects-runtime {
+  position: absolute;
+  z-index: 21;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.bg-effects-runtime-toggle {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: white;
+  background: rgba(24, 32, 45, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.bg-effects-runtime-panel {
+  width: min(320px, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #e2e8f0;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.bg-effects-runtime-panel .bg-effects-label {
+  color: #94a3b8;
+}
+
+.bg-effects-runtime-panel .bg-effects-options button {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+.bg-effects-runtime-panel .bg-effects-options button.is-active {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+}
+
+.bg-effects-settings {
+  padding: 16px;
+}
+
+.bg-effects-settings h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  .bg-effects-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bg-effects-runtime {
+    top: auto;
+    bottom: 92px;
+    right: 12px;
+  }
+
+  .recording-controls {
+    right: 12px;
+    top: 64px;
+  }
+}
+
 
 .meeting-recordings-wrap {
   margin-top: 18px;

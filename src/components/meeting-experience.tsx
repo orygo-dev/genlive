@@ -10,6 +10,15 @@ import {
 import { ArrowLeft, Clock3, LoaderCircle, LockKeyhole, Video } from "lucide-react";
 import { HostWaitingRoom } from "@/components/host-waiting-room";
 import { RecordingControls } from "@/components/recording-controls";
+import {
+  BackgroundEffectsProvider,
+  useBackgroundEffects,
+} from "@/components/background-effects-context";
+import { BackgroundEffectsPrejoin } from "@/components/background-effects-prejoin";
+import {
+  BackgroundEffectsRuntime,
+  BackgroundEffectsSettings,
+} from "@/components/background-effects-runtime";
 
 type ConnectionDetails = {
   identity: string;
@@ -34,8 +43,68 @@ type MeetingExperienceProps = {
   } | null;
 };
 
-export function MeetingExperience({ roomName, meetingConfig }: MeetingExperienceProps) {
+function MeetingBackgroundSettings() {
+  const { effectId, setEffectId } = useBackgroundEffects();
+  return (
+    <BackgroundEffectsSettings
+      effectId={effectId}
+      onEffectChange={setEffectId}
+    />
+  );
+}
+
+function MeetingRoom({
+  connection,
+  roomName,
+  onError,
+}: {
+  connection: ConnectionDetails;
+  roomName: string;
+  onError: (message: string) => void;
+}) {
   const router = useRouter();
+  const { effectId, setEffectId } = useBackgroundEffects();
+
+  return (
+    <div className="live-room" data-lk-theme="default">
+      <LiveKitRoom
+        token={connection.token}
+        serverUrl={connection.serverUrl}
+        connect
+        video
+        audio
+        onDisconnected={() =>
+          router.push(connection.role === "PARTICIPANT" ? "/" : "/dashboard")
+        }
+        onError={(roomError) => onError(roomError.message)}
+      >
+        <div className="room-brand">
+          <Video size={16} />
+          <span>{roomName}</span>
+        </div>
+        {(connection.role === "HOST" || connection.role === "MODERATOR") && (
+          <>
+            <HostWaitingRoom roomName={roomName} />
+            <RecordingControls roomName={roomName} />
+          </>
+        )}
+        <BackgroundEffectsRuntime
+          effectId={effectId}
+          onEffectChange={setEffectId}
+        />
+        <VideoConference SettingsComponent={MeetingBackgroundSettings} />
+        <RoomAudioRenderer />
+      </LiveKitRoom>
+    </div>
+  );
+}
+
+function MeetingExperienceInner({
+  roomName,
+  meetingConfig,
+}: MeetingExperienceProps) {
+  const router = useRouter();
+  const { effectId, setEffectId } = useBackgroundEffects();
   const [participantName, setParticipantName] = useState("");
   const [password, setPassword] = useState("");
   const [connection, setConnection] = useState<ConnectionDetails | null>(null);
@@ -179,32 +248,11 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
 
   if (connection) {
     return (
-      <div className="live-room" data-lk-theme="default">
-        <LiveKitRoom
-          token={connection.token}
-          serverUrl={connection.serverUrl}
-          connect
-          video
-          audio
-          onDisconnected={() =>
-            router.push(connection.role === "PARTICIPANT" ? "/" : "/dashboard")
-          }
-          onError={(roomError) => setError(roomError.message)}
-        >
-          <div className="room-brand">
-            <Video size={16} /> GenMeet
-            <span>{roomName}</span>
-          </div>
-          {(connection.role === "HOST" || connection.role === "MODERATOR") && (
-            <>
-              <HostWaitingRoom roomName={roomName} />
-              <RecordingControls roomName={roomName} />
-            </>
-          )}
-          <VideoConference />
-          <RoomAudioRenderer />
-        </LiveKitRoom>
-      </div>
+      <MeetingRoom
+        connection={connection}
+        roomName={roomName}
+        onError={setError}
+      />
     );
   }
 
@@ -214,7 +262,7 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
         <section className="prejoin-card waiting-card">
           <div className="prejoin-brand">
             <span className="brand-mark"><Video size={20} /></span>
-            <span>GenMeet</span>
+            <span>Meeting</span>
           </div>
           <div className="waiting-loader">
             <LoaderCircle className="spinner" size={28} />
@@ -257,10 +305,10 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
         <ArrowLeft size={18} /> Kembali
       </button>
 
-      <section className="prejoin-card">
+      <section className="prejoin-card prejoin-card-wide">
         <div className="prejoin-brand">
           <span className="brand-mark"><Video size={20} /></span>
-          <span>GenMeet</span>
+          <span>Meeting</span>
         </div>
         <div className="prejoin-icon"><Video size={26} /></div>
         <p className="prejoin-kicker">Anda akan bergabung ke</p>
@@ -276,9 +324,14 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
         )}
         <p className="prejoin-description">
           {meetingConfig?.waitingRoom
-            ? "Masukkan nama Anda. Host akan menyetujui sebelum Anda masuk."
-            : "Masukkan nama yang akan dilihat peserta lain selama meeting."}
+            ? "Atur nama dan background. Host akan menyetujui sebelum Anda masuk."
+            : "Atur nama dan background yang akan dilihat peserta lain."}
         </p>
+
+        <BackgroundEffectsPrejoin
+          effectId={effectId}
+          onEffectChange={setEffectId}
+        />
 
         <form onSubmit={joinRoom} className="prejoin-form" noValidate>
           <label htmlFor="participant-name">Nama Anda</label>
@@ -337,5 +390,13 @@ export function MeetingExperience({ roomName, meetingConfig }: MeetingExperience
         </p>
       </section>
     </main>
+  );
+}
+
+export function MeetingExperience(props: MeetingExperienceProps) {
+  return (
+    <BackgroundEffectsProvider>
+      <MeetingExperienceInner {...props} />
+    </BackgroundEffectsProvider>
   );
 }
