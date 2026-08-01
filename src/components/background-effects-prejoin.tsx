@@ -8,8 +8,10 @@ import {
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import { BackgroundEffectsPicker } from "@/components/background-effects-picker";
 import { useBackgroundEffects } from "@/components/background-effects-context";
+import { MediaDevicePickers } from "@/components/media-device-pickers";
 import { useVirtualBackground } from "@/hooks/useVirtualBackground";
 import type { BackgroundEffectId } from "@/lib/background-effects";
+import { readStoredMediaDevices } from "@/lib/media-devices";
 
 type BackgroundEffectsPrejoinProps = {
   effectId: BackgroundEffectId;
@@ -31,6 +33,9 @@ export function BackgroundEffectsPrejoin({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
   const [previewError, setPreviewError] = useState("");
+  const [cameraDeviceId, setCameraDeviceId] = useState(
+    () => readStoredMediaDevices().videoinput ?? "",
+  );
   const {
     qualityMode,
     setQualityMode,
@@ -55,6 +60,7 @@ export function BackgroundEffectsPrejoin({
       try {
         localTrack = await createLocalVideoTrack({
           facingMode: "user",
+          deviceId: cameraDeviceId || undefined,
           resolution: { width: 1280, height: 720, frameRate: 24 },
         });
         if (cancelled) {
@@ -82,7 +88,7 @@ export function BackgroundEffectsPrejoin({
         localTrack.detach();
       }
     };
-  }, []);
+  }, [cameraDeviceId]);
 
   useEffect(() => {
     if (!track) return;
@@ -129,6 +135,15 @@ export function BackgroundEffectsPrejoin({
           </button>
         </div>
       </div>
+      <MediaDevicePickers
+        showSpeaker={false}
+        className="prejoin-device-pickers"
+        onDeviceChange={(kind, deviceId) => {
+          if (kind === "videoinput") {
+            setCameraDeviceId(deviceId);
+          }
+        }}
+      />
       <BackgroundEffectsPicker
         value={effectId}
         onChange={onEffectChange}

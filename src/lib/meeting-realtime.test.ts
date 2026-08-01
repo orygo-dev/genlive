@@ -22,6 +22,30 @@ const samples: MeetingRealtimeMessage[] = [
     label: "Grup A",
   },
   {
+    type: "breakout",
+    action: "start",
+    rooms: [
+      { roomName: "demo-bo-1", label: "Grup 1" },
+      { roomName: "demo-bo-2", label: "Grup 2" },
+    ],
+    assignments: [
+      {
+        identity: "user-a",
+        roomName: "demo-bo-1",
+        label: "Grup 1",
+      },
+    ],
+    secondsLeft: 300,
+  },
+  { type: "breakout", action: "timer", secondsLeft: 42 },
+  {
+    type: "caption",
+    text: "Halo semua",
+    from: "Anisa",
+    final: true,
+    id: "c1",
+  },
+  {
     type: "wb_stroke",
     points: [0, 0, 10, 10],
     color: "#ffffff",

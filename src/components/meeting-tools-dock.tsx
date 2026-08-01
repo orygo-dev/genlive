@@ -24,6 +24,7 @@ import {
   type LocalAudioTrack,
 } from "livekit-client";
 import {
+  Captions,
   Ellipsis,
   Hand,
   LayoutGrid,
@@ -41,6 +42,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
+import { MediaDevicePickers } from "@/components/media-device-pickers";
 import {
   decodeMeetingMessage,
   encodeMeetingMessage,
@@ -80,6 +82,34 @@ type FloatingReaction = {
 type BreakoutRoom = {
   roomName: string;
   label: string;
+};
+
+type CaptionLine = {
+  id: string;
+  from: string;
+  text: string;
+  final: boolean;
+};
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0: { transcript: string };
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
 };
 
 type MeetingToolsDockProps = {
@@ -209,9 +239,22 @@ export function MeetingToolsDock({
   const [pollOptions, setPollOptions] = useState("Ya\nTidak");
   const [breakoutCount, setBreakoutCount] = useState(2);
   const [breakoutRooms, setBreakoutRooms] = useState<BreakoutRoom[]>([]);
+  const [breakoutAssignments, setBreakoutAssignments] = useState<
+    Record<string, string>
+  >({});
+  const [breakoutDurationMin, setBreakoutDurationMin] = useState(5);
+  const [breakoutSecondsLeft, setBreakoutSecondsLeft] = useState<number | null>(
+    null,
+  );
   const [activeBreakout, setActiveBreakout] = useState<BreakoutRoom | null>(
     null,
   );
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [captionLines, setCaptionLines] = useState<CaptionLine[]>([]);
+  const [captionSupported, setCaptionSupported] = useState(true);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const captionSeqRef = useRef(0);
+  const autoJoinRef = useRef(false);
   const [aiInput, setAiInput] = useState("");
   const [aiReply, setAiReply] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -224,6 +267,9 @@ export function MeetingToolsDock({
     type: "ok" | "error";
     text: string;
   } | null>(null);
+  const [roomLocked, setRoomLocked] = useState(false);
+  const [hostBusy, setHostBusy] = useState(false);
+  const [hostError, setHostError] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
@@ -328,11 +374,45 @@ export function MeetingToolsDock({
           );
           break;
         case "breakout":
-          if (message.action === "join") {
+          if (message.action === "start") {
+            const rooms = message.rooms ?? [];
+            setBreakoutRooms(rooms);
+            if (typeof message.secondsLeft === "number") {
+              setBreakoutSecondsLeft(message.secondsLeft);
+            }
+            const mine = message.assignments?.find(
+              (entry) => entry.identity === localParticipant.identity,
+            );
+            if (mine) {
+              const entry = {
+                roomName: mine.roomName,
+                label: mine.label,
+              };
+              setActiveBreakout(entry);
+              if (
+                roomName === mainRoomName &&
+                !autoJoinRef.current
+              ) {
+                autoJoinRef.current = true;
+                window.setTimeout(() => {
+                  router.push(
+                    `/meeting/${encodeURIComponent(entry.roomName)}`,
+                  );
+                }, 800);
+              }
+            } else if (rooms[0]) {
+              setActiveBreakout(rooms[0]);
+            }
+          } else if (message.action === "timer") {
+            if (typeof message.secondsLeft === "number") {
+              setBreakoutSecondsLeft(message.secondsLeft);
+            }
+          } else if (message.action === "join") {
             const entry = {
-              roomName: message.roomName,
-              label: message.label ?? message.roomName,
+              roomName: message.roomName ?? "",
+              label: message.label ?? message.roomName ?? "",
             };
+            if (!entry.roomName) break;
             setBreakoutRooms((current) => {
               if (current.some((roomItem) => roomItem.roomName === entry.roomName)) {
                 return current;
@@ -342,10 +422,28 @@ export function MeetingToolsDock({
             setActiveBreakout(entry);
           } else if (message.action === "return") {
             setActiveBreakout(null);
+            setBreakoutRooms([]);
+            setBreakoutSecondsLeft(null);
+            autoJoinRef.current = false;
             if (roomName !== mainRoomName) {
               router.push(`/meeting/${encodeURIComponent(mainRoomName)}`);
             }
           }
+          break;
+        case "caption":
+          setCaptionLines((current) => {
+            const withoutSame = current.filter((line) => line.id !== message.id);
+            const next = [
+              ...withoutSame,
+              {
+                id: message.id,
+                from: message.from,
+                text: message.text,
+                final: message.final,
+              },
+            ];
+            return next.slice(-6);
+          });
           break;
         case "wb_stroke":
           drawRemoteStroke(message.points, message.color, message.width);
@@ -357,8 +455,27 @@ export function MeetingToolsDock({
           break;
       }
     },
-    [mainRoomName, roomName, router],
+    [localParticipant.identity, mainRoomName, roomName, router],
   );
+
+  useEffect(() => {
+    if (!isHost || !meetingId) return;
+    let cancelled = false;
+    void fetch(`/api/meetings/${encodeURIComponent(roomName)}/host`, {
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as { locked?: boolean };
+        if (!cancelled) {
+          setRoomLocked(Boolean(payload.locked));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [isHost, meetingId, roomName]);
 
   useEffect(() => {
     applyBeautyMode(beautyMode);
@@ -455,22 +572,73 @@ export function MeetingToolsDock({
     const count = Math.max(1, Math.min(8, breakoutCount));
     const created: BreakoutRoom[] = [];
     for (let index = 1; index <= count; index += 1) {
-      const entry = {
+      created.push({
         roomName: `${mainRoomName}-bo-${index}`,
         label: `Grup ${index}`,
-      };
-      created.push(entry);
-      await publishMessage({
-        type: "breakout",
-        action: "join",
-        roomName: entry.roomName,
-        label: entry.label,
       });
     }
+
+    const remoteParticipants = participants.filter(
+      (participant) => !participant.isLocal,
+    );
+    const assignments = remoteParticipants.map((participant, index) => {
+      const preferredRoom =
+        breakoutAssignments[participant.identity] ||
+        created[index % created.length]?.roomName ||
+        created[0].roomName;
+      const roomEntry =
+        created.find((entry) => entry.roomName === preferredRoom) ?? created[0];
+      return {
+        identity: participant.identity,
+        roomName: roomEntry.roomName,
+        label: roomEntry.label,
+      };
+    });
+
+    const secondsLeft = Math.max(1, breakoutDurationMin) * 60;
+    const endsAt = Date.now() + secondsLeft * 1000;
     setBreakoutRooms(created);
+    setBreakoutSecondsLeft(secondsLeft);
+    try {
+      window.sessionStorage.setItem(
+        "genmeet_breakout",
+        JSON.stringify({
+          mainRoomName,
+          endsAt,
+          active: true,
+        }),
+      );
+    } catch {
+      // ignore
+    }
+    if (meetingId) {
+      void hostAction({
+        action: "breakout",
+        active: true,
+        endsAt,
+      }).catch(() => undefined);
+    }
+    await publishMessage({
+      type: "breakout",
+      action: "start",
+      rooms: created,
+      assignments,
+      secondsLeft,
+    });
   }
 
   async function endBreakout() {
+    try {
+      window.sessionStorage.removeItem("genmeet_breakout");
+    } catch {
+      // ignore
+    }
+    if (meetingId) {
+      void hostAction({
+        action: "breakout",
+        active: false,
+      }).catch(() => undefined);
+    }
     await publishMessage({
       type: "breakout",
       action: "return",
@@ -478,7 +646,203 @@ export function MeetingToolsDock({
     });
     setBreakoutRooms([]);
     setActiveBreakout(null);
+    setBreakoutSecondsLeft(null);
+    autoJoinRef.current = false;
   }
+
+  useEffect(() => {
+    if (breakoutSecondsLeft === null) return;
+    if (breakoutSecondsLeft <= 0) {
+      if (isHost && breakoutRooms.length > 0) {
+        void endBreakout();
+      }
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setBreakoutSecondsLeft((current) =>
+        current === null ? null : Math.max(0, current - 1),
+      );
+    }, 1000);
+    return () => window.clearTimeout(timer);
+    // endBreakout intentionally omitted — host close on zero only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [breakoutSecondsLeft, breakoutRooms.length, isHost]);
+
+  useEffect(() => {
+    if (
+      !isHost ||
+      breakoutSecondsLeft === null ||
+      breakoutRooms.length === 0
+    ) {
+      return;
+    }
+    if (breakoutSecondsLeft % 5 !== 0 && breakoutSecondsLeft !== 1) {
+      return;
+    }
+    void publishMessage({
+      type: "breakout",
+      action: "timer",
+      secondsLeft: breakoutSecondsLeft,
+    });
+  }, [breakoutSecondsLeft, breakoutRooms.length, isHost, publishMessage]);
+
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem("genmeet_breakout");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        mainRoomName?: string;
+        endsAt?: number;
+        active?: boolean;
+      };
+      if (!parsed.active || parsed.mainRoomName !== mainRoomName) return;
+      if (typeof parsed.endsAt === "number") {
+        const left = Math.max(
+          0,
+          Math.ceil((parsed.endsAt - Date.now()) / 1000),
+        );
+        setBreakoutSecondsLeft(left);
+      }
+    } catch {
+      // ignore
+    }
+  }, [mainRoomName]);
+
+  useEffect(() => {
+    if (roomName === mainRoomName) return;
+    let cancelled = false;
+
+    async function pollBreakoutStatus() {
+      try {
+        const response = await fetch(
+          `/api/meetings/${encodeURIComponent(mainRoomName)}/breakout-status`,
+          { cache: "no-store" },
+        );
+        if (!response.ok || cancelled) return;
+        const payload = (await response.json()) as {
+          active?: boolean;
+          endsAt?: number | null;
+        };
+        if (payload.active === false) {
+          try {
+            window.sessionStorage.removeItem("genmeet_breakout");
+          } catch {
+            // ignore
+          }
+          router.push(`/meeting/${encodeURIComponent(mainRoomName)}`);
+          return;
+        }
+        if (typeof payload.endsAt === "number") {
+          const left = Math.max(
+            0,
+            Math.ceil((payload.endsAt - Date.now()) / 1000),
+          );
+          setBreakoutSecondsLeft(left);
+          if (left <= 0) {
+            try {
+              window.sessionStorage.removeItem("genmeet_breakout");
+            } catch {
+              // ignore
+            }
+            router.push(`/meeting/${encodeURIComponent(mainRoomName)}`);
+          }
+        }
+      } catch {
+        // ignore transient errors
+      }
+    }
+
+    void pollBreakoutStatus();
+    const timer = window.setInterval(() => {
+      void pollBreakoutStatus();
+    }, 4000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [mainRoomName, roomName, router]);
+
+  useEffect(() => {
+    type SpeechWindow = Window & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const speechWindow = window as SpeechWindow;
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setCaptionSupported(false);
+      return;
+    }
+
+    if (!captionsEnabled) {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "id-ID";
+    recognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const text = result[0]?.transcript?.trim();
+        if (!text) continue;
+        captionSeqRef.current += 1;
+        const message: MeetingRealtimeMessage = {
+          type: "caption",
+          text,
+          from: localParticipant.name || localParticipant.identity,
+          final: result.isFinal,
+          id: result.isFinal
+            ? `${localParticipant.identity}-f-${captionSeqRef.current}`
+            : `${localParticipant.identity}-interim`,
+        };
+        void publishMessage(message);
+        handleIncomingMessage(encodeMeetingMessage(message));
+      }
+    };
+    recognition.onerror = () => {
+      // Keep CC toggle on; browser may recover on next utterance.
+    };
+    recognition.onend = () => {
+      if (captionsEnabled && recognitionRef.current === recognition) {
+        try {
+          recognition.start();
+        } catch {
+          // Already started.
+        }
+      }
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      try {
+        recognition.lang = "en-US";
+        recognition.start();
+      } catch {
+        setCaptionSupported(false);
+        setCaptionsEnabled(false);
+      }
+    }
+
+    return () => {
+      recognition.onend = null;
+      recognition.stop();
+      if (recognitionRef.current === recognition) {
+        recognitionRef.current = null;
+      }
+    };
+  }, [
+    captionsEnabled,
+    handleIncomingMessage,
+    localParticipant.identity,
+    localParticipant.name,
+    publishMessage,
+  ]);
 
   function canvasPoint(event: MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
@@ -611,15 +975,31 @@ export function MeetingToolsDock({
     setEnding(true);
     try {
       await fetch(
-        `/api/meetings/manage/${encodeURIComponent(meetingId)}/cancel`,
+        `/api/meetings/manage/${encodeURIComponent(meetingId)}/end`,
         { method: "POST" },
       );
     } catch {
-      // Still leave locally even if cancel fails.
+      // Still leave locally even if end fails.
     } finally {
       room.disconnect();
       setEnding(false);
     }
+  }
+
+  async function hostAction(body: Record<string, unknown>) {
+    const response = await fetch(
+      `/api/meetings/${encodeURIComponent(roomName)}/host`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const payload = (await response.json()) as { error?: string; locked?: boolean };
+    if (!response.ok) {
+      throw new Error(payload.error ?? "Aksi host gagal.");
+    }
+    return payload;
   }
 
   return (
@@ -633,10 +1013,39 @@ export function MeetingToolsDock({
         ))}
       </div>
 
+      {captionsEnabled || captionLines.length > 0 ? (
+        <div className="meeting-caption-overlay" aria-live="polite">
+          {captionLines.length === 0 ? (
+            <p className="meeting-caption-empty">
+              {captionsEnabled
+                ? "Captions aktif — bicara untuk menampilkan teks."
+                : null}
+            </p>
+          ) : (
+            captionLines.map((line) => (
+              <p
+                key={line.id}
+                className={line.final ? undefined : "is-interim"}
+              >
+                <strong>{line.from}:</strong> {line.text}
+              </p>
+            ))
+          )}
+        </div>
+      ) : null}
+
       {activeBreakout && roomName === mainRoomName ? (
         <div className="meeting-breakout-banner">
           <p>
             Breakout tersedia: <strong>{activeBreakout.label}</strong>
+            {breakoutSecondsLeft !== null ? (
+              <>
+                {" "}
+                ·{" "}
+                {String(Math.floor(breakoutSecondsLeft / 60)).padStart(2, "0")}:
+                {String(breakoutSecondsLeft % 60).padStart(2, "0")}
+              </>
+            ) : null}
           </p>
           <button
             type="button"
@@ -654,7 +1063,17 @@ export function MeetingToolsDock({
 
       {roomName !== mainRoomName ? (
         <div className="meeting-breakout-banner">
-          <p>Anda berada di breakout room.</p>
+          <p>
+            Anda berada di breakout room.
+            {breakoutSecondsLeft !== null ? (
+              <>
+                {" "}
+                Sisa{" "}
+                {String(Math.floor(breakoutSecondsLeft / 60)).padStart(2, "0")}:
+                {String(breakoutSecondsLeft % 60).padStart(2, "0")}
+              </>
+            ) : null}
+          </p>
           <button
             type="button"
             className="button button-ghost"
@@ -729,6 +1148,24 @@ export function MeetingToolsDock({
             <MonitorUp size={18} />
             Share
           </TrackToggle>
+
+          <button
+            type="button"
+            className={captionsEnabled ? "active" : ""}
+            onClick={() => {
+              if (!captionSupported) return;
+              setCaptionsEnabled((current) => !current);
+            }}
+            title={
+              captionSupported
+                ? "Teks berjalan (CC)"
+                : "Captions tidak didukung di browser ini"
+            }
+            disabled={!captionSupported}
+          >
+            <Captions size={18} />
+            <span>CC</span>
+          </button>
 
           <button
             type="button"
@@ -808,18 +1245,157 @@ export function MeetingToolsDock({
         ) : null}
 
         {activePanel === "participants" ? (
-          <section className="meeting-tools-panel">
+          <section className="meeting-tools-panel meeting-tools-panel-wide">
             <header>
               <strong>Peserta ({participants.length})</strong>
               <button type="button" onClick={() => setActivePanel("none")}>
                 <X size={16} />
               </button>
             </header>
+            {isHost && meetingId ? (
+              <div className="meeting-host-actions">
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  disabled={hostBusy}
+                  onClick={() => {
+                    setHostBusy(true);
+                    setHostError("");
+                    void hostAction({
+                      action: "mute_all",
+                      exceptIdentity: localParticipant.identity,
+                    })
+                      .catch((error: unknown) => {
+                        setHostError(
+                          error instanceof Error
+                            ? error.message
+                            : "Mute semua gagal.",
+                        );
+                      })
+                      .finally(() => setHostBusy(false));
+                  }}
+                >
+                  Mute semua
+                </button>
+                <button
+                  type="button"
+                  className={`button button-ghost${roomLocked ? " is-locked" : ""}`}
+                  disabled={hostBusy}
+                  onClick={() => {
+                    setHostBusy(true);
+                    setHostError("");
+                    void hostAction({ action: "lock", locked: !roomLocked })
+                      .then((payload) => {
+                        setRoomLocked(Boolean(payload.locked));
+                      })
+                      .catch((error: unknown) => {
+                        setHostError(
+                          error instanceof Error
+                            ? error.message
+                            : "Kunci meeting gagal.",
+                        );
+                      })
+                      .finally(() => setHostBusy(false));
+                  }}
+                >
+                  {roomLocked ? "Buka kunci" : "Kunci meeting"}
+                </button>
+              </div>
+            ) : null}
+            {hostError ? (
+              <p className="meeting-display-name-status is-error" role="alert">
+                {hostError}
+              </p>
+            ) : null}
             <ul className="meeting-participants-list">
               {participants.map((participant) => (
                 <li key={participant.identity}>
                   <span>{participant.name || participant.identity}</span>
-                  {participant.isLocal ? <small>Anda</small> : null}
+                  <div className="meeting-participant-actions">
+                    {participant.isLocal ? <small>Anda</small> : null}
+                    {isHost && meetingId && !participant.isLocal ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={hostBusy}
+                          onClick={() => {
+                            setHostBusy(true);
+                            setHostError("");
+                            void hostAction({
+                              action: "mute",
+                              identity: participant.identity,
+                              trackKind: "audio",
+                              muted: true,
+                            })
+                              .catch((error: unknown) => {
+                                setHostError(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Mute gagal.",
+                                );
+                              })
+                              .finally(() => setHostBusy(false));
+                          }}
+                        >
+                          Mute mic
+                        </button>
+                        <button
+                          type="button"
+                          disabled={hostBusy}
+                          onClick={() => {
+                            setHostBusy(true);
+                            setHostError("");
+                            void hostAction({
+                              action: "mute",
+                              identity: participant.identity,
+                              trackKind: "video",
+                              muted: true,
+                            })
+                              .catch((error: unknown) => {
+                                setHostError(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Matikan kamera gagal.",
+                                );
+                              })
+                              .finally(() => setHostBusy(false));
+                          }}
+                        >
+                          Mute cam
+                        </button>
+                        <button
+                          type="button"
+                          className="is-danger"
+                          disabled={hostBusy}
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `Keluarkan ${participant.name || participant.identity}?`,
+                              )
+                            ) {
+                              return;
+                            }
+                            setHostBusy(true);
+                            setHostError("");
+                            void hostAction({
+                              action: "kick",
+                              identity: participant.identity,
+                            })
+                              .catch((error: unknown) => {
+                                setHostError(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Kick gagal.",
+                                );
+                              })
+                              .finally(() => setHostBusy(false));
+                          }}
+                        >
+                          Kick
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -988,6 +1564,17 @@ export function MeetingToolsDock({
                 <option value="original">Asli (tanpa filter)</option>
               </select>
             </div>
+
+            <h4 className="meeting-settings-subtitle">Perangkat</h4>
+            <MediaDevicePickers
+              onDeviceChange={async (kind, deviceId) => {
+                try {
+                  await room.switchActiveDevice(kind, deviceId);
+                } catch {
+                  // Browser may block speaker switch without gesture.
+                }
+              }}
+            />
           </section>
         ) : null}
 
@@ -1075,7 +1662,7 @@ export function MeetingToolsDock({
         ) : null}
 
         {activePanel === "breakout" && isHost ? (
-          <section className="meeting-tools-panel">
+          <section className="meeting-tools-panel meeting-tools-panel-wide">
             <header>
               <strong>Breakout room</strong>
               <button type="button" onClick={() => setActivePanel("none")}>
@@ -1094,6 +1681,71 @@ export function MeetingToolsDock({
                   setBreakoutCount(Number(event.target.value) || 1)
                 }
               />
+            </div>
+            <div className="meeting-tools-field">
+              <label htmlFor="breakout-duration">Timer (menit)</label>
+              <input
+                id="breakout-duration"
+                type="number"
+                min={1}
+                max={60}
+                value={breakoutDurationMin}
+                onChange={(event) =>
+                  setBreakoutDurationMin(Number(event.target.value) || 1)
+                }
+              />
+            </div>
+            <div className="meeting-breakout-assign">
+              <strong>Assign peserta</strong>
+              {participants.filter((participant) => !participant.isLocal)
+                .length === 0 ? (
+                <p className="meeting-panel-empty">
+                  Belum ada peserta lain untuk di-assign.
+                </p>
+              ) : (
+                <ul className="meeting-breakout-assign-list">
+                  {participants
+                    .filter((participant) => !participant.isLocal)
+                    .map((participant) => {
+                      const rooms = Array.from(
+                        { length: Math.max(1, Math.min(8, breakoutCount)) },
+                        (_, index) => ({
+                          roomName: `${mainRoomName}-bo-${index + 1}`,
+                          label: `Grup ${index + 1}`,
+                        }),
+                      );
+                      const value =
+                        breakoutAssignments[participant.identity] ||
+                        rooms[0]?.roomName ||
+                        "";
+                      return (
+                        <li key={participant.identity}>
+                          <span>
+                            {participant.name || participant.identity}
+                          </span>
+                          <select
+                            value={value}
+                            onChange={(event) =>
+                              setBreakoutAssignments((current) => ({
+                                ...current,
+                                [participant.identity]: event.target.value,
+                              }))
+                            }
+                          >
+                            {rooms.map((roomEntry) => (
+                              <option
+                                key={roomEntry.roomName}
+                                value={roomEntry.roomName}
+                              >
+                                {roomEntry.label}
+                              </option>
+                            ))}
+                          </select>
+                        </li>
+                      );
+                    })}
+                </ul>
+              )}
             </div>
             <div className="meeting-breakout-actions">
               <button
@@ -1114,7 +1766,12 @@ export function MeetingToolsDock({
             {breakoutRooms.length > 0 ? (
               <ul className="meeting-breakout-list">
                 {breakoutRooms.map((entry) => (
-                  <li key={entry.roomName}>{entry.label}</li>
+                  <li key={entry.roomName}>
+                    {entry.label}
+                    {breakoutSecondsLeft !== null
+                      ? ` · ${String(Math.floor(breakoutSecondsLeft / 60)).padStart(2, "0")}:${String(breakoutSecondsLeft % 60).padStart(2, "0")}`
+                      : ""}
+                  </li>
                 ))}
               </ul>
             ) : null}

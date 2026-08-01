@@ -10,9 +10,12 @@ export type MeetingRealtimeMessage =
   | { type: "poll_vote"; pollId: string; optionIndex: number; from: string }
   | {
       type: "breakout";
-      action: "join" | "return";
-      roomName: string;
+      action: "join" | "return" | "start" | "timer";
+      roomName?: string;
       label?: string;
+      rooms?: { roomName: string; label: string }[];
+      assignments?: { identity: string; roomName: string; label: string }[];
+      secondsLeft?: number;
     }
   | {
       type: "wb_stroke";
@@ -21,10 +24,48 @@ export type MeetingRealtimeMessage =
       width: number;
       from: string;
     }
-  | { type: "wb_clear"; from: string };
+  | { type: "wb_clear"; from: string }
+  | {
+      type: "caption";
+      text: string;
+      from: string;
+      final: boolean;
+      id: string;
+    };
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+
+function isBreakoutRooms(
+  value: unknown,
+): value is { roomName: string; label: string }[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (entry) =>
+        entry &&
+        typeof entry === "object" &&
+        typeof (entry as { roomName?: unknown }).roomName === "string" &&
+        typeof (entry as { label?: unknown }).label === "string",
+    )
+  );
+}
+
+function isBreakoutAssignments(
+  value: unknown,
+): value is { identity: string; roomName: string; label: string }[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (entry) =>
+        entry &&
+        typeof entry === "object" &&
+        typeof (entry as { identity?: unknown }).identity === "string" &&
+        typeof (entry as { roomName?: unknown }).roomName === "string" &&
+        typeof (entry as { label?: unknown }).label === "string",
+    )
+  );
+}
 
 function isMeetingRealtimeMessage(value: unknown): value is MeetingRealtimeMessage {
   if (!value || typeof value !== "object" || !("type" in value)) {
@@ -52,12 +93,31 @@ function isMeetingRealtimeMessage(value: unknown): value is MeetingRealtimeMessa
         typeof (value as { optionIndex?: unknown }).optionIndex === "number" &&
         typeof (value as { from?: unknown }).from === "string"
       );
-    case "breakout":
+    case "breakout": {
+      const action = (value as { action?: unknown }).action;
+      if (
+        action !== "join" &&
+        action !== "return" &&
+        action !== "start" &&
+        action !== "timer"
+      ) {
+        return false;
+      }
+      if (action === "join" || action === "return") {
+        return typeof (value as { roomName?: unknown }).roomName === "string";
+      }
+      if (action === "start") {
+        const rooms = (value as { rooms?: unknown }).rooms;
+        const assignments = (value as { assignments?: unknown }).assignments;
+        return (
+          (rooms === undefined || isBreakoutRooms(rooms)) &&
+          (assignments === undefined || isBreakoutAssignments(assignments))
+        );
+      }
       return (
-        ((value as { action?: unknown }).action === "join" ||
-          (value as { action?: unknown }).action === "return") &&
-        typeof (value as { roomName?: unknown }).roomName === "string"
+        typeof (value as { secondsLeft?: unknown }).secondsLeft === "number"
       );
+    }
     case "wb_stroke":
       return (
         Array.isArray((value as { points?: unknown }).points) &&
@@ -67,6 +127,13 @@ function isMeetingRealtimeMessage(value: unknown): value is MeetingRealtimeMessa
       );
     case "wb_clear":
       return typeof (value as { from?: unknown }).from === "string";
+    case "caption":
+      return (
+        typeof (value as { text?: unknown }).text === "string" &&
+        typeof (value as { from?: unknown }).from === "string" &&
+        typeof (value as { final?: unknown }).final === "boolean" &&
+        typeof (value as { id?: unknown }).id === "string"
+      );
     default:
       return false;
   }

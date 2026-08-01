@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { assertCanConsumeMeetingMinutes } from "@/lib/billing";
 import { prisma } from "@/lib/db";
 import { createParticipantToken } from "@/lib/livekit-token";
+import { getRoomLockState } from "@/lib/livekit-room-admin";
 import { maintenanceBlockResponse } from "@/lib/maintenance";
 import { meetingRequestSchema } from "@/lib/meeting";
 import { isParticipantRoomOpen } from "@/lib/meeting-lifecycle";
@@ -98,6 +99,16 @@ export async function POST(request: Request) {
         { error: "Meeting belum dimulai oleh host." },
         { status: 403 },
       );
+    }
+
+    if (role === "PARTICIPANT") {
+      const locked = await getRoomLockState(parsed.data.roomName);
+      if (locked) {
+        return NextResponse.json(
+          { error: "Meeting sedang dikunci oleh host. Coba lagi nanti." },
+          { status: 403 },
+        );
+      }
     }
 
     if (meeting?.passwordHash && role === "PARTICIPANT") {

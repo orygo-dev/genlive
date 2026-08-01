@@ -5654,6 +5654,87 @@ footer p {
   overflow: hidden;
 }
 
+.meeting-caption-overlay {
+  position: fixed;
+  z-index: 26;
+  left: 50%;
+  bottom: 108px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 24px));
+  display: grid;
+  gap: 4px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.meeting-caption-overlay p {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #f8fafc;
+  background: rgba(15, 20, 28, 0.82);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.meeting-caption-overlay p.is-interim {
+  opacity: 0.72;
+  font-style: italic;
+}
+
+.meeting-caption-empty {
+  opacity: 0.7;
+  font-size: 12px !important;
+}
+
+.prejoin-device-pickers,
+.meeting-device-pickers {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.meeting-settings-subtitle {
+  margin: 14px 0 8px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.meeting-breakout-assign {
+  margin: 10px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.meeting-breakout-assign-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.meeting-breakout-assign-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.12);
+  font-size: 12px;
+}
+
+.meeting-breakout-assign-list select {
+  max-width: 140px;
+  border: 1px solid #3b4654;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #e8eef6;
+  background: #242c37;
+}
+
 .meeting-reaction-float {
   position: absolute;
   left: 50%;
@@ -6019,6 +6100,40 @@ footer p {
   border-radius: 10px;
   background: rgba(148, 163, 184, 0.12);
   font-size: 13px;
+  align-items: center;
+}
+
+.meeting-participant-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meeting-participant-actions button {
+  border: 1px solid #3b4654;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #e8eef6;
+  background: #242c37;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.meeting-participant-actions button.is-danger {
+  border-color: #7f1d1d;
+  background: #991b1b;
+}
+
+.meeting-host-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.meeting-host-actions .is-locked {
+  border-color: #f59e0b;
+  color: #fde68a;
 }
 
 .meeting-more-grid {

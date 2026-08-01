@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hashAdmissionToken } from "@/lib/admission";
 import { prisma } from "@/lib/db";
 import { createParticipantToken } from "@/lib/livekit-token";
+import { getRoomLockState } from "@/lib/livekit-room-admin";
 
 export const runtime = "nodejs";
 const ADMISSION_RETRY_WINDOW_MS = 2 * 60 * 1000;
@@ -94,6 +95,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Meeting sudah berakhir." },
       { status: 410 },
+    );
+  }
+
+  if (await getRoomLockState(participant.meeting.roomName)) {
+    return NextResponse.json(
+      { error: "Meeting sedang dikunci oleh host." },
+      { status: 403 },
     );
   }
 

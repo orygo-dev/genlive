@@ -24,6 +24,7 @@ import {
   type MeetingLayoutMode,
 } from "@/components/meeting-stage";
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
+import { readStoredMediaDevices } from "@/lib/media-devices";
 
 type ConnectionDetails = {
   identity: string;
@@ -75,20 +76,27 @@ function MeetingRoom({
     connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
-  const roomOptions = useMemo<RoomOptions>(
-    () => ({
+  const roomOptions = useMemo<RoomOptions>(() => {
+    const devices = readStoredMediaDevices();
+    return {
       adaptiveStream: true,
       dynacast: true,
+      audioCaptureDefaults: devices.audioinput
+        ? { deviceId: devices.audioinput }
+        : undefined,
       videoCaptureDefaults: {
         resolution: VideoPresets.h720.resolution,
+        ...(devices.videoinput ? { deviceId: devices.videoinput } : {}),
       },
+      audioOutput: devices.audiooutput
+        ? { deviceId: devices.audiooutput }
+        : undefined,
       publishDefaults: {
         simulcast: true,
         videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
       },
-    }),
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
