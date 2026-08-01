@@ -1,22 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Track, type LocalVideoTrack } from "livekit-client";
 import { useLocalParticipant } from "@livekit/components-react";
-import {
-  supportsBackgroundProcessors,
-  type BackgroundProcessorWrapper,
-} from "@livekit/track-processors";
 import { ImageIcon, X } from "lucide-react";
 import { BackgroundEffectsPicker } from "@/components/background-effects-picker";
-import {
-  storeBackgroundEffect,
-  type BackgroundEffectId,
-} from "@/lib/background-effects";
-import {
-  applyBackgroundEffect,
-  createDisabledBackgroundProcessor,
-} from "@/lib/background-processor";
+import { useBackgroundEffects } from "@/components/background-effects-context";
+import { useVirtualBackground } from "@/hooks/useVirtualBackground";
+import type { BackgroundEffectId } from "@/lib/background-effects";
 
 type BackgroundEffectsRuntimeProps = {
   effectId: BackgroundEffectId;
@@ -28,86 +19,53 @@ export function BackgroundEffectsRuntime({
   onEffectChange,
 }: BackgroundEffectsRuntimeProps) {
   const { localParticipant } = useLocalParticipant();
-  const processorRef = useRef<BackgroundProcessorWrapper | null>(null);
-  const trackRef = useRef<LocalVideoTrack | null>(null);
-  const [supported] = useState(() => supportsBackgroundProcessors());
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [track, setTrack] = useState<LocalVideoTrack | null>(null);
+  const {
+    qualityMode,
+    setQualityMode,
+    autoDowngradeWarning,
+    clearAutoDowngradeWarning,
+    noteAutoDowngrade,
+  } = useBackgroundEffects();
 
   useEffect(() => {
-    if (!supported) {
-      return;
+    function refreshTrack() {
+      const publication = localParticipant.getTrackPublication(
+        Track.Source.Camera,
+      );
+      const next = (publication?.track as LocalVideoTrack | undefined) ?? null;
+      setTrack(next);
     }
 
-    let cancelled = false;
-
-    async function ensureProcessor() {
-      const publication = localParticipant.getTrackPublication(Track.Source.Camera);
-      const track = publication?.track as LocalVideoTrack | undefined;
-      if (!track) {
-        return;
-      }
-
-      if (trackRef.current !== track) {
-        trackRef.current = track;
-        const processor = createDisabledBackgroundProcessor();
-        processorRef.current = processor;
-        await track.setProcessor(processor);
-      }
-
-      if (!processorRef.current || cancelled) {
-        return;
-      }
-
-      setBusy(true);
-      try {
-        await applyBackgroundEffect(processorRef.current, effectId, track);
-        storeBackgroundEffect(effectId);
-        if (typeof document !== "undefined") {
-          const room = document.querySelector(".live-room");
-          if (room instanceof HTMLElement) {
-            room.dataset.bgEffect =
-              effectId === "none"
-                ? "off"
-                : effectId.startsWith("blur")
-                  ? "blur"
-                  : "virtual";
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setBusy(false);
-        }
-      }
-    }
-
-    void ensureProcessor();
-
-    const onLocalTrackPublished = () => {
-      void ensureProcessor();
-    };
-    localParticipant.on("localTrackPublished", onLocalTrackPublished);
+    refreshTrack();
+    localParticipant.on("localTrackPublished", refreshTrack);
+    localParticipant.on("localTrackUnpublished", refreshTrack);
 
     return () => {
-      cancelled = true;
-      localParticipant.off("localTrackPublished", onLocalTrackPublished);
+      localParticipant.off("localTrackPublished", refreshTrack);
+      localParticipant.off("localTrackUnpublished", refreshTrack);
     };
-  }, [effectId, localParticipant, supported]);
+  }, [localParticipant]);
+
+  const vb = useVirtualBackground({
+    effectId,
+    qualityMode,
+    track,
+    onAutoDowngrade: () => noteAutoDowngrade(),
+  });
 
   useEffect(() => {
-    return () => {
-      const track = trackRef.current;
-      if (track) {
-        void track.stopProcessor().catch(() => undefined);
-      }
-      processorRef.current = null;
-      trackRef.current = null;
-    };
-  }, []);
-
-  if (!supported) {
-    return null;
-  }
+    if (typeof document === "undefined") return;
+    const room = document.querySelector(".live-room");
+    if (!(room instanceof HTMLElement)) return;
+    room.dataset.bgEffect =
+      effectId === "none"
+        ? "off"
+        : effectId.startsWith("blur")
+          ? "blur"
+          : "virtual";
+  }, [effectId]);
 
   return (
     <div className="bg-effects-runtime">
@@ -118,16 +76,33 @@ export function BackgroundEffectsRuntime({
         aria-controls="bg-effects-panel"
         onClick={() => setOpen((value) => !value)}
       >
-        {open ? <X size={16} /> : <ImageIcon size={16} />}
+        <ImageIcon size={16} />
         Background
       </button>
-
       {open ? (
         <div id="bg-effects-panel" className="bg-effects-runtime-panel">
+          <div className="bg-effects-runtime-panel-head">
+            <strong>Virtual background</strong>
+            <button
+              type="button"
+              aria-label="Tutup"
+              onClick={() => setOpen(false)}
+            >
+              <X size={16} />
+            </button>
+          </div>
           <BackgroundEffectsPicker
             value={effectId}
             onChange={onEffectChange}
-            disabled={busy}
+            qualityMode={qualityMode}
+            onQualityChange={setQualityMode}
+            disabled={vb.busy}
+            unsupported={!vb.supported}
+            loading={vb.loading}
+            error={vb.error}
+            autoDowngraded={autoDowngradeWarning || vb.autoDowngraded}
+            activeQuality={vb.activeQuality}
+            onDismissDowngradeWarning={clearAutoDowngradeWarning}
             compact
           />
         </div>
@@ -140,15 +115,23 @@ export function BackgroundEffectsSettings({
   effectId,
   onEffectChange,
 }: BackgroundEffectsRuntimeProps) {
-  const supported = supportsBackgroundProcessors();
+  const {
+    qualityMode,
+    setQualityMode,
+    autoDowngradeWarning,
+    clearAutoDowngradeWarning,
+  } = useBackgroundEffects();
 
   return (
     <div className="bg-effects-settings lk-settings-menu-modal">
-      <h3>Efek video</h3>
+      <h3>Background effects</h3>
       <BackgroundEffectsPicker
         value={effectId}
         onChange={onEffectChange}
-        unsupported={!supported}
+        qualityMode={qualityMode}
+        onQualityChange={setQualityMode}
+        autoDowngraded={autoDowngradeWarning}
+        onDismissDowngradeWarning={clearAutoDowngradeWarning}
       />
     </div>
   );

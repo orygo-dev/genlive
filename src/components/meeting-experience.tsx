@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LiveKitRoom } from "@livekit/components-react";
+import { VideoPresets, type RoomOptions } from "livekit-client";
 import { ArrowLeft, Clock3, LoaderCircle, LockKeyhole, Video } from "lucide-react";
 import { HostWaitingRoom } from "@/components/host-waiting-room";
 import { RecordingControls } from "@/components/recording-controls";
@@ -57,6 +58,21 @@ function MeetingRoom({
     connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
+  const roomOptions = useMemo<RoomOptions>(
+    () => ({
+      adaptiveStream: true,
+      dynacast: true,
+      videoCaptureDefaults: {
+        resolution: VideoPresets.h720.resolution,
+      },
+      publishDefaults: {
+        simulcast: true,
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+      },
+    }),
+    [],
+  );
+
   return (
     <div className="live-room" data-lk-theme="default">
       <LiveKitRoom
@@ -65,6 +81,7 @@ function MeetingRoom({
         connect
         video
         audio
+        options={roomOptions}
         onDisconnected={() =>
           router.push(connection.role === "PARTICIPANT" ? "/" : "/dashboard")
         }

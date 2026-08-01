@@ -2,20 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createLocalVideoTrack, type LocalVideoTrack } from "livekit-client";
-import {
-  supportsBackgroundProcessors,
-  type BackgroundProcessorWrapper,
-} from "@livekit/track-processors";
 import { BackgroundEffectsPicker } from "@/components/background-effects-picker";
-import {
-  readStoredBackgroundEffect,
-  storeBackgroundEffect,
-  type BackgroundEffectId,
-} from "@/lib/background-effects";
-import {
-  applyBackgroundEffect,
-  createDisabledBackgroundProcessor,
-} from "@/lib/background-processor";
+import { useBackgroundEffects } from "@/components/background-effects-context";
+import { useVirtualBackground } from "@/hooks/useVirtualBackground";
+import type { BackgroundEffectId } from "@/lib/background-effects";
 
 type BackgroundEffectsPrejoinProps = {
   effectId: BackgroundEffectId;
@@ -27,51 +17,40 @@ export function BackgroundEffectsPrejoin({
   onEffectChange,
 }: BackgroundEffectsPrejoinProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const trackRef = useRef<LocalVideoTrack | null>(null);
-  const processorRef = useRef<BackgroundProcessorWrapper | null>(null);
-  const [previewReady, setPreviewReady] = useState(false);
-  const [supported] = useState(() =>
-    typeof window !== "undefined" ? supportsBackgroundProcessors() : false,
-  );
-  const [busy, setBusy] = useState(false);
+  const [track, setTrack] = useState<LocalVideoTrack | null>(null);
   const [previewError, setPreviewError] = useState("");
+  const {
+    qualityMode,
+    setQualityMode,
+    autoDowngradeWarning,
+    clearAutoDowngradeWarning,
+    noteAutoDowngrade,
+  } = useBackgroundEffects();
+
+  const vb = useVirtualBackground({
+    effectId,
+    qualityMode,
+    track,
+    onAutoDowngrade: () => noteAutoDowngrade(),
+  });
 
   useEffect(() => {
     let cancelled = false;
+    let localTrack: LocalVideoTrack | null = null;
 
     async function startPreview() {
       try {
-        const track = await createLocalVideoTrack({
+        localTrack = await createLocalVideoTrack({
           facingMode: "user",
           resolution: { width: 1280, height: 720, frameRate: 24 },
         });
         if (cancelled) {
-          track.stop();
+          localTrack.stop();
           return;
         }
-
-        trackRef.current = track;
+        setTrack(localTrack);
         if (videoRef.current) {
-          track.attach(videoRef.current);
-        }
-
-        if (supportsBackgroundProcessors()) {
-          const processor = createDisabledBackgroundProcessor();
-          processorRef.current = processor;
-          await track.setProcessor(processor);
-          // Re-attach after processor wraps the track stream.
-          if (videoRef.current) {
-            track.attach(videoRef.current);
-          }
-        }
-
-        if (!cancelled) {
-          const initial =
-            effectId === "none" ? readStoredBackgroundEffect() : effectId;
-          if (initial !== effectId) {
-            onEffectChange(initial);
-          }
-          setPreviewReady(true);
+          localTrack.attach(videoRef.current);
         }
       } catch {
         if (!cancelled) {
@@ -84,57 +63,19 @@ export function BackgroundEffectsPrejoin({
 
     return () => {
       cancelled = true;
-      setPreviewReady(false);
-      const track = trackRef.current;
-      trackRef.current = null;
-      processorRef.current = null;
-      if (track) {
-        void track.stopProcessor().catch(() => undefined);
-        track.stop();
-        track.detach();
+      setTrack(null);
+      if (localTrack) {
+        localTrack.stop();
+        localTrack.detach();
       }
     };
-    // Mount once for preview lifecycle; effect changes handled below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const processor = processorRef.current;
-    const track = trackRef.current;
-    if (!previewReady || !processor || !supported) {
-      return;
+    if (track && videoRef.current) {
+      track.attach(videoRef.current);
     }
-
-    let cancelled = false;
-    setBusy(true);
-    setPreviewError("");
-
-    void applyBackgroundEffect(processor, effectId, track)
-      .then(() => {
-        if (cancelled) return;
-        storeBackgroundEffect(effectId);
-        // Keep preview attached to the processed track after mode switches.
-        if (videoRef.current && track) {
-          track.attach(videoRef.current);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPreviewError(
-            "Efek background belum dapat diterapkan. Coba gambar JPG/PNG.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setBusy(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [effectId, previewReady, supported]);
+  }, [track, effectId, vb.busy]);
 
   return (
     <div className="bg-effects-prejoin">
@@ -145,8 +86,15 @@ export function BackgroundEffectsPrejoin({
       <BackgroundEffectsPicker
         value={effectId}
         onChange={onEffectChange}
-        disabled={busy}
-        unsupported={!supported}
+        qualityMode={qualityMode}
+        onQualityChange={setQualityMode}
+        disabled={vb.busy}
+        unsupported={!vb.supported}
+        loading={vb.loading}
+        error={vb.error}
+        autoDowngraded={autoDowngradeWarning || vb.autoDowngraded}
+        activeQuality={vb.activeQuality}
+        onDismissDowngradeWarning={clearAutoDowngradeWarning}
         compact
       />
     </div>

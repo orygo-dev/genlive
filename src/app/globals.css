@@ -2045,6 +2045,73 @@ footer p {
   color: var(--danger);
 }
 
+.bg-effects-quality {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.bg-effects-quality button {
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.bg-effects-quality button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.bg-effects-status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bg-effects-warning {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #92400e;
+  background: #fff7ed;
+}
+
+.bg-effects-warning-dismiss {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.bg-effects-runtime-panel .bg-effects-quality button {
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.bg-effects-runtime-panel .bg-effects-quality button.is-active {
+  border-color: rgba(147, 197, 253, 0.65);
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.bg-effects-runtime-panel .bg-effects-status {
+  color: #94a3b8;
+}
+
+.bg-effects-runtime-panel .bg-effects-warning {
+  color: #ffedd5;
+  background: rgba(154, 52, 18, 0.35);
+}
+
 .bg-effects-runtime-panel .bg-effects-hint {
   color: #94a3b8;
 }

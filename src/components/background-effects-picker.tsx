@@ -10,21 +10,43 @@ import {
   storeCustomBackgroundImage,
   type BackgroundEffectId,
 } from "@/lib/background-effects";
+import type { QualityMode, QualityTier } from "@/features/video-effects";
 
 type BackgroundEffectsPickerProps = {
   value: BackgroundEffectId;
   onChange: (value: BackgroundEffectId) => void;
+  qualityMode: QualityMode;
+  onQualityChange: (value: QualityMode) => void;
   disabled?: boolean;
   unsupported?: boolean;
   compact?: boolean;
+  loading?: boolean;
+  error?: string;
+  autoDowngraded?: boolean;
+  activeQuality?: QualityTier | null;
+  onDismissDowngradeWarning?: () => void;
 };
+
+const QUALITY_OPTIONS: { id: QualityMode; label: string }[] = [
+  { id: "auto", label: "Auto" },
+  { id: "low", label: "Low" },
+  { id: "balanced", label: "Balanced" },
+  { id: "high", label: "High" },
+];
 
 export function BackgroundEffectsPicker({
   value,
   onChange,
+  qualityMode,
+  onQualityChange,
   disabled = false,
   unsupported = false,
   compact = false,
+  loading = false,
+  error = "",
+  autoDowngraded = false,
+  activeQuality = null,
+  onDismissDowngradeWarning,
 }: BackgroundEffectsPickerProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [customPreview, setCustomPreview] = useState<string | null>(() =>
@@ -36,7 +58,8 @@ export function BackgroundEffectsPicker({
   if (unsupported) {
     return (
       <p className="bg-effects-unsupported">
-        Browser ini belum mendukung efek background. Gunakan Chrome atau Edge terbaru.
+        Browser ini belum mendukung efek background. Gunakan Chrome atau Edge
+        terbaru.
       </p>
     );
   }
@@ -50,9 +73,9 @@ export function BackgroundEffectsPicker({
       storeCustomBackgroundImage(dataUrl);
       setCustomPreview(dataUrl);
       onChange("custom");
-    } catch (error) {
+    } catch (err) {
       setUploadError(
-        error instanceof Error ? error.message : "Gambar belum dapat dipakai.",
+        err instanceof Error ? err.message : "Gambar belum dapat dipakai.",
       );
     } finally {
       setUploading(false);
@@ -71,15 +94,21 @@ export function BackgroundEffectsPicker({
     }
   }
 
+  const locked = disabled || uploading || loading;
+
   return (
     <div className={`bg-effects-picker${compact ? " is-compact" : ""}`}>
       <p className="bg-effects-label">Background</p>
-      <div className="bg-effects-options" role="listbox" aria-label="Pilih background">
+      <div
+        className="bg-effects-options"
+        role="listbox"
+        aria-label="Pilih background"
+      >
         <button
           type="button"
           className={value === "none" ? "is-active" : undefined}
-          aria-selected={value === "none"}
-          disabled={disabled || uploading}
+          aria-pressed={value === "none"}
+          disabled={locked}
           onClick={() => onChange("none")}
         >
           <span className="bg-effects-swatch bg-effects-swatch-none">Off</span>
@@ -88,22 +117,24 @@ export function BackgroundEffectsPicker({
         <button
           type="button"
           className={value === "blur" ? "is-active" : undefined}
-          aria-selected={value === "blur"}
-          disabled={disabled || uploading}
+          aria-pressed={value === "blur"}
+          disabled={locked}
           onClick={() => onChange("blur")}
         >
           <span className="bg-effects-swatch bg-effects-swatch-blur">Blur</span>
-          <span>Blur</span>
+          <span>Blur Light</span>
         </button>
         <button
           type="button"
           className={value === "blur-strong" ? "is-active" : undefined}
-          aria-selected={value === "blur-strong"}
-          disabled={disabled || uploading}
+          aria-pressed={value === "blur-strong"}
+          disabled={locked}
           onClick={() => onChange("blur-strong")}
         >
-          <span className="bg-effects-swatch bg-effects-swatch-blur-strong">Blur+</span>
-          <span>Blur kuat</span>
+          <span className="bg-effects-swatch bg-effects-swatch-blur-strong">
+            Blur+
+          </span>
+          <span>Blur Strong</span>
         </button>
         {BACKGROUND_PRESETS.map((preset) => {
           const id = `preset:${preset.id}` as BackgroundEffectId;
@@ -112,8 +143,8 @@ export function BackgroundEffectsPicker({
               key={preset.id}
               type="button"
               className={value === id ? "is-active" : undefined}
-              aria-selected={value === id}
-              disabled={disabled || uploading}
+              aria-pressed={value === id}
+              disabled={locked}
               onClick={() => onChange(id)}
             >
               <span
@@ -130,8 +161,8 @@ export function BackgroundEffectsPicker({
           <button
             type="button"
             className={value === "custom" ? "is-active" : undefined}
-            aria-selected={value === "custom"}
-            disabled={disabled || uploading}
+            aria-pressed={value === "custom"}
+            disabled={locked}
             onClick={() => onChange("custom")}
           >
             <span
@@ -139,14 +170,14 @@ export function BackgroundEffectsPicker({
               style={{ backgroundImage: `url(${customPreview})` }}
               aria-hidden="true"
             />
-            <span>Gambar saya</span>
+            <span>Background Image</span>
           </button>
         ) : null}
 
         <button
           type="button"
           className="bg-effects-upload"
-          disabled={disabled || uploading}
+          disabled={locked}
           onClick={() => inputRef.current?.click()}
         >
           <span className="bg-effects-swatch bg-effects-swatch-upload">
@@ -161,26 +192,71 @@ export function BackgroundEffectsPicker({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
-        disabled={disabled || uploading}
+        disabled={locked}
         onChange={(event) => {
           void onFileSelected(event.target.files?.[0] ?? null);
         }}
       />
 
+      <p className="bg-effects-label">Quality</p>
+      <div
+        className="bg-effects-quality"
+        role="listbox"
+        aria-label="Kualitas segmentasi"
+      >
+        {QUALITY_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className={qualityMode === option.id ? "is-active" : undefined}
+            aria-pressed={qualityMode === option.id}
+            disabled={locked}
+            onClick={() => onQualityChange(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="bg-effects-status" role="status">
+          Memuat model background…
+        </p>
+      ) : null}
+
+      {autoDowngraded ? (
+        <p className="bg-effects-warning" role="status">
+          Kualitas otomatis diturunkan
+          {activeQuality ? ` ke ${activeQuality}` : ""} agar tetap lancar.
+          {onDismissDowngradeWarning ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="bg-effects-warning-dismiss"
+                onClick={onDismissDowngradeWarning}
+              >
+                Tutup
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+
       {customPreview ? (
         <button
           type="button"
           className="bg-effects-remove-custom"
-          disabled={disabled || uploading}
+          disabled={locked}
           onClick={removeCustom}
         >
           <Trash2 size={14} /> Hapus gambar sendiri
         </button>
       ) : null}
 
-      {uploadError ? (
+      {uploadError || error ? (
         <p className="bg-effects-upload-error" role="alert">
-          {uploadError}
+          {uploadError || error}
         </p>
       ) : (
         <p className="bg-effects-hint">
