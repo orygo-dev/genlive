@@ -5,28 +5,22 @@ import {
   type SwitchBackgroundProcessorOptions,
 } from "@livekit/track-processors";
 import type { LocalVideoTrack } from "livekit-client";
-import { VideoPresets } from "livekit-client";
 import {
   getBackgroundImagePath,
+  isVirtualBackgroundEffect,
   type BackgroundEffectId,
 } from "@/lib/background-effects";
 
-/** Landscape selfie model tends to be stabler for webcam 16:9 frames. */
-const SEGMENTER_MODEL =
-  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter_landscape/float16/latest/selfie_segmenter_landscape.tflite";
+const rasterCache = new Map<string, string>();
 
 export function createDisabledBackgroundProcessor() {
   return BackgroundProcessor(
     {
       mode: "disabled",
-      // Prefer GPU; fall back handled by MediaPipe if unavailable.
       segmenterOptions: {
         delegate: "GPU",
       },
-      assetPaths: {
-        modelAssetPath: SEGMENTER_MODEL,
-      },
-      // Lower FPS = less mask jitter / “wavy” edges under load.
+      // Slightly lower FPS keeps edges steadier under CPU load.
       maxFps: supportsModernBackgroundProcessors() ? 24 : 20,
     },
     "genmeet-background",
@@ -40,7 +34,6 @@ export function toProcessorSwitchOptions(
     return { mode: "disabled" };
   }
   if (effectId === "blur") {
-    // Slightly stronger blur hides residual mask flicker better.
     return { mode: "background-blur", blurRadius: 16 };
   }
   if (effectId === "blur-strong") {
@@ -54,57 +47,81 @@ export function toProcessorSwitchOptions(
   return { mode: "virtual-background", imagePath };
 }
 
-export function isVirtualBackgroundEffect(effectId: BackgroundEffectId) {
-  return effectId === "custom" || effectId.startsWith("preset:");
-}
-
-const tunedForEffects = new WeakSet<LocalVideoTrack>();
+export { isVirtualBackgroundEffect };
 
 /**
- * Cap camera to 720p@24 when effects are on — steadier segmentation than 1080p.
- * Only restarts once per track while effects stay on (avoids flicker on effect switches).
- * Re-attach processor after restart because constraints restart replaces the MediaStreamTrack.
+ * LiveKit WebGL compositing often fails on SVG (black / empty texture).
+ * Rasterize to JPEG data-URL so virtual backgrounds stay visible.
  */
-export async function tuneCameraForBackgroundEffect(
-  track: LocalVideoTrack,
-  effectId: BackgroundEffectId,
-  processor: BackgroundProcessorWrapper | null,
-) {
-  if (effectId === "none") {
-    return;
+export async function rasterizeBackgroundImage(src: string): Promise<string> {
+  if (
+    src.startsWith("data:image/jpeg") ||
+    src.startsWith("data:image/jpg") ||
+    src.startsWith("data:image/png") ||
+    src.startsWith("data:image/webp")
+  ) {
+    return src;
   }
 
-  if (!tunedForEffects.has(track)) {
-    try {
-      await track.restartTrack({
-        resolution: VideoPresets.h720.resolution,
-        frameRate: 24,
-      });
-      tunedForEffects.add(track);
-    } catch {
-      // Some devices reject exact constraints; keep current track.
-    }
-
-    if (processor) {
-      try {
-        await track.setProcessor(processor);
-      } catch {
-        // ignore re-attach races
-      }
-    }
+  const cached = rasterCache.get(src);
+  if (cached) {
+    return cached;
   }
+
+  const image = await loadImage(src);
+  const width = Math.max(1, image.naturalWidth || image.width || 1280);
+  const height = Math.max(1, image.naturalHeight || image.height || 720);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Canvas tidak tersedia untuk background.");
+  }
+  context.drawImage(image, 0, 0, width, height);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  rasterCache.set(src, dataUrl);
+  return dataUrl;
 }
 
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    if (!src.startsWith("data:")) {
+      image.crossOrigin = "anonymous";
+    }
+    image.onload = () => resolve(image);
+    image.onerror = () =>
+      reject(new Error("Gambar background gagal dimuat."));
+    image.src = src;
+  });
+}
+
+export async function resolveProcessorSwitchOptions(
+  effectId: BackgroundEffectId,
+): Promise<SwitchBackgroundProcessorOptions> {
+  if (!isVirtualBackgroundEffect(effectId)) {
+    return toProcessorSwitchOptions(effectId);
+  }
+
+  const imagePath = getBackgroundImagePath(effectId);
+  if (!imagePath) {
+    return { mode: "disabled" };
+  }
+
+  const rasterPath = await rasterizeBackgroundImage(imagePath);
+  return { mode: "virtual-background", imagePath: rasterPath };
+}
+
+/**
+ * Apply effect. Do NOT restart the camera track here — restartTrack while a
+ * processor is attached commonly blacks out the preview (especially pre-join).
+ */
 export async function applyBackgroundEffect(
   processor: BackgroundProcessorWrapper,
   effectId: BackgroundEffectId,
-  track?: LocalVideoTrack | null,
-  options?: { retuneCamera?: boolean },
+  _track?: LocalVideoTrack | null,
 ) {
-  const retuneCamera = options?.retuneCamera ?? true;
-  if (track && retuneCamera) {
-    await tuneCameraForBackgroundEffect(track, effectId, processor);
-  }
-
-  await processor.switchTo(toProcessorSwitchOptions(effectId));
+  await processor.switchTo(await resolveProcessorSwitchOptions(effectId));
 }

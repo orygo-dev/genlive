@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBackgroundImagePath,
   isBackgroundEffectId,
+  isVirtualBackgroundEffect,
 } from "./background-effects";
 import { toProcessorSwitchOptions } from "./background-processor";
 
@@ -14,6 +15,8 @@ describe("background effects", () => {
     expect(isBackgroundEffectId("preset:soft-blue")).toBe(true);
     expect(isBackgroundEffectId("preset:missing")).toBe(false);
     expect(isBackgroundEffectId("glow")).toBe(false);
+    expect(isVirtualBackgroundEffect("preset:office")).toBe(true);
+    expect(isVirtualBackgroundEffect("blur")).toBe(false);
   });
 
   it("maps effects to processor options", () => {

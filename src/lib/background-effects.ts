@@ -126,6 +126,10 @@ export function getBackgroundImagePath(
   return BACKGROUND_PRESETS.find((preset) => preset.id === presetId)?.imagePath ?? null;
 }
 
+export function isVirtualBackgroundEffect(effectId: BackgroundEffectId) {
+  return effectId === "custom" || effectId.startsWith("preset:");
+}
+
 /** @deprecated use getBackgroundImagePath */
 export function getPresetImagePath(effectId: BackgroundEffectId): string | null {
   return getBackgroundImagePath(effectId);
@@ -152,11 +156,8 @@ export async function fileToCustomBackgroundDataUrl(file: File): Promise<string>
     if (!context) {
       throw new Error("Gambar belum dapat diproses.");
     }
-    // Soften image slightly so harsh textures don't amplify jagged cutout edges.
-    context.filter = "blur(1.2px) contrast(0.98) saturate(0.98)";
     context.drawImage(image, 0, 0, width, height);
-    context.filter = "none";
-    return canvas.toDataURL("image/jpeg", 0.9);
+    return canvas.toDataURL("image/jpeg", 0.92);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }

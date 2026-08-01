@@ -29,6 +29,7 @@ export function BackgroundEffectsPrejoin({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trackRef = useRef<LocalVideoTrack | null>(null);
   const processorRef = useRef<BackgroundProcessorWrapper | null>(null);
+  const [previewReady, setPreviewReady] = useState(false);
   const [supported] = useState(() =>
     typeof window !== "undefined" ? supportsBackgroundProcessors() : false,
   );
@@ -58,11 +59,19 @@ export function BackgroundEffectsPrejoin({
           const processor = createDisabledBackgroundProcessor();
           processorRef.current = processor;
           await track.setProcessor(processor);
-          const initial = effectId === "none" ? readStoredBackgroundEffect() : effectId;
-          await applyBackgroundEffect(processor, initial, track);
-          if (!cancelled && initial !== effectId) {
+          // Re-attach after processor wraps the track stream.
+          if (videoRef.current) {
+            track.attach(videoRef.current);
+          }
+        }
+
+        if (!cancelled) {
+          const initial =
+            effectId === "none" ? readStoredBackgroundEffect() : effectId;
+          if (initial !== effectId) {
             onEffectChange(initial);
           }
+          setPreviewReady(true);
         }
       } catch {
         if (!cancelled) {
@@ -75,6 +84,7 @@ export function BackgroundEffectsPrejoin({
 
     return () => {
       cancelled = true;
+      setPreviewReady(false);
       const track = trackRef.current;
       trackRef.current = null;
       processorRef.current = null;
@@ -90,21 +100,29 @@ export function BackgroundEffectsPrejoin({
 
   useEffect(() => {
     const processor = processorRef.current;
-    if (!processor || !supported) {
+    const track = trackRef.current;
+    if (!previewReady || !processor || !supported) {
       return;
     }
 
     let cancelled = false;
     setBusy(true);
-    void applyBackgroundEffect(processor, effectId, trackRef.current)
+    setPreviewError("");
+
+    void applyBackgroundEffect(processor, effectId, track)
       .then(() => {
-        if (!cancelled) {
-          storeBackgroundEffect(effectId);
+        if (cancelled) return;
+        storeBackgroundEffect(effectId);
+        // Keep preview attached to the processed track after mode switches.
+        if (videoRef.current && track) {
+          track.attach(videoRef.current);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setPreviewError("Efek background belum dapat diterapkan.");
+          setPreviewError(
+            "Efek background belum dapat diterapkan. Coba gambar JPG/PNG.",
+          );
         }
       })
       .finally(() => {
@@ -116,7 +134,7 @@ export function BackgroundEffectsPrejoin({
     return () => {
       cancelled = true;
     };
-  }, [effectId, supported]);
+  }, [effectId, previewReady, supported]);
 
   return (
     <div className="bg-effects-prejoin">
