@@ -95,6 +95,25 @@ type MeetingToolsDockProps = {
 const REACTION_EMOJIS = ["👍", "👏", "❤️", "😂", "🎉", "🤔"];
 const BEAUTY_STORAGE_KEY = "genmeet-beauty";
 const AUDIO_STORAGE_KEY = "genmeet-audio-mode";
+const DISPLAY_NAME_STORAGE_KEY = "genmeet_display_name";
+
+function readStoredDisplayName(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.sessionStorage.getItem(DISPLAY_NAME_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function storeDisplayName(name: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(DISPLAY_NAME_STORAGE_KEY, name);
+  } catch {
+    // ignore quota / private mode
+  }
+}
 
 function readStoredBeauty(): BeautyMode {
   if (typeof window === "undefined") return "off";
@@ -196,6 +215,15 @@ export function MeetingToolsDock({
   const [aiInput, setAiInput] = useState("");
   const [aiReply, setAiReply] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [displayName, setDisplayName] = useState(() => {
+    const stored = readStoredDisplayName();
+    return stored || localParticipant.name || localParticipant.identity || "";
+  });
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameStatus, setNameStatus] = useState<{
+    type: "ok" | "error";
+    text: string;
+  } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
@@ -541,6 +569,43 @@ export function MeetingToolsDock({
     }
   }
 
+  async function saveDisplayName(event: FormEvent) {
+    event.preventDefault();
+    const next = displayName.trim();
+    if (next.length < 2) {
+      setNameStatus({
+        type: "error",
+        text: "Nama minimal 2 karakter.",
+      });
+      return;
+    }
+    if (next.length > 50) {
+      setNameStatus({
+        type: "error",
+        text: "Nama maksimal 50 karakter.",
+      });
+      return;
+    }
+
+    setNameBusy(true);
+    setNameStatus(null);
+    try {
+      await localParticipant.setName(next);
+      storeDisplayName(next);
+      setNameStatus({ type: "ok", text: "Nama tampilan diperbarui." });
+    } catch (error) {
+      setNameStatus({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Nama belum dapat diubah.",
+      });
+    } finally {
+      setNameBusy(false);
+    }
+  }
+
   async function endMeetingForAll() {
     if (!meetingId || ending) return;
     setEnding(true);
@@ -758,6 +823,13 @@ export function MeetingToolsDock({
                 </li>
               ))}
             </ul>
+            <button
+              type="button"
+              className="button button-ghost button-full"
+              onClick={() => setActivePanel("settings")}
+            >
+              Ubah nama tampilan
+            </button>
             <p className="meeting-panel-hint">
               Host: gunakan tombol <strong>Menunggu</strong> di pojok untuk
               menyetujui waiting room.
@@ -829,7 +901,7 @@ export function MeetingToolsDock({
                 </button>
               ) : null}
               <button type="button" onClick={() => setActivePanel("settings")}>
-                <Mic size={18} /> Audio & beauty
+                <Mic size={18} /> Pengaturan
               </button>
             </div>
           </section>
@@ -838,11 +910,56 @@ export function MeetingToolsDock({
         {activePanel === "settings" ? (
           <section className="meeting-tools-panel">
             <header>
-              <strong>Pengaturan meeting</strong>
+              <strong>Pengaturan</strong>
               <button type="button" onClick={() => setActivePanel("none")}>
                 <X size={16} />
               </button>
             </header>
+
+            <form
+              className="meeting-display-name-form"
+              onSubmit={(event) => void saveDisplayName(event)}
+            >
+              <div className="meeting-tools-field">
+                <label htmlFor="display-name">Nama tampilan</label>
+                <input
+                  id="display-name"
+                  type="text"
+                  value={displayName}
+                  maxLength={50}
+                  autoComplete="nickname"
+                  placeholder="Nama yang terlihat di meeting"
+                  onChange={(event) => {
+                    setDisplayName(event.target.value);
+                    setNameStatus(null);
+                  }}
+                />
+              </div>
+              <div className="meeting-name-actions">
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={nameBusy}
+                >
+                  {nameBusy ? "Menyimpan..." : "Simpan nama"}
+                </button>
+              </div>
+              {nameStatus ? (
+                <p
+                  className={`meeting-display-name-status${
+                    nameStatus.type === "error" ? " is-error" : ""
+                  }`}
+                  role="status"
+                >
+                  {nameStatus.text}
+                </p>
+              ) : (
+                <p className="meeting-panel-hint">
+                  Nama ini muncul di tile video dan daftar peserta.
+                </p>
+              )}
+            </form>
+
             <div className="meeting-tools-field">
               <label htmlFor="beauty-mode">Filter kecantikan</label>
               <select

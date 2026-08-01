@@ -164,7 +164,14 @@ function MeetingExperienceInner({
 }: MeetingExperienceProps) {
   const router = useRouter();
   const { effectId, setEffectId } = useBackgroundEffects();
-  const [participantName, setParticipantName] = useState("");
+  const [participantName, setParticipantName] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return window.sessionStorage.getItem("genmeet_display_name") ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [password, setPassword] = useState("");
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
@@ -424,6 +431,14 @@ function MeetingExperienceInner({
             onChange={(event) => {
               setParticipantName(event.target.value);
               setError("");
+              try {
+                window.sessionStorage.setItem(
+                  "genmeet_display_name",
+                  event.target.value.trim(),
+                );
+              } catch {
+                // ignore
+              }
             }}
             placeholder="Contoh: Anisa Putri"
             maxLength={50}
