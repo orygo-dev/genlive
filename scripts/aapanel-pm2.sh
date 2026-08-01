@@ -48,15 +48,23 @@ if [[ "$APP_URL" != https://* ]]; then
   exit 1
 fi
 if [[ -z "$(read_env LIVEKIT_URL)" || "$(read_env LIVEKIT_URL)" != wss://* ]]; then
-  echo "ERROR: LIVEKIT_URL harus diawali wss://"
-  exit 1
+  echo "WARNING: LIVEKIT_URL belum diisi di .env.production."
+  echo "         Isi lewat Super Admin → Integrasi setelah app jalan, atau set LIVEKIT_URL=wss://..."
 fi
 
 ENC_KEY="$(read_env APP_ENCRYPTION_KEY)"
 if [[ -z "$ENC_KEY" || ${#ENC_KEY} -lt 32 ]]; then
-  echo "ERROR: APP_ENCRYPTION_KEY wajib di .env.production (≥32 karakter)."
-  echo "Tanpa ini proses Node crash terus dan PM2 masuk status errored."
-  exit 1
+  NEW_KEY="$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | head -c 64)"
+  if [[ -z "$NEW_KEY" || ${#NEW_KEY} -lt 32 ]]; then
+    echo "ERROR: Gagal membuat APP_ENCRYPTION_KEY otomatis."
+    exit 1
+  fi
+  {
+    echo ""
+    echo "# Auto-generated $(date -Is) — untuk menyimpan secret Integrasi di database"
+    echo "APP_ENCRYPTION_KEY=$NEW_KEY"
+  } >> "$ROOT/.env.production"
+  echo "==> APP_ENCRYPTION_KEY dibuat otomatis dan ditambahkan ke .env.production"
 fi
 
 ensure_deps() {

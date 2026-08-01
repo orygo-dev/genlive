@@ -2,23 +2,37 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 
 const PREFIX = "gcm1";
 
+/**
+ * Prefer APP_ENCRYPTION_KEY. If missing, derive a stable key from DATABASE_URL
+ * so Super Admin → Integrasi can save secrets without a manual .env edit.
+ * Set APP_ENCRYPTION_KEY explicitly in production when possible (deploy script
+ * auto-generates it).
+ */
 function getKey() {
   const raw = process.env.APP_ENCRYPTION_KEY?.trim();
-  if (!raw) {
-    return null;
+  if (raw) {
+    return createHash("sha256").update(raw).digest();
   }
-  return createHash("sha256").update(raw).digest();
+
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (databaseUrl) {
+    return createHash("sha256")
+      .update(`genmeet-integrations-v1:${databaseUrl}`)
+      .digest();
+  }
+
+  return null;
 }
 
 export function isEncryptionConfigured() {
-  return Boolean(process.env.APP_ENCRYPTION_KEY?.trim());
+  return getKey() !== null;
 }
 
 export function encryptSecretPayload(plaintext: string) {
   const key = getKey();
   if (!key) {
     throw new Error(
-      "APP_ENCRYPTION_KEY belum disetel. Tambahkan di .env untuk menyimpan konfigurasi terenkripsi.",
+      "Enkripsi belum siap. Set DATABASE_URL atau APP_ENCRYPTION_KEY di server.",
     );
   }
 
@@ -35,7 +49,7 @@ export function encryptSecretPayload(plaintext: string) {
 export function decryptSecretPayload(ciphertext: string) {
   const key = getKey();
   if (!key) {
-    throw new Error("APP_ENCRYPTION_KEY belum disetel.");
+    throw new Error("Enkripsi belum siap. Set DATABASE_URL atau APP_ENCRYPTION_KEY.");
   }
 
   const [prefix, ivB64, tagB64, dataB64] = ciphertext.split(":");

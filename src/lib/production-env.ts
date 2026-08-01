@@ -10,9 +10,8 @@ export const productionEnvSchema = z.object({
       message: "APP_URL production harus memakai HTTPS.",
     }),
   DATABASE_URL: z.string().min(1),
-  APP_ENCRYPTION_KEY: z.string().min(32, {
-    message: "APP_ENCRYPTION_KEY wajib (≥32 karakter).",
-  }),
+  // Prefer explicit key; crypto-secrets can derive from DATABASE_URL if absent.
+  APP_ENCRYPTION_KEY: z.string().min(32).optional().or(z.literal("")),
   LIVEKIT_URL: z.string().url().startsWith("wss://").optional().or(z.literal("")),
   LIVEKIT_API_KEY: z.string().optional().or(z.literal("")),
   LIVEKIT_API_SECRET: z.string().optional().or(z.literal("")),
@@ -40,7 +39,7 @@ export function collectProductionEnvIssues(
   const parsed = productionEnvSchema.safeParse({
     APP_URL: env.APP_URL,
     DATABASE_URL: env.DATABASE_URL,
-    APP_ENCRYPTION_KEY: env.APP_ENCRYPTION_KEY,
+    APP_ENCRYPTION_KEY: env.APP_ENCRYPTION_KEY || "",
     LIVEKIT_URL: env.LIVEKIT_URL || "",
     LIVEKIT_API_KEY: env.LIVEKIT_API_KEY || "",
     LIVEKIT_API_SECRET: env.LIVEKIT_API_SECRET || "",
@@ -58,6 +57,15 @@ export function collectProductionEnvIssues(
         message: issue.message,
       });
     }
+  }
+
+  if (!has(env, "APP_ENCRYPTION_KEY") || (env.APP_ENCRYPTION_KEY?.trim().length ?? 0) < 32) {
+    issues.push({
+      key: "APP_ENCRYPTION_KEY",
+      optional: true,
+      message:
+        "Belum diisi — Integrasi UI tetap bisa menyimpan (kunci diturunkan dari DATABASE_URL). Deploy script bisa generate otomatis.",
+    });
   }
 
   if (

@@ -5,6 +5,29 @@ import { LoaderCircle, PlugZap, Save } from "lucide-react";
 
 type IntegrationsView = Record<string, string | boolean | string[] | null | undefined>;
 
+async function readApiJson<T extends { error?: string }>(
+  response: Response,
+): Promise<T> {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      response.status === 404
+        ? "API integrasi tidak ditemukan (404). Deploy ulang server: bash scripts/aapanel-pm2.sh --build"
+        : response.status === 502 || response.status === 503
+          ? `Server/PM2 tidak merespons (${response.status}). Cek: pm2 status genmeet`
+          : `Server mengembalikan HTML (status ${response.status}), bukan JSON. Cek proxy Apache ke port 3010 dan log PM2.`,
+    );
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `Respons API tidak valid (status ${response.status}). Cek pm2 logs genmeet.`,
+    );
+  }
+}
+
 export function AdminIntegrationsPanel() {
   const [data, setData] = useState<IntegrationsView | null>(null);
   const [encryptionConfigured, setEncryptionConfigured] = useState(false);
@@ -18,11 +41,11 @@ export function AdminIntegrationsPanel() {
     setError("");
     try {
       const response = await fetch("/api/admin/integrations");
-      const payload = (await response.json()) as {
+      const payload = await readApiJson<{
         integrations?: IntegrationsView;
         encryptionConfigured?: boolean;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !payload.integrations) {
         throw new Error(payload.error ?? "Gagal memuat integrasi.");
       }
@@ -101,13 +124,13 @@ export function AdminIntegrationsPanel() {
       }
 
       const response = await fetch("/api/admin/integrations", {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = await readApiJson<{ error?: string }>(response);
       if (!response.ok) throw new Error(payload.error ?? "Gagal menyimpan.");
-      setMessage("Konfigurasi integrasi disimpan.");
+      setMessage("Konfigurasi LiveKit & integrasi tersimpan. Silakan uji koneksi.");
       await load();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Gagal menyimpan.");
@@ -124,11 +147,11 @@ export function AdminIntegrationsPanel() {
       const response = await fetch("/api/admin/integrations/test-livekit", {
         method: "POST",
       });
-      const payload = (await response.json()) as {
+      const payload = await readApiJson<{
         ok?: boolean;
         message?: string;
         error?: string;
-      };
+      }>(response);
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error ?? "Tes LiveKit gagal.");
       }
@@ -154,10 +177,15 @@ export function AdminIntegrationsPanel() {
 
       {!encryptionConfigured ? (
         <p className="form-error">
-          Set `APP_ENCRYPTION_KEY` di `.env.production` lalu restart PM2 sebelum
-          menyimpan secret dari UI.
+          Enkripsi belum siap di server. Pastikan aplikasi sudah terhubung ke
+          database, lalu restart PM2.
         </p>
-      ) : null}
+      ) : (
+        <p className="admin-muted">
+          LiveKit bisa diisi di sini — tidak perlu mengedit file `.env` untuk
+          URL/key/secret.
+        </p>
+      )}
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
 

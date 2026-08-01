@@ -15,11 +15,28 @@ export const dynamic = "force-dynamic";
 
 const optionalString = z.string().trim().max(2000).nullable().optional();
 const optionalBool = z.boolean().nullable().optional();
+const optionalLivekitUrl = z
+  .string()
+  .trim()
+  .max(2000)
+  .nullable()
+  .optional()
+  .refine(
+    (value) =>
+      value == null ||
+      value === "" ||
+      value.startsWith("wss://") ||
+      value.startsWith("ws://"),
+    {
+      message:
+        "LIVEKIT_URL harus diawali wss:// (contoh: wss://xxx.livekit.cloud)",
+    },
+  );
 
 const patchSchema = z.object({
   appUrl: optionalString,
   cronSecret: optionalString,
-  livekitUrl: optionalString,
+  livekitUrl: optionalLivekitUrl,
   livekitApiKey: optionalString,
   livekitApiSecret: optionalString,
   livekitApiUrl: optionalString,
@@ -88,66 +105,79 @@ function applyPatch(
 }
 
 export async function GET() {
-  const gate = await requireSuperAdminApi();
-  if (gate.error || !gate.context) return gate.error!;
+  try {
+    const gate = await requireSuperAdminApi();
+    if (gate.error || !gate.context) return gate.error!;
 
-  const [resolved, stored] = await Promise.all([
-    getPlatformConfig(),
-    getStoredIntegrations(),
-  ]);
+    const [resolved, stored] = await Promise.all([
+      getPlatformConfig(),
+      getStoredIntegrations(),
+    ]);
 
-  return NextResponse.json({
-    encryptionConfigured: isEncryptionConfigured(),
-    integrations: {
-      appUrl: resolved.appUrl,
-      cronSecret: maskSecret(resolved.cronSecret),
-      cronSecretSet: Boolean(resolved.cronSecret),
-      livekitUrl: resolved.livekitUrl,
-      livekitApiKey: maskSecret(resolved.livekitApiKey),
-      livekitApiKeySet: Boolean(resolved.livekitApiKey),
-      livekitApiSecret: maskSecret(resolved.livekitApiSecret),
-      livekitApiSecretSet: Boolean(resolved.livekitApiSecret),
-      livekitApiUrl: resolved.livekitApiUrl,
-      livekitEgressS3AccessKey: maskSecret(resolved.livekitEgressS3AccessKey),
-      livekitEgressS3AccessKeySet: Boolean(resolved.livekitEgressS3AccessKey),
-      livekitEgressS3Secret: maskSecret(resolved.livekitEgressS3Secret),
-      livekitEgressS3SecretSet: Boolean(resolved.livekitEgressS3Secret),
-      livekitEgressS3Bucket: resolved.livekitEgressS3Bucket,
-      livekitEgressS3Region: resolved.livekitEgressS3Region,
-      livekitEgressS3Endpoint: resolved.livekitEgressS3Endpoint,
-      livekitEgressS3ForcePathStyle: resolved.livekitEgressS3ForcePathStyle,
-      resendApiKey: maskSecret(resolved.resendApiKey),
-      resendApiKeySet: Boolean(resolved.resendApiKey),
-      emailFrom: resolved.emailFrom,
-      fonnteToken: maskSecret(resolved.fonnteToken),
-      fonnteTokenSet: Boolean(resolved.fonnteToken),
-      fonnteCountryCode: resolved.fonnteCountryCode,
-      paymentProvider: resolved.paymentProvider,
-      midtransServerKey: maskSecret(resolved.midtransServerKey),
-      midtransServerKeySet: Boolean(resolved.midtransServerKey),
-      midtransClientKey: maskSecret(resolved.midtransClientKey),
-      midtransClientKeySet: Boolean(resolved.midtransClientKey),
-      midtransIsProduction: resolved.midtransIsProduction,
-      ipaymuVa: resolved.ipaymuVa,
-      ipaymuApiKey: maskSecret(resolved.ipaymuApiKey),
-      ipaymuApiKeySet: Boolean(resolved.ipaymuApiKey),
-      ipaymuIsProduction: resolved.ipaymuIsProduction,
-      flipSecretKey: maskSecret(resolved.flipSecretKey),
-      flipSecretKeySet: Boolean(resolved.flipSecretKey),
-      flipValidationToken: maskSecret(resolved.flipValidationToken),
-      flipValidationTokenSet: Boolean(resolved.flipValidationToken),
-      flipIsProduction: resolved.flipIsProduction,
-      googleClientId: resolved.googleClientId,
-      googleClientSecret: maskSecret(resolved.googleClientSecret),
-      googleClientSecretSet: Boolean(resolved.googleClientSecret),
-      storedKeys: Object.keys(stored).filter(
-        (key) => (stored as Record<string, unknown>)[key] != null && (stored as Record<string, unknown>)[key] !== "",
-      ),
-    },
-  });
+    return NextResponse.json({
+      encryptionConfigured: isEncryptionConfigured(),
+      integrations: {
+        appUrl: resolved.appUrl,
+        cronSecret: maskSecret(resolved.cronSecret),
+        cronSecretSet: Boolean(resolved.cronSecret),
+        livekitUrl: resolved.livekitUrl,
+        livekitApiKey: maskSecret(resolved.livekitApiKey),
+        livekitApiKeySet: Boolean(resolved.livekitApiKey),
+        livekitApiSecret: maskSecret(resolved.livekitApiSecret),
+        livekitApiSecretSet: Boolean(resolved.livekitApiSecret),
+        livekitApiUrl: resolved.livekitApiUrl,
+        livekitEgressS3AccessKey: maskSecret(resolved.livekitEgressS3AccessKey),
+        livekitEgressS3AccessKeySet: Boolean(resolved.livekitEgressS3AccessKey),
+        livekitEgressS3Secret: maskSecret(resolved.livekitEgressS3Secret),
+        livekitEgressS3SecretSet: Boolean(resolved.livekitEgressS3Secret),
+        livekitEgressS3Bucket: resolved.livekitEgressS3Bucket,
+        livekitEgressS3Region: resolved.livekitEgressS3Region,
+        livekitEgressS3Endpoint: resolved.livekitEgressS3Endpoint,
+        livekitEgressS3ForcePathStyle: resolved.livekitEgressS3ForcePathStyle,
+        resendApiKey: maskSecret(resolved.resendApiKey),
+        resendApiKeySet: Boolean(resolved.resendApiKey),
+        emailFrom: resolved.emailFrom,
+        fonnteToken: maskSecret(resolved.fonnteToken),
+        fonnteTokenSet: Boolean(resolved.fonnteToken),
+        fonnteCountryCode: resolved.fonnteCountryCode,
+        paymentProvider: resolved.paymentProvider,
+        midtransServerKey: maskSecret(resolved.midtransServerKey),
+        midtransServerKeySet: Boolean(resolved.midtransServerKey),
+        midtransClientKey: maskSecret(resolved.midtransClientKey),
+        midtransClientKeySet: Boolean(resolved.midtransClientKey),
+        midtransIsProduction: resolved.midtransIsProduction,
+        ipaymuVa: resolved.ipaymuVa,
+        ipaymuApiKey: maskSecret(resolved.ipaymuApiKey),
+        ipaymuApiKeySet: Boolean(resolved.ipaymuApiKey),
+        ipaymuIsProduction: resolved.ipaymuIsProduction,
+        flipSecretKey: maskSecret(resolved.flipSecretKey),
+        flipSecretKeySet: Boolean(resolved.flipSecretKey),
+        flipValidationToken: maskSecret(resolved.flipValidationToken),
+        flipValidationTokenSet: Boolean(resolved.flipValidationToken),
+        flipIsProduction: resolved.flipIsProduction,
+        googleClientId: resolved.googleClientId,
+        googleClientSecret: maskSecret(resolved.googleClientSecret),
+        googleClientSecretSet: Boolean(resolved.googleClientSecret),
+        storedKeys: Object.keys(stored).filter(
+          (key) =>
+            (stored as Record<string, unknown>)[key] != null &&
+            (stored as Record<string, unknown>)[key] !== "",
+        ),
+      },
+    });
+  } catch (error) {
+    console.error("Admin integrations GET failed", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Gagal memuat integrasi.",
+      },
+      { status: 500 },
+    );
+  }
 }
 
-export async function PATCH(request: Request) {
+async function saveIntegrationsRequest(request: Request) {
   const gate = await requireSuperAdminApi();
   if (gate.error || !gate.context) return gate.error!;
 
@@ -155,7 +185,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       {
         error:
-          "APP_ENCRYPTION_KEY belum disetel di server. Tambahkan ke .env lalu restart PM2.",
+          "Enkripsi belum siap di server (butuh DATABASE_URL). Restart PM2 setelah env lengkap.",
       },
       { status: 400 },
     );
@@ -175,4 +205,40 @@ export async function PATCH(request: Request) {
   await saveIntegrations(next, gate.context.user.id);
 
   return NextResponse.json({ ok: true });
+}
+
+/** POST — preferred (Apache/aaPanel often mishandles PATCH and returns HTML). */
+export async function POST(request: Request) {
+  try {
+    return await saveIntegrationsRequest(request);
+  } catch (error) {
+    console.error("Admin integrations POST failed", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Gagal menyimpan integrasi.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+/** PATCH kept for compatibility. */
+export async function PATCH(request: Request) {
+  try {
+    return await saveIntegrationsRequest(request);
+  } catch (error) {
+    console.error("Admin integrations PATCH failed", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Gagal menyimpan integrasi.",
+      },
+      { status: 500 },
+    );
+  }
 }
