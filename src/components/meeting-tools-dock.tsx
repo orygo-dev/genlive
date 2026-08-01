@@ -11,6 +11,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Chat,
+  TrackToggle,
   useLocalParticipant,
   useParticipants,
   useRoomContext,
@@ -22,13 +24,17 @@ import {
   type LocalAudioTrack,
 } from "livekit-client";
 import {
+  Ellipsis,
   Hand,
   LayoutGrid,
+  LogOut,
   Maximize2,
   MessageSquare,
   Mic,
+  MonitorUp,
   Palette,
   PanelRight,
+  PhoneOff,
   Sparkles,
   Users,
   Vote,
@@ -51,7 +57,11 @@ type DockPanel =
   | "polls"
   | "breakout"
   | "whiteboard"
-  | "ai";
+  | "ai"
+  | "participants"
+  | "chat"
+  | "more"
+  | "leave";
 
 type PollState = {
   pollId: string;
@@ -76,6 +86,8 @@ type MeetingToolsDockProps = {
   roomName: string;
   isHost: boolean;
   mainRoomName: string;
+  meetingId: string | null;
+  meetingTitle: string;
   layoutMode: MeetingLayoutMode;
   onLayoutChange: (mode: MeetingLayoutMode) => void;
 };
@@ -150,6 +162,8 @@ export function MeetingToolsDock({
   roomName,
   isHost,
   mainRoomName,
+  meetingId,
+  meetingTitle,
   layoutMode,
   onLayoutChange,
 }: MeetingToolsDockProps) {
@@ -157,10 +171,16 @@ export function MeetingToolsDock({
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
+  const [ending, setEnding] = useState(false);
+  const reactionSeqRef = useRef(0);
 
   const [activePanel, setActivePanel] = useState<DockPanel>("none");
-  const [beautyMode, setBeautyMode] = useState<BeautyMode>("off");
-  const [audioMode, setAudioMode] = useState<AudioMode>("standard");
+  const [beautyMode, setBeautyMode] = useState<BeautyMode>(() =>
+    readStoredBeauty(),
+  );
+  const [audioMode, setAudioMode] = useState<AudioMode>(() =>
+    readStoredAudioMode(),
+  );
   const [handRaised, setHandRaised] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>(
     [],
@@ -313,11 +333,6 @@ export function MeetingToolsDock({
   );
 
   useEffect(() => {
-    setBeautyMode(readStoredBeauty());
-    setAudioMode(readStoredAudioMode());
-  }, []);
-
-  useEffect(() => {
     applyBeautyMode(beautyMode);
     window.localStorage.setItem(BEAUTY_STORAGE_KEY, beautyMode);
   }, [beautyMode]);
@@ -358,7 +373,8 @@ export function MeetingToolsDock({
   }
 
   async function sendReaction(emoji: string) {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    reactionSeqRef.current += 1;
+    const id = `rx-${reactionSeqRef.current}`;
     const message: MeetingRealtimeMessage = {
       type: "reaction",
       emoji,
@@ -386,7 +402,7 @@ export function MeetingToolsDock({
       .filter(Boolean);
     if (!question || options.length < 2) return;
 
-    const pollId = `poll-${Date.now()}`;
+    const pollId = `poll-${++reactionSeqRef.current}`;
     await publishMessage({
       type: "poll_create",
       pollId,
@@ -525,6 +541,22 @@ export function MeetingToolsDock({
     }
   }
 
+  async function endMeetingForAll() {
+    if (!meetingId || ending) return;
+    setEnding(true);
+    try {
+      await fetch(
+        `/api/meetings/manage/${encodeURIComponent(meetingId)}/cancel`,
+        { method: "POST" },
+      );
+    } catch {
+      // Still leave locally even if cancel fails.
+    } finally {
+      room.disconnect();
+      setEnding(false);
+    }
+  }
+
   return (
     <>
       <div className="meeting-reaction-layer" aria-hidden="true">
@@ -585,17 +617,53 @@ export function MeetingToolsDock({
         </aside>
       ) : null}
 
-      <nav className="meeting-tools-dock" aria-label="Alat meeting">
-        <div className="meeting-tools-dock-row">
+      <nav className="meeting-tools-dock meeting-control-bar" aria-label="Kontrol meeting">
+        <div className="meeting-tools-dock-row meeting-control-bar-row">
+          <TrackToggle
+            source={Track.Source.Microphone}
+            showIcon
+            className="meeting-control-toggle"
+          >
+            Mic
+          </TrackToggle>
+          <TrackToggle
+            source={Track.Source.Camera}
+            showIcon
+            className="meeting-control-toggle"
+          >
+            Video
+          </TrackToggle>
+
           <button
             type="button"
-            className={handRaised ? "active" : ""}
-            onClick={() => void toggleHandRaised()}
-            title="Angkat tangan"
+            className={activePanel === "participants" ? "active" : ""}
+            onClick={() => togglePanel("participants")}
+            title="Peserta"
           >
-            <Hand size={18} />
-            <span>Tangan</span>
+            <Users size={18} />
+            <span>Peserta</span>
+            <em className="meeting-control-count">{participants.length}</em>
           </button>
+
+          <button
+            type="button"
+            className={activePanel === "chat" ? "active" : ""}
+            onClick={() => togglePanel("chat")}
+            title="Chat"
+          >
+            <MessageSquare size={18} />
+            <span>Chat</span>
+          </button>
+
+          <TrackToggle
+            source={Track.Source.ScreenShare}
+            captureOptions={{ audio: true, selfBrowserSurface: "include" }}
+            showIcon
+            className="meeting-control-toggle"
+          >
+            <MonitorUp size={18} />
+            Share
+          </TrackToggle>
 
           <button
             type="button"
@@ -609,86 +677,163 @@ export function MeetingToolsDock({
 
           <button
             type="button"
-            className={layoutMode === "gallery" ? "active" : ""}
-            onClick={() => onLayoutChange("gallery")}
-            title="Layout galeri"
+            className={
+              activePanel === "more" ||
+              activePanel === "settings" ||
+              activePanel === "polls" ||
+              activePanel === "whiteboard" ||
+              activePanel === "ai" ||
+              activePanel === "breakout"
+                ? "active"
+                : ""
+            }
+            onClick={() => togglePanel("more")}
+            title="Lainnya"
           >
-            <LayoutGrid size={18} />
-            <span>Galeri</span>
+            <Ellipsis size={18} />
+            <span>Lainnya</span>
           </button>
 
           <button
             type="button"
-            className={layoutMode === "focus" ? "active" : ""}
-            onClick={() => onLayoutChange("focus")}
-            title="Layout fokus"
+            className="meeting-control-leave"
+            onClick={() => togglePanel("leave")}
+            title="Keluar"
           >
-            <PanelRight size={18} />
-            <span>Fokus</span>
-          </button>
-
-          <button
-            type="button"
-            className={layoutMode === "immersive" ? "active" : ""}
-            onClick={() => onLayoutChange("immersive")}
-            title="Layout imersif"
-          >
-            <Maximize2 size={18} />
-            <span>Imersif</span>
-          </button>
-
-          <button
-            type="button"
-            className={activePanel === "polls" ? "active" : ""}
-            onClick={() => togglePanel("polls")}
-            title="Polling"
-          >
-            <Vote size={18} />
-            <span>Polling</span>
-          </button>
-
-          <button
-            type="button"
-            className={activePanel === "whiteboard" ? "active" : ""}
-            onClick={() => togglePanel("whiteboard")}
-            title="Papan tulis"
-          >
-            <Palette size={18} />
-            <span>Papan</span>
-          </button>
-
-          <button
-            type="button"
-            className={activePanel === "ai" ? "active" : ""}
-            onClick={() => togglePanel("ai")}
-            title="Asisten AI"
-          >
-            <MessageSquare size={18} />
-            <span>AI</span>
-          </button>
-
-          {isHost ? (
-            <button
-              type="button"
-              className={activePanel === "breakout" ? "active" : ""}
-              onClick={() => togglePanel("breakout")}
-              title="Breakout room"
-            >
-              <Users size={18} />
-              <span>Breakout</span>
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            className={activePanel === "settings" ? "active" : ""}
-            onClick={() => togglePanel("settings")}
-            title="Pengaturan audio & kecantikan"
-          >
-            <Mic size={18} />
-            <span>Atur</span>
+            <PhoneOff size={18} />
+            <span>Keluar</span>
           </button>
         </div>
+
+        {activePanel === "leave" ? (
+          <section className="meeting-tools-panel meeting-leave-sheet">
+            <header>
+              <strong>Keluar dari meeting?</strong>
+              <button type="button" onClick={() => setActivePanel("none")}>
+                <X size={16} />
+              </button>
+            </header>
+            <p className="meeting-leave-copy">
+              Anda akan meninggalkan “{meetingTitle}”.
+            </p>
+            <div className="meeting-leave-actions">
+              <button
+                type="button"
+                className="button button-ghost"
+                onClick={() => {
+                  setActivePanel("none");
+                  room.disconnect();
+                }}
+              >
+                <LogOut size={16} /> Keluar
+              </button>
+              {isHost && meetingId ? (
+                <button
+                  type="button"
+                  className="button button-primary meeting-leave-end"
+                  disabled={ending}
+                  onClick={() => void endMeetingForAll()}
+                >
+                  <PhoneOff size={16} />
+                  {ending ? "Mengakhiri..." : "Akhiri untuk semua"}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {activePanel === "participants" ? (
+          <section className="meeting-tools-panel">
+            <header>
+              <strong>Peserta ({participants.length})</strong>
+              <button type="button" onClick={() => setActivePanel("none")}>
+                <X size={16} />
+              </button>
+            </header>
+            <ul className="meeting-participants-list">
+              {participants.map((participant) => (
+                <li key={participant.identity}>
+                  <span>{participant.name || participant.identity}</span>
+                  {participant.isLocal ? <small>Anda</small> : null}
+                </li>
+              ))}
+            </ul>
+            <p className="meeting-panel-hint">
+              Host: gunakan tombol <strong>Menunggu</strong> di pojok untuk
+              menyetujui waiting room.
+            </p>
+          </section>
+        ) : null}
+
+        {activePanel === "chat" ? (
+          <section className="meeting-tools-panel meeting-tools-panel-wide meeting-chat-panel">
+            <header>
+              <strong>Chat</strong>
+              <button type="button" onClick={() => setActivePanel("none")}>
+                <X size={16} />
+              </button>
+            </header>
+            <Chat />
+          </section>
+        ) : null}
+
+        {activePanel === "more" ? (
+          <section className="meeting-tools-panel meeting-more-menu">
+            <header>
+              <strong>Lainnya</strong>
+              <button type="button" onClick={() => setActivePanel("none")}>
+                <X size={16} />
+              </button>
+            </header>
+            <div className="meeting-more-grid">
+              <button
+                type="button"
+                className={handRaised ? "active" : ""}
+                onClick={() => void toggleHandRaised()}
+              >
+                <Hand size={18} /> Angkat tangan
+              </button>
+              <button
+                type="button"
+                className={layoutMode === "gallery" ? "active" : ""}
+                onClick={() => onLayoutChange("gallery")}
+              >
+                <LayoutGrid size={18} /> Galeri
+              </button>
+              <button
+                type="button"
+                className={layoutMode === "focus" ? "active" : ""}
+                onClick={() => onLayoutChange("focus")}
+              >
+                <PanelRight size={18} /> Fokus
+              </button>
+              <button
+                type="button"
+                className={layoutMode === "immersive" ? "active" : ""}
+                onClick={() => onLayoutChange("immersive")}
+              >
+                <Maximize2 size={18} /> Imersif
+              </button>
+              <button type="button" onClick={() => setActivePanel("polls")}>
+                <Vote size={18} /> Polling
+              </button>
+              <button type="button" onClick={() => setActivePanel("whiteboard")}>
+                <Palette size={18} /> Papan tulis
+              </button>
+              <button type="button" onClick={() => setActivePanel("ai")}>
+                <MessageSquare size={18} /> AI
+              </button>
+              {isHost ? (
+                <button type="button" onClick={() => setActivePanel("breakout")}>
+                  <Users size={18} /> Breakout
+                </button>
+              ) : null}
+              <button type="button" onClick={() => setActivePanel("settings")}>
+                <Mic size={18} /> Audio & beauty
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {activePanel === "settings" ? (
           <section className="meeting-tools-panel">

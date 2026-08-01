@@ -4,7 +4,13 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LiveKitRoom } from "@livekit/components-react";
 import { VideoPresets, type RoomOptions } from "livekit-client";
-import { ArrowLeft, Clock3, LoaderCircle, LockKeyhole, Video } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock3,
+  LoaderCircle,
+  LockKeyhole,
+  Video,
+} from "lucide-react";
 import { HostWaitingRoom } from "@/components/host-waiting-room";
 import { RecordingControls } from "@/components/recording-controls";
 import {
@@ -34,6 +40,7 @@ type AdmissionRequest = {
 type MeetingExperienceProps = {
   roomName: string;
   meetingConfig: {
+    id: string | null;
     title: string;
     passwordRequired: boolean;
     waitingRoom: boolean;
@@ -45,15 +52,25 @@ type MeetingExperienceProps = {
 function MeetingRoom({
   connection,
   roomName,
+  meetingTitle,
+  meetingId,
+  micEnabled,
+  cameraEnabled,
   onError,
 }: {
   connection: ConnectionDetails;
   roomName: string;
+  meetingTitle: string;
+  meetingId: string | null;
+  micEnabled: boolean;
+  cameraEnabled: boolean;
   onError: (message: string) => void;
 }) {
   const router = useRouter();
   const { effectId, setEffectId } = useBackgroundEffects();
   const [layoutMode, setLayoutMode] = useState<MeetingLayoutMode>("gallery");
+  const [joinedAt] = useState(() => Date.now());
+  const [elapsedLabel, setElapsedLabel] = useState("00:00");
   const isHost =
     connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
@@ -73,23 +90,48 @@ function MeetingRoom({
     [],
   );
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const total = Math.floor((Date.now() - joinedAt) / 1000);
+      const minutes = String(Math.floor(total / 60)).padStart(2, "0");
+      const seconds = String(total % 60).padStart(2, "0");
+      setElapsedLabel(`${minutes}:${seconds}`);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [joinedAt]);
+
+  function goToLeftScreen() {
+    const params = new URLSearchParams({
+      room: roomName,
+      title: meetingTitle,
+      role: connection.role,
+    });
+    router.push(`/meeting/left?${params.toString()}`);
+  }
+
   return (
     <div className="live-room" data-lk-theme="default">
       <LiveKitRoom
         token={connection.token}
         serverUrl={connection.serverUrl}
         connect
-        video
-        audio
+        video={cameraEnabled}
+        audio={micEnabled}
         options={roomOptions}
-        onDisconnected={() =>
-          router.push(connection.role === "PARTICIPANT" ? "/" : "/dashboard")
-        }
+        onDisconnected={goToLeftScreen}
         onError={(roomError) => onError(roomError.message)}
       >
-        <div className="room-brand">
-          <Video size={16} />
-          <span>{roomName}</span>
+        <div className="room-chrome">
+          <div className="room-brand">
+            <Video size={16} />
+            <div>
+              <strong>{meetingTitle}</strong>
+              <small>{roomName}</small>
+            </div>
+          </div>
+          <div className="room-elapsed" aria-live="polite">
+            {elapsedLabel}
+          </div>
         </div>
         {isHost && (
           <>
@@ -105,6 +147,8 @@ function MeetingRoom({
         <MeetingToolsDock
           roomName={roomName}
           mainRoomName={mainRoomName}
+          meetingId={meetingId}
+          meetingTitle={meetingTitle}
           isHost={isHost}
           layoutMode={layoutMode}
           onLayoutChange={setLayoutMode}
@@ -122,10 +166,14 @@ function MeetingExperienceInner({
   const { effectId, setEffectId } = useBackgroundEffects();
   const [participantName, setParticipantName] = useState("");
   const [password, setPassword] = useState("");
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
   const [connection, setConnection] = useState<ConnectionDetails | null>(null);
   const [admission, setAdmission] = useState<AdmissionRequest | null>(null);
   const [error, setError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+
+  const meetingTitle = meetingConfig?.title ?? roomName;
 
   useEffect(() => {
     if (!admission) return;
@@ -213,7 +261,9 @@ function MeetingExperienceInner({
       setAdmission(null);
       setError(payload.error ?? "Permintaan tidak dapat dibatalkan.");
     } catch {
-      setError("Koneksi terputus. Permintaan masih aktif dan akan dicoba kembali.");
+      setError(
+        "Koneksi terputus. Permintaan masih aktif dan akan dicoba kembali.",
+      );
     }
   }
 
@@ -266,6 +316,10 @@ function MeetingExperienceInner({
       <MeetingRoom
         connection={connection}
         roomName={roomName}
+        meetingTitle={meetingTitle}
+        meetingId={meetingConfig?.id ?? null}
+        micEnabled={micEnabled}
+        cameraEnabled={cameraEnabled}
         onError={setError}
       />
     );
@@ -276,7 +330,9 @@ function MeetingExperienceInner({
       <main className="prejoin-page">
         <section className="prejoin-card waiting-card">
           <div className="prejoin-brand">
-            <span className="brand-mark"><Video size={20} /></span>
+            <span className="brand-mark">
+              <Video size={20} />
+            </span>
             <span>Meeting</span>
           </div>
           <div className="waiting-loader">
@@ -295,12 +351,15 @@ function MeetingExperienceInner({
             <li className="waiting-step">Masuk ke meeting</li>
           </ol>
           <p className="prejoin-description">
-            Halaman ini akan masuk otomatis setelah host menyetujui.
-            Biarkan tab ini terbuka.
+            Halaman ini akan masuk otomatis setelah host menyetujui. Biarkan tab
+            ini terbuka. Kamera/mikrofon baru aktif setelah Anda diizinkan.
           </p>
           <ul className="waiting-tips">
-            <li>Matikan mic sampai Anda diizinkan masuk.</li>
-            <li>Pastikan kamera dan mic sudah diizinkan browser.</li>
+            <li>
+              Preferensi mic/kamera Anda: {micEnabled ? "mic nyala" : "mic mati"}
+              , {cameraEnabled ? "kamera nyala" : "kamera mati"}.
+            </li>
+            <li>Pastikan izin browser untuk kamera dan mikrofon sudah diberikan.</li>
             <li>Siapkan nama tampilan yang mudah dikenali host.</li>
           </ul>
           <button
@@ -316,18 +375,23 @@ function MeetingExperienceInner({
 
   return (
     <main className="prejoin-page">
-      <button className="back-link" type="button" onClick={() => router.push("/")}>
+      <button
+        className="back-link"
+        type="button"
+        onClick={() => router.push("/")}
+      >
         <ArrowLeft size={18} /> Kembali
       </button>
 
-      <section className="prejoin-card prejoin-card-wide">
+      <section className="prejoin-card prejoin-card-wide prejoin-zoom">
         <div className="prejoin-brand">
-          <span className="brand-mark"><Video size={20} /></span>
+          <span className="brand-mark">
+            <Video size={20} />
+          </span>
           <span>Meeting</span>
         </div>
-        <div className="prejoin-icon"><Video size={26} /></div>
         <p className="prejoin-kicker">Anda akan bergabung ke</p>
-        <h1>{meetingConfig?.title ?? roomName}</h1>
+        <h1>{meetingTitle}</h1>
         {meetingConfig?.startsAt && meetingConfig.status === "SCHEDULED" && (
           <p className="meeting-schedule">
             <Clock3 size={14} />
@@ -339,13 +403,17 @@ function MeetingExperienceInner({
         )}
         <p className="prejoin-description">
           {meetingConfig?.waitingRoom
-            ? "Atur nama dan background. Host akan menyetujui sebelum Anda masuk."
-            : "Atur nama dan background yang akan dilihat peserta lain."}
+            ? "Atur kamera, mikrofon, dan nama. Host akan menyetujui sebelum Anda masuk."
+            : "Atur kamera, mikrofon, dan nama yang akan dilihat peserta lain."}
         </p>
 
         <BackgroundEffectsPrejoin
           effectId={effectId}
           onEffectChange={setEffectId}
+          micEnabled={micEnabled}
+          cameraEnabled={cameraEnabled}
+          onMicChange={setMicEnabled}
+          onCameraChange={setCameraEnabled}
         />
 
         <form onSubmit={joinRoom} className="prejoin-form" noValidate>
@@ -392,9 +460,13 @@ function MeetingExperienceInner({
             disabled={isJoining}
           >
             {isJoining ? (
-              <><LoaderCircle className="spinner" size={18} /> Menghubungkan...</>
+              <>
+                <LoaderCircle className="spinner" size={18} /> Menghubungkan...
+              </>
             ) : (
-              <><Video size={18} /> Gabung sekarang</>
+              <>
+                <Video size={18} /> Gabung
+              </>
             )}
           </button>
         </form>

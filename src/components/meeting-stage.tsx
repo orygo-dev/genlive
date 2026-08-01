@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import {
   CarouselLayout,
-  ControlBar,
   FocusLayout,
   FocusLayoutContainer,
   GridLayout,
@@ -67,7 +66,6 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
             <ParticipantTile />
           </GridLayout>
         </div>
-        <ControlBar controls={{ chat: true, settings: true }} />
         <RoomAudioRenderer />
       </div>
     );
@@ -93,7 +91,6 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
           )}
         </FocusLayoutContainer>
       </div>
-      <ControlBar controls={{ chat: true, settings: true }} />
       <RoomAudioRenderer />
     </div>
   );

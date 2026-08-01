@@ -21,6 +21,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
   const meeting = await prisma.meeting.findUnique({
     where: { roomName: result.data },
     select: {
+      id: true,
       title: true,
       passwordHash: true,
       waitingRoom: true,
@@ -47,6 +48,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
       meetingConfig={
         meeting
           ? {
+              id: meeting.id,
               title: meeting.title,
               passwordRequired: Boolean(meeting.passwordHash) && !canModerate,
               waitingRoom: meeting.waitingRoom && !canModerate,

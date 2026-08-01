@@ -20,6 +20,7 @@ export function DashboardActions({ organizationId }: { organizationId: string })
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [waitingRoom, setWaitingRoom] = useState(true);
 
   async function requestMeeting(
     payload: {
@@ -70,7 +71,7 @@ export function DashboardActions({ organizationId }: { organizationId: string })
 
   function createMeeting() {
     void requestMeeting(
-      { title: "Meeting instan", waitingRoom: true },
+      { title: "Meeting instan", waitingRoom },
       true,
     );
   }
@@ -138,37 +139,39 @@ export function DashboardActions({ organizationId }: { organizationId: string })
         {isLoggingOut ? "Keluar..." : "Keluar"}
       </button>
 
-      <div className="dashboard-actions">
+      <div className="dashboard-zoom-strip" aria-label="Aksi meeting">
         <button
-          className="button button-ghost dashboard-schedule"
+          className="dashboard-zoom-tile dashboard-zoom-tile-primary"
+          onClick={createMeeting}
+          disabled={isCreating}
+          type="button"
+        >
+          <Plus size={22} />
+          <strong>Meeting baru</strong>
+          <span>Mulai rapat instan sekarang</span>
+        </button>
+        <button
+          className="dashboard-zoom-tile"
           type="button"
           onClick={() => {
             setError("");
             setIsScheduleOpen(true);
           }}
         >
-          <CalendarDays size={18} /> Jadwalkan
+          <CalendarDays size={22} />
+          <strong>Jadwalkan</strong>
+          <span>Atur waktu dan undang peserta</span>
         </button>
-        <button
-          className="button button-primary dashboard-new"
-          onClick={createMeeting}
-          disabled={isCreating}
-        >
-          {isCreating ? (
-            <><LoaderCircle className="spinner" size={18} /> Membuat...</>
-          ) : (
-            <><Plus size={19} /> Meeting baru</>
-          )}
-        </button>
-        <form className="dashboard-join" onSubmit={joinMeeting} noValidate>
-          <Video size={18} />
+        <form className="dashboard-zoom-tile dashboard-zoom-join" onSubmit={joinMeeting} noValidate>
+          <Video size={22} />
+          <strong>Gabung</strong>
           <input
             value={roomCode}
             onChange={(event) => {
               setRoomCode(event.target.value);
               setError("");
             }}
-            placeholder="Masukkan kode meeting"
+            placeholder="Kode meeting"
             aria-label="Kode meeting"
             aria-invalid={Boolean(error)}
           />
@@ -177,6 +180,18 @@ export function DashboardActions({ organizationId }: { organizationId: string })
           </button>
         </form>
       </div>
+
+      <label className="dashboard-waiting-toggle">
+        <input
+          type="checkbox"
+          checked={waitingRoom}
+          onChange={(event) => setWaitingRoom(event.target.checked)}
+        />
+        <span>
+          <strong>Ruang tunggu</strong> untuk meeting baru
+        </span>
+      </label>
+
       {error && <p className="form-error dashboard-error" role="alert">{error}</p>}
 
       {isScheduleOpen && (

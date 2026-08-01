@@ -161,7 +161,47 @@ export function HomeExperience({
             Platform meeting video untuk bisnis — workspace, undangan, recording,
             dan billing dalam satu tempat.
           </p>
-          <div className="landing-hero-actions">
+
+          <div className="landing-zoom-actions" aria-label="Gabung atau mulai meeting">
+            <form className="landing-zoom-join" onSubmit={joinMeeting} noValidate>
+              <label className="landing-join-field">
+                <span className="sr-only">Kode meeting</span>
+                <input
+                  value={roomCode}
+                  onChange={(event) => {
+                    setRoomCode(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="Masukkan kode meeting"
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? "join-error-hero" : undefined}
+                />
+              </label>
+              <button className="landing-btn landing-btn-dark" type="submit">
+                Gabung meeting
+              </button>
+            </form>
+            <div className="landing-zoom-host">
+              <Link className="landing-btn landing-btn-light" href="/auth">
+                Mulai meeting
+                <ArrowRight size={18} />
+              </Link>
+              <button
+                type="button"
+                className="landing-btn landing-btn-ghost"
+                onClick={startMeeting}
+              >
+                <Plus size={16} /> Meeting cepat
+              </button>
+            </div>
+            {error ? (
+              <p className="form-error" id="join-error-hero" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="landing-hero-actions landing-hero-actions-secondary">
             <Link className="landing-btn landing-btn-dark" href="/auth">
               Mulai gratis
               <ArrowRight size={18} />
