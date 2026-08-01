@@ -2,11 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  LiveKitRoom,
-  RoomAudioRenderer,
-  VideoConference,
-} from "@livekit/components-react";
+import { LiveKitRoom } from "@livekit/components-react";
 import { ArrowLeft, Clock3, LoaderCircle, LockKeyhole, Video } from "lucide-react";
 import { HostWaitingRoom } from "@/components/host-waiting-room";
 import { RecordingControls } from "@/components/recording-controls";
@@ -15,10 +11,12 @@ import {
   useBackgroundEffects,
 } from "@/components/background-effects-context";
 import { BackgroundEffectsPrejoin } from "@/components/background-effects-prejoin";
+import { BackgroundEffectsRuntime } from "@/components/background-effects-runtime";
 import {
-  BackgroundEffectsRuntime,
-  BackgroundEffectsSettings,
-} from "@/components/background-effects-runtime";
+  MeetingStage,
+  type MeetingLayoutMode,
+} from "@/components/meeting-stage";
+import { MeetingToolsDock } from "@/components/meeting-tools-dock";
 
 type ConnectionDetails = {
   identity: string;
@@ -43,16 +41,6 @@ type MeetingExperienceProps = {
   } | null;
 };
 
-function MeetingBackgroundSettings() {
-  const { effectId, setEffectId } = useBackgroundEffects();
-  return (
-    <BackgroundEffectsSettings
-      effectId={effectId}
-      onEffectChange={setEffectId}
-    />
-  );
-}
-
 function MeetingRoom({
   connection,
   roomName,
@@ -64,6 +52,10 @@ function MeetingRoom({
 }) {
   const router = useRouter();
   const { effectId, setEffectId } = useBackgroundEffects();
+  const [layoutMode, setLayoutMode] = useState<MeetingLayoutMode>("gallery");
+  const isHost =
+    connection.role === "HOST" || connection.role === "MODERATOR";
+  const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
   return (
     <div className="live-room" data-lk-theme="default">
@@ -82,7 +74,7 @@ function MeetingRoom({
           <Video size={16} />
           <span>{roomName}</span>
         </div>
-        {(connection.role === "HOST" || connection.role === "MODERATOR") && (
+        {isHost && (
           <>
             <HostWaitingRoom roomName={roomName} />
             <RecordingControls roomName={roomName} />
@@ -92,8 +84,14 @@ function MeetingRoom({
           effectId={effectId}
           onEffectChange={setEffectId}
         />
-        <VideoConference SettingsComponent={MeetingBackgroundSettings} />
-        <RoomAudioRenderer />
+        <MeetingStage layoutMode={layoutMode} />
+        <MeetingToolsDock
+          roomName={roomName}
+          mainRoomName={mainRoomName}
+          isHost={isHost}
+          layoutMode={layoutMode}
+          onLayoutChange={setLayoutMode}
+        />
       </LiveKitRoom>
     </div>
   );

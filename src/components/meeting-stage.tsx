@@ -1,0 +1,100 @@
+"use client";
+
+import { useMemo } from "react";
+import {
+  CarouselLayout,
+  ControlBar,
+  FocusLayout,
+  FocusLayoutContainer,
+  GridLayout,
+  ParticipantTile,
+  RoomAudioRenderer,
+  useTracks,
+} from "@livekit/components-react";
+import { Track } from "livekit-client";
+
+export type MeetingLayoutMode = "gallery" | "focus" | "immersive";
+
+type MeetingStageProps = {
+  layoutMode: MeetingLayoutMode;
+};
+
+type StageTrack = ReturnType<typeof useTracks>[number];
+
+function pickFocusTrack(tracks: StageTrack[]): StageTrack | undefined {
+  const screenShare = tracks.find(
+    (track) =>
+      track.source === Track.Source.ScreenShare &&
+      track.publication &&
+      !track.publication.isMuted,
+  );
+  if (screenShare) {
+    return screenShare;
+  }
+
+  const remoteCamera = tracks.find(
+    (track) =>
+      track.source === Track.Source.Camera &&
+      track.participant &&
+      !track.participant.isLocal &&
+      track.publication,
+  );
+  if (remoteCamera) {
+    return remoteCamera;
+  }
+
+  return tracks.find((track) => track.source === Track.Source.Camera);
+}
+
+export function MeetingStage({ layoutMode }: MeetingStageProps) {
+  const tracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+      { source: Track.Source.ScreenShareAudio, withPlaceholder: false },
+    ],
+    { onlySubscribed: false },
+  );
+
+  const focusTrack = useMemo(() => pickFocusTrack(tracks), [tracks]);
+  const stageClass = `meeting-stage meeting-stage-${layoutMode}`;
+
+  if (layoutMode === "gallery") {
+    return (
+      <div className={stageClass}>
+        <div className="meeting-stage-main">
+          <GridLayout tracks={tracks}>
+            <ParticipantTile />
+          </GridLayout>
+        </div>
+        <ControlBar controls={{ chat: true, settings: true }} />
+        <RoomAudioRenderer />
+      </div>
+    );
+  }
+
+  const sideTracks = focusTrack
+    ? tracks.filter((track) => track !== focusTrack)
+    : tracks;
+
+  return (
+    <div className={stageClass}>
+      <div className="meeting-stage-main">
+        <FocusLayoutContainer>
+          <CarouselLayout tracks={sideTracks}>
+            <ParticipantTile />
+          </CarouselLayout>
+          {focusTrack ? (
+            <FocusLayout trackRef={focusTrack} />
+          ) : (
+            <GridLayout tracks={tracks}>
+              <ParticipantTile />
+            </GridLayout>
+          )}
+        </FocusLayoutContainer>
+      </div>
+      <ControlBar controls={{ chat: true, settings: true }} />
+      <RoomAudioRenderer />
+    </div>
+  );
+}

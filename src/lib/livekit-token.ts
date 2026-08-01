@@ -30,6 +30,7 @@ export async function createParticipantToken(input: ParticipantTokenInput) {
     canPublish: true,
     canSubscribe: true,
     canPublishData: true,
+    canUpdateOwnMetadata: true,
   });
 
   return {
