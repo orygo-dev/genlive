@@ -4,7 +4,7 @@ import {
   type SwitchBackgroundProcessorOptions,
 } from "@livekit/track-processors";
 import {
-  getPresetImagePath,
+  getBackgroundImagePath,
   type BackgroundEffectId,
 } from "@/lib/background-effects";
 
@@ -25,7 +25,7 @@ export function toProcessorSwitchOptions(
     return { mode: "background-blur", blurRadius: 24 };
   }
 
-  const imagePath = getPresetImagePath(effectId);
+  const imagePath = getBackgroundImagePath(effectId);
   if (!imagePath) {
     return { mode: "disabled" };
   }

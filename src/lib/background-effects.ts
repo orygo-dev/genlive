@@ -2,6 +2,7 @@ export type BackgroundEffectId =
   | "none"
   | "blur"
   | "blur-strong"
+  | "custom"
   | `preset:${string}`;
 
 export type BackgroundPreset = {
@@ -33,9 +34,18 @@ export const BACKGROUND_PRESETS: BackgroundPreset[] = [
 ];
 
 export const BACKGROUND_EFFECT_STORAGE_KEY = "genmeet_bg_effect";
+export const BACKGROUND_CUSTOM_IMAGE_KEY = "genmeet_bg_custom_image";
+
+const MAX_CUSTOM_BYTES = 4 * 1024 * 1024;
+const MAX_CUSTOM_EDGE = 1600;
 
 export function isBackgroundEffectId(value: string): value is BackgroundEffectId {
-  if (value === "none" || value === "blur" || value === "blur-strong") {
+  if (
+    value === "none" ||
+    value === "blur" ||
+    value === "blur-strong" ||
+    value === "custom"
+  ) {
     return true;
   }
   if (!value.startsWith("preset:")) {
@@ -51,6 +61,9 @@ export function readStoredBackgroundEffect(): BackgroundEffectId {
   }
   try {
     const raw = window.sessionStorage.getItem(BACKGROUND_EFFECT_STORAGE_KEY);
+    if (raw === "custom" && !readCustomBackgroundImage()) {
+      return "none";
+    }
     if (raw && isBackgroundEffectId(raw)) {
       return raw;
     }
@@ -71,10 +84,86 @@ export function storeBackgroundEffect(effectId: BackgroundEffectId) {
   }
 }
 
-export function getPresetImagePath(effectId: BackgroundEffectId): string | null {
+export function readCustomBackgroundImage(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    return window.sessionStorage.getItem(BACKGROUND_CUSTOM_IMAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function storeCustomBackgroundImage(dataUrl: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(BACKGROUND_CUSTOM_IMAGE_KEY, dataUrl);
+}
+
+export function clearCustomBackgroundImage() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.sessionStorage.removeItem(BACKGROUND_CUSTOM_IMAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function getBackgroundImagePath(
+  effectId: BackgroundEffectId,
+): string | null {
+  if (effectId === "custom") {
+    return readCustomBackgroundImage();
+  }
   if (!effectId.startsWith("preset:")) {
     return null;
   }
   const presetId = effectId.slice("preset:".length);
   return BACKGROUND_PRESETS.find((preset) => preset.id === presetId)?.imagePath ?? null;
+}
+
+/** @deprecated use getBackgroundImagePath */
+export function getPresetImagePath(effectId: BackgroundEffectId): string | null {
+  return getBackgroundImagePath(effectId);
+}
+
+export async function fileToCustomBackgroundDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Pilih file gambar (JPG, PNG, atau WebP).");
+  }
+  if (file.size > MAX_CUSTOM_BYTES) {
+    throw new Error("Ukuran gambar maksimal 4 MB.");
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(objectUrl);
+    const scale = Math.min(1, MAX_CUSTOM_EDGE / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Gambar belum dapat diproses.");
+    }
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", 0.88);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Gambar tidak valid."));
+    image.src = src;
+  });
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  getPresetImagePath,
+  getBackgroundImagePath,
   isBackgroundEffectId,
 } from "./background-effects";
 import { toProcessorSwitchOptions } from "./background-processor";
@@ -10,6 +10,7 @@ describe("background effects", () => {
     expect(isBackgroundEffectId("none")).toBe(true);
     expect(isBackgroundEffectId("blur")).toBe(true);
     expect(isBackgroundEffectId("blur-strong")).toBe(true);
+    expect(isBackgroundEffectId("custom")).toBe(true);
     expect(isBackgroundEffectId("preset:soft-blue")).toBe(true);
     expect(isBackgroundEffectId("preset:missing")).toBe(false);
     expect(isBackgroundEffectId("glow")).toBe(false);
@@ -29,6 +30,9 @@ describe("background effects", () => {
       mode: "virtual-background",
       imagePath: "/backgrounds/soft-blue.svg",
     });
-    expect(getPresetImagePath("preset:office")).toBe("/backgrounds/office.svg");
+    expect(toProcessorSwitchOptions("custom")).toEqual({ mode: "disabled" });
+    expect(getBackgroundImagePath("preset:office")).toBe(
+      "/backgrounds/office.svg",
+    );
   });
 });

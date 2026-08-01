@@ -2006,6 +2006,58 @@ footer p {
   cursor: not-allowed;
 }
 
+.bg-effects-swatch-custom {
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-effects-swatch-upload {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.bg-effects-remove-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  border: 0;
+  padding: 0;
+  color: var(--danger);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.bg-effects-hint,
+.bg-effects-upload-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.bg-effects-hint {
+  color: var(--muted);
+}
+
+.bg-effects-upload-error {
+  color: var(--danger);
+}
+
+.bg-effects-runtime-panel .bg-effects-hint {
+  color: #94a3b8;
+}
+
+.bg-effects-runtime-panel .bg-effects-swatch-upload {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.bg-effects-runtime-panel .bg-effects-remove-custom {
+  color: #fca5a5;
+}
+
 .bg-effects-swatch {
   width: 100%;
   height: 42px;
