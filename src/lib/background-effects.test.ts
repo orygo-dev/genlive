@@ -20,11 +20,11 @@ describe("background effects", () => {
     expect(toProcessorSwitchOptions("none")).toEqual({ mode: "disabled" });
     expect(toProcessorSwitchOptions("blur")).toEqual({
       mode: "background-blur",
-      blurRadius: 12,
+      blurRadius: 16,
     });
     expect(toProcessorSwitchOptions("blur-strong")).toEqual({
       mode: "background-blur",
-      blurRadius: 24,
+      blurRadius: 28,
     });
     expect(toProcessorSwitchOptions("preset:soft-blue")).toEqual({
       mode: "virtual-background",

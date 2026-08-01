@@ -184,7 +184,8 @@ export function BackgroundEffectsPicker({
         </p>
       ) : (
         <p className="bg-effects-hint">
-          Unggah JPG/PNG/WebP maksimal 4 MB untuk background sendiri.
+          Unggah JPG/PNG/WebP maks. 4 MB. Untuk tepi lebih halus: pencahayaan
+          merata, background polos, dan hindari gerakan cepat.
         </p>
       )}
     </div>

@@ -61,8 +61,19 @@ export function BackgroundEffectsRuntime({
 
       setBusy(true);
       try {
-        await applyBackgroundEffect(processorRef.current, effectId);
+        await applyBackgroundEffect(processorRef.current, effectId, track);
         storeBackgroundEffect(effectId);
+        if (typeof document !== "undefined") {
+          const room = document.querySelector(".live-room");
+          if (room instanceof HTMLElement) {
+            room.dataset.bgEffect =
+              effectId === "none"
+                ? "off"
+                : effectId.startsWith("blur")
+                  ? "blur"
+                  : "virtual";
+          }
+        }
       } finally {
         if (!cancelled) {
           setBusy(false);

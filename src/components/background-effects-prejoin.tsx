@@ -42,6 +42,7 @@ export function BackgroundEffectsPrejoin({
       try {
         const track = await createLocalVideoTrack({
           facingMode: "user",
+          resolution: { width: 1280, height: 720, frameRate: 24 },
         });
         if (cancelled) {
           track.stop();
@@ -58,7 +59,7 @@ export function BackgroundEffectsPrejoin({
           processorRef.current = processor;
           await track.setProcessor(processor);
           const initial = effectId === "none" ? readStoredBackgroundEffect() : effectId;
-          await applyBackgroundEffect(processor, initial);
+          await applyBackgroundEffect(processor, initial, track);
           if (!cancelled && initial !== effectId) {
             onEffectChange(initial);
           }
@@ -95,7 +96,7 @@ export function BackgroundEffectsPrejoin({
 
     let cancelled = false;
     setBusy(true);
-    void applyBackgroundEffect(processor, effectId)
+    void applyBackgroundEffect(processor, effectId, trackRef.current)
       .then(() => {
         if (!cancelled) {
           storeBackgroundEffect(effectId);

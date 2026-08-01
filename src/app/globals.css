@@ -2058,6 +2058,12 @@ footer p {
   color: #fca5a5;
 }
 
+/* Soften local tile slightly when virtual BG is active — reduces harsh cutout look. */
+.live-room[data-bg-effect="virtual"] .lk-participant-tile[data-lk-local-participant] video,
+.live-room[data-bg-effect="virtual"] .lk-participant-tile[data-lk-local-participant] .lk-participant-media-video {
+  filter: contrast(1.02) saturate(1.03);
+}
+
 .bg-effects-swatch {
   width: 100%;
   height: 42px;

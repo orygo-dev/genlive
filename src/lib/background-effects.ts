@@ -152,8 +152,11 @@ export async function fileToCustomBackgroundDataUrl(file: File): Promise<string>
     if (!context) {
       throw new Error("Gambar belum dapat diproses.");
     }
+    // Soften image slightly so harsh textures don't amplify jagged cutout edges.
+    context.filter = "blur(1.2px) contrast(0.98) saturate(0.98)";
     context.drawImage(image, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", 0.88);
+    context.filter = "none";
+    return canvas.toDataURL("image/jpeg", 0.9);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
