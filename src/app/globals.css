@@ -5550,6 +5550,18 @@ footer p {
   position: relative;
 }
 
+.meeting-stage-main .lk-grid-layout,
+.meeting-stage-main .lk-focus-layout-wrapper {
+  height: 100%;
+  min-height: 240px;
+}
+
+.meeting-stage-main .lk-participant-tile video,
+.meeting-stage-main .lk-participant-media-video {
+  object-fit: cover;
+  background: #0f141c;
+}
+
 .meeting-stage-gallery .meeting-stage-main,
 .meeting-stage-focus .meeting-stage-main {
   background: #0f141c;

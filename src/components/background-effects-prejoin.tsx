@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createLocalVideoTrack,
   type LocalVideoTrack,
@@ -11,7 +11,13 @@ import { useBackgroundEffects } from "@/components/background-effects-context";
 import { MediaDevicePickers } from "@/components/media-device-pickers";
 import { useVirtualBackground } from "@/hooks/useVirtualBackground";
 import type { BackgroundEffectId } from "@/lib/background-effects";
-import { readStoredMediaDevices } from "@/lib/media-devices";
+import {
+  idealDeviceId,
+  listMediaDevices,
+  pickPreferredDeviceId,
+  readStoredMediaDevices,
+  storeMediaDevice,
+} from "@/lib/media-devices";
 
 type BackgroundEffectsPrejoinProps = {
   effectId: BackgroundEffectId;
@@ -31,6 +37,7 @@ export function BackgroundEffectsPrejoin({
   onCameraChange,
 }: BackgroundEffectsPrejoinProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const trackRef = useRef<LocalVideoTrack | null>(null);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
   const [previewError, setPreviewError] = useState("");
   const [cameraDeviceId, setCameraDeviceId] = useState(
@@ -52,28 +59,72 @@ export function BackgroundEffectsPrejoin({
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 
+  const attachPreview = useCallback((nextTrack: LocalVideoTrack | null) => {
+    const el = videoRef.current;
+    if (!el || !nextTrack) return;
+    nextTrack.attach(el);
+    void el.play().catch(() => undefined);
+  }, []);
+
+  const setVideoNode = useCallback(
+    (node: HTMLVideoElement | null) => {
+      videoRef.current = node;
+      if (node && trackRef.current) {
+        trackRef.current.attach(node);
+        void node.play().catch(() => undefined);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     let localTrack: LocalVideoTrack | null = null;
 
     async function startPreview() {
+      setPreviewError("");
       try {
-        localTrack = await createLocalVideoTrack({
-          facingMode: "user",
-          deviceId: cameraDeviceId || undefined,
-          resolution: { width: 1280, height: 720, frameRate: 24 },
-        });
+        const cams = await listMediaDevices("videoinput");
+        const preferred = pickPreferredDeviceId(
+          cams,
+          cameraDeviceId || readStoredMediaDevices().videoinput,
+        );
+        if (preferred) {
+          storeMediaDevice("videoinput", preferred);
+        }
+
+        const deviceConstraint = idealDeviceId(preferred || cameraDeviceId);
+        try {
+          localTrack = await createLocalVideoTrack({
+            ...(deviceConstraint
+              ? { deviceId: deviceConstraint }
+              : { facingMode: "user" }),
+            resolution: { width: 1280, height: 720, frameRate: 24 },
+          });
+        } catch {
+          // Stale deviceId / overconstrained — fall back to any camera.
+          localTrack = await createLocalVideoTrack({
+            facingMode: "user",
+            resolution: { width: 1280, height: 720, frameRate: 24 },
+          });
+        }
+
         if (cancelled) {
           localTrack.stop();
           return;
         }
+        trackRef.current = localTrack;
         setTrack(localTrack);
-        if (videoRef.current) {
-          localTrack.attach(videoRef.current);
-        }
-      } catch {
+        attachPreview(localTrack);
+      } catch (error) {
         if (!cancelled) {
-          setPreviewError("Kamera belum dapat dibuka untuk pratinjau.");
+          setPreviewError(
+            error instanceof Error
+              ? `Kamera belum dapat dibuka: ${error.message}`
+              : "Kamera belum dapat dibuka untuk pratinjau.",
+          );
+          setTrack(null);
+          trackRef.current = null;
         }
       }
     }
@@ -82,31 +133,30 @@ export function BackgroundEffectsPrejoin({
 
     return () => {
       cancelled = true;
+      trackRef.current = null;
       setTrack(null);
       if (localTrack) {
         localTrack.stop();
         localTrack.detach();
       }
     };
-  }, [cameraDeviceId]);
+  }, [attachPreview, cameraDeviceId]);
 
   useEffect(() => {
     if (!track) return;
     if (cameraEnabled) {
       void track.unmute();
-      if (videoRef.current) {
-        track.attach(videoRef.current);
-      }
+      attachPreview(track);
     } else {
       void track.mute();
     }
-  }, [track, cameraEnabled, effectId, vb.busy]);
+  }, [track, cameraEnabled, effectId, vb.busy, attachPreview]);
 
   return (
     <div className="bg-effects-prejoin prejoin-media">
       <div className={`bg-effects-preview${cameraEnabled ? "" : " is-cam-off"}`}>
         {cameraEnabled ? (
-          <video ref={videoRef} autoPlay playsInline muted />
+          <video ref={setVideoNode} autoPlay playsInline muted />
         ) : (
           <div className="prejoin-cam-off" aria-hidden="true">
             <VideoOff size={40} />
@@ -137,6 +187,7 @@ export function BackgroundEffectsPrejoin({
       </div>
       <MediaDevicePickers
         showSpeaker={false}
+        requestVideoPermission={false}
         className="prejoin-device-pickers"
         onDeviceChange={(kind, deviceId) => {
           if (kind === "videoinput") {

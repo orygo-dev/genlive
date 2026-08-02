@@ -8,7 +8,10 @@ import {
   type RoomOptions,
   type VideoCaptureOptions,
 } from "livekit-client";
-import { readStoredMediaDevices } from "@/lib/media-devices";
+import {
+  idealDeviceId,
+  readStoredMediaDevices,
+} from "@/lib/media-devices";
 
 /** Longer reconnect window for unstable mobile / Wi‑Fi links. */
 const RECONNECT_DELAYS_MS = [
@@ -17,10 +20,11 @@ const RECONNECT_DELAYS_MS = [
 
 export function buildMeetingRoomOptions(): RoomOptions {
   const devices = readStoredMediaDevices();
+  const videoDevice = idealDeviceId(devices.videoinput);
+  const audioDevice = idealDeviceId(devices.audioinput);
+
   return {
-    adaptiveStream: {
-      pixelDensity: "screen",
-    },
+    adaptiveStream: true,
     dynacast: true,
     disconnectOnPageLeave: true,
     stopLocalTrackOnUnpublish: true,
@@ -29,13 +33,14 @@ export function buildMeetingRoomOptions(): RoomOptions {
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
-      voiceIsolation: true,
-      ...(devices.audioinput ? { deviceId: devices.audioinput } : {}),
+      ...(audioDevice ? { deviceId: audioDevice } : {}),
     },
     videoCaptureDefaults: {
-      facingMode: "user",
+      // Never combine facingMode with deviceId — browsers often fail the constraint.
+      ...(videoDevice
+        ? { deviceId: videoDevice }
+        : { facingMode: "user" as const }),
       resolution: VideoPresets.h720.resolution,
-      ...(devices.videoinput ? { deviceId: devices.videoinput } : {}),
     },
     audioOutput: devices.audiooutput
       ? { deviceId: devices.audiooutput }
@@ -71,11 +76,12 @@ export function buildLocalAudioCapture(
 ): AudioCaptureOptions | false {
   if (!enabled) return false;
   const devices = readStoredMediaDevices();
+  const audioDevice = idealDeviceId(devices.audioinput);
   return {
     echoCancellation: true,
     noiseSuppression: true,
     autoGainControl: true,
-    ...(devices.audioinput ? { deviceId: devices.audioinput } : {}),
+    ...(audioDevice ? { deviceId: audioDevice } : {}),
   };
 }
 
@@ -84,9 +90,11 @@ export function buildLocalVideoCapture(
 ): VideoCaptureOptions | false {
   if (!enabled) return false;
   const devices = readStoredMediaDevices();
+  const videoDevice = idealDeviceId(devices.videoinput);
   return {
-    facingMode: "user",
+    ...(videoDevice
+      ? { deviceId: videoDevice }
+      : { facingMode: "user" as const }),
     resolution: VideoPresets.h720.resolution,
-    ...(devices.videoinput ? { deviceId: devices.videoinput } : {}),
   };
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ensureMediaPermission,
   listMediaDevices,
+  pickPreferredDeviceId,
   readStoredMediaDevices,
   storeMediaDevice,
   type MediaDeviceOption,
@@ -14,12 +15,18 @@ type DeviceKind = "audioinput" | "videoinput" | "audiooutput";
 type MediaDevicePickersProps = {
   showSpeaker?: boolean;
   className?: string;
+  /**
+   * Prejoin already opens the camera for preview — requesting video again
+   * races getUserMedia and often leaves the preview black on Windows.
+   */
+  requestVideoPermission?: boolean;
   onDeviceChange?: (kind: DeviceKind, deviceId: string) => void | Promise<void>;
 };
 
 export function MediaDevicePickers({
   showSpeaker = true,
   className,
+  requestVideoPermission = true,
   onDeviceChange,
 }: MediaDevicePickersProps) {
   const stored = readStoredMediaDevices();
@@ -31,7 +38,10 @@ export function MediaDevicePickers({
   const [speakerId, setSpeakerId] = useState(stored.audiooutput ?? "");
 
   const refresh = useCallback(async () => {
-    await ensureMediaPermission();
+    await ensureMediaPermission({
+      audio: true,
+      video: requestVideoPermission,
+    });
     const [nextMics, nextCams, nextSpeakers] = await Promise.all([
       listMediaDevices("audioinput"),
       listMediaDevices("videoinput"),
@@ -42,26 +52,21 @@ export function MediaDevicePickers({
     setSpeakers(nextSpeakers);
 
     const preferred = readStoredMediaDevices();
-    const nextMic =
-      preferred.audioinput &&
-      nextMics.some((d) => d.deviceId === preferred.audioinput)
-        ? preferred.audioinput
-        : nextMics[0]?.deviceId ?? "";
-    const nextCam =
-      preferred.videoinput &&
-      nextCams.some((d) => d.deviceId === preferred.videoinput)
-        ? preferred.videoinput
-        : nextCams[0]?.deviceId ?? "";
-    const nextSpeaker =
-      preferred.audiooutput &&
-      nextSpeakers.some((d) => d.deviceId === preferred.audiooutput)
-        ? preferred.audiooutput
-        : nextSpeakers[0]?.deviceId ?? "";
+    const nextMic = pickPreferredDeviceId(nextMics, preferred.audioinput);
+    const nextCam = pickPreferredDeviceId(nextCams, preferred.videoinput);
+    const nextSpeaker = pickPreferredDeviceId(
+      nextSpeakers,
+      preferred.audiooutput,
+    );
 
     setMicId(nextMic);
     setCamId(nextCam);
     setSpeakerId(nextSpeaker);
-  }, []);
+
+    if (nextMic) storeMediaDevice("audioinput", nextMic);
+    if (nextCam) storeMediaDevice("videoinput", nextCam);
+    if (nextSpeaker) storeMediaDevice("audiooutput", nextSpeaker);
+  }, [requestVideoPermission]);
 
   useEffect(() => {
     void refresh();
