@@ -5,8 +5,37 @@ import { prisma } from "@/lib/db";
 import {
   DEFAULT_APP_NAME,
   defaultPlatformBranding,
+  normalizeMobileBannerSlides,
+  type MobileBannerSlide,
   type PlatformBranding,
 } from "@/lib/platform-branding";
+
+function toBranding(settings: {
+  appName: string;
+  logoUrl: string | null;
+  loginBackgroundUrl: string | null;
+  splashBackgroundUrl: string | null;
+  splashLogoUrl: string | null;
+  mobileBannerSlides: unknown;
+}): PlatformBranding {
+  return {
+    appName: settings.appName || DEFAULT_APP_NAME,
+    logoUrl: settings.logoUrl,
+    loginBackgroundUrl: settings.loginBackgroundUrl,
+    splashBackgroundUrl: settings.splashBackgroundUrl,
+    splashLogoUrl: settings.splashLogoUrl,
+    mobileBannerSlides: normalizeMobileBannerSlides(settings.mobileBannerSlides),
+  };
+}
+
+const brandingSelect = {
+  appName: true,
+  logoUrl: true,
+  loginBackgroundUrl: true,
+  splashBackgroundUrl: true,
+  splashLogoUrl: true,
+  mobileBannerSlides: true,
+} as const;
 
 export const getPlatformBranding = cache(async (): Promise<PlatformBranding> => {
   try {
@@ -14,22 +43,10 @@ export const getPlatformBranding = cache(async (): Promise<PlatformBranding> => 
       where: { id: 1 },
       create: { id: 1, appName: DEFAULT_APP_NAME },
       update: {},
-      select: {
-        appName: true,
-        logoUrl: true,
-        loginBackgroundUrl: true,
-        splashBackgroundUrl: true,
-        splashLogoUrl: true,
-      },
+      select: brandingSelect,
     });
 
-    return {
-      appName: settings.appName || DEFAULT_APP_NAME,
-      logoUrl: settings.logoUrl,
-      loginBackgroundUrl: settings.loginBackgroundUrl,
-      splashBackgroundUrl: settings.splashBackgroundUrl,
-      splashLogoUrl: settings.splashLogoUrl,
-    };
+    return toBranding(settings);
   } catch {
     return defaultPlatformBranding;
   }
@@ -38,7 +55,16 @@ export const getPlatformBranding = cache(async (): Promise<PlatformBranding> => 
 export async function updatePlatformBranding(
   input: Partial<PlatformBranding> & { updatedById?: string | null },
 ) {
-  const data: Record<string, string | null | undefined> = {};
+  const data: {
+    appName?: string;
+    logoUrl?: string | null;
+    loginBackgroundUrl?: string | null;
+    splashBackgroundUrl?: string | null;
+    splashLogoUrl?: string | null;
+    mobileBannerSlides?: MobileBannerSlide[];
+    updatedById?: string | null;
+  } = {};
+
   if (input.appName !== undefined) data.appName = input.appName;
   if (input.logoUrl !== undefined) data.logoUrl = input.logoUrl;
   if (input.loginBackgroundUrl !== undefined) {
@@ -48,6 +74,11 @@ export async function updatePlatformBranding(
     data.splashBackgroundUrl = input.splashBackgroundUrl;
   }
   if (input.splashLogoUrl !== undefined) data.splashLogoUrl = input.splashLogoUrl;
+  if (input.mobileBannerSlides !== undefined) {
+    data.mobileBannerSlides = normalizeMobileBannerSlides(
+      input.mobileBannerSlides,
+    );
+  }
 
   const settings = await prisma.platformSettings.upsert({
     where: { id: 1 },
@@ -58,26 +89,15 @@ export async function updatePlatformBranding(
       loginBackgroundUrl: input.loginBackgroundUrl ?? null,
       splashBackgroundUrl: input.splashBackgroundUrl ?? null,
       splashLogoUrl: input.splashLogoUrl ?? null,
+      mobileBannerSlides: data.mobileBannerSlides ?? [],
       updatedById: input.updatedById ?? null,
     },
     update: {
       ...data,
       updatedById: input.updatedById ?? undefined,
     },
-    select: {
-      appName: true,
-      logoUrl: true,
-      loginBackgroundUrl: true,
-      splashBackgroundUrl: true,
-      splashLogoUrl: true,
-    },
+    select: brandingSelect,
   });
 
-  return {
-    appName: settings.appName || DEFAULT_APP_NAME,
-    logoUrl: settings.logoUrl,
-    loginBackgroundUrl: settings.loginBackgroundUrl,
-    splashBackgroundUrl: settings.splashBackgroundUrl,
-    splashLogoUrl: settings.splashLogoUrl,
-  } satisfies PlatformBranding;
+  return toBranding(settings);
 }

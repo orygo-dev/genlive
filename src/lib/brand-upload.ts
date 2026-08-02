@@ -17,7 +17,8 @@ export type BrandAssetKind =
   | "logo"
   | "loginBackground"
   | "splashBackground"
-  | "splashLogo";
+  | "splashLogo"
+  | "mobileBanner";
 
 /** Project root even when PM2 cwd is `.next/standalone`. */
 export function resolveProjectRoot() {

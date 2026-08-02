@@ -10,6 +10,7 @@ const KIND_VALUES = new Set<BrandAssetKind>([
   "loginBackground",
   "splashBackground",
   "splashLogo",
+  "mobileBanner",
 ]);
 
 export async function POST(request: Request) {

@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getPlatformBranding, updatePlatformBranding } from "@/lib/platform-settings";
+import {
+  getPlatformBranding,
+  updatePlatformBranding,
+} from "@/lib/platform-settings";
+import { MOBILE_BANNER_RECOMMENDED } from "@/lib/platform-branding";
 import { getSuperAdminContext } from "@/lib/super-admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const slideSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  imageUrl: z.string().trim().min(1).max(1000),
+  title: z.string().trim().max(80).default(""),
+  body: z.string().trim().max(200).default(""),
+  linkUrl: z.string().trim().max(1000).nullable().optional(),
+  active: z.boolean().default(true),
+});
 
 const updateSchema = z.object({
   appName: z.string().trim().min(2).max(80).optional(),
@@ -12,6 +25,10 @@ const updateSchema = z.object({
   loginBackgroundUrl: z.string().trim().max(1000).nullable().optional(),
   splashBackgroundUrl: z.string().trim().max(1000).nullable().optional(),
   splashLogoUrl: z.string().trim().max(1000).nullable().optional(),
+  mobileBannerSlides: z
+    .array(slideSchema)
+    .max(MOBILE_BANNER_RECOMMENDED.maxSlides)
+    .optional(),
 });
 
 export async function GET() {
@@ -55,7 +72,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ branding });
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return NextResponse.json({ error: "Format data tidak valid." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Format data tidak valid." },
+        { status: 400 },
+      );
     }
     console.error("Update platform branding failed", error);
     return NextResponse.json(
