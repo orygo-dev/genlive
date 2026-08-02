@@ -5275,6 +5275,75 @@ footer p {
   padding: 10px 12px;
 }
 
+.admin-livekit-fieldset {
+  background: #f7fafc;
+}
+
+.admin-livekit-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-livekit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-livekit-badge.is-ok {
+  color: #0f7a45;
+  background: #e8f8ef;
+}
+
+.admin-livekit-badge.is-warn {
+  color: #9a6700;
+  background: #fff6dd;
+}
+
+.admin-livekit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-livekit-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meeting-connection-banner {
+  position: fixed;
+  z-index: 40;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: #eef3f9;
+  background: rgba(20, 27, 36, 0.94);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.meeting-connection-banner.is-reconnect {
+  background: rgba(146, 64, 14, 0.95);
+}
+
+.meeting-connection-banner.is-offline {
+  background: rgba(127, 29, 29, 0.95);
+}
+
 .admin-plan-editor {
   display: grid;
   gap: 16px;

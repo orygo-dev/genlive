@@ -9,6 +9,10 @@ import {
   saveIntegrations,
   type PlatformIntegrations,
 } from "@/lib/platform-config";
+import {
+  normalizeLivekitApiUrl,
+  normalizeLivekitUrl,
+} from "@/lib/livekit-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +30,9 @@ const optionalLivekitUrl = z
       value == null ||
       value === "" ||
       value.startsWith("wss://") ||
-      value.startsWith("ws://"),
+      value.startsWith("ws://") ||
+      value.startsWith("https://") ||
+      value.startsWith("http://"),
     {
       message:
         "LIVEKIT_URL harus diawali wss:// (contoh: wss://xxx.livekit.cloud)",
@@ -114,8 +120,15 @@ export async function GET() {
       getStoredIntegrations(),
     ]);
 
+    const livekitReady = Boolean(
+      resolved.livekitUrl &&
+        resolved.livekitApiKey &&
+        resolved.livekitApiSecret,
+    );
+
     return NextResponse.json({
       encryptionConfigured: isEncryptionConfigured(),
+      livekitReady,
       integrations: {
         appUrl: resolved.appUrl,
         cronSecret: maskSecret(resolved.cronSecret),
@@ -126,6 +139,9 @@ export async function GET() {
         livekitApiSecret: maskSecret(resolved.livekitApiSecret),
         livekitApiSecretSet: Boolean(resolved.livekitApiSecret),
         livekitApiUrl: resolved.livekitApiUrl,
+        livekitStoredInDatabase: Boolean(
+          stored.livekitUrl || stored.livekitApiKey || stored.livekitApiSecret,
+        ),
         livekitEgressS3AccessKey: maskSecret(resolved.livekitEgressS3AccessKey),
         livekitEgressS3AccessKeySet: Boolean(resolved.livekitEgressS3AccessKey),
         livekitEgressS3Secret: maskSecret(resolved.livekitEgressS3Secret),
@@ -202,9 +218,37 @@ async function saveIntegrationsRequest(request: Request) {
 
   const current = await getStoredIntegrations();
   const next = applyPatch(current, parsed.data);
-  await saveIntegrations(next, gate.context.user.id);
 
-  return NextResponse.json({ ok: true });
+  if (Object.prototype.hasOwnProperty.call(parsed.data, "livekitUrl")) {
+    next.livekitUrl = normalizeLivekitUrl(next.livekitUrl ?? null);
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(parsed.data, "livekitApiUrl") ||
+    Object.prototype.hasOwnProperty.call(parsed.data, "livekitUrl")
+  ) {
+    next.livekitApiUrl = normalizeLivekitApiUrl(
+      next.livekitApiUrl ?? null,
+      next.livekitUrl ?? current.livekitUrl,
+    );
+  }
+  if (typeof next.livekitApiKey === "string") {
+    next.livekitApiKey = next.livekitApiKey.trim() || null;
+  }
+  if (typeof next.livekitApiSecret === "string") {
+    next.livekitApiSecret = next.livekitApiSecret.trim() || null;
+  }
+
+  await saveIntegrations(next, gate.context.user.id);
+  const resolved = await getPlatformConfig();
+
+  return NextResponse.json({
+    ok: true,
+    livekitReady: Boolean(
+      resolved.livekitUrl &&
+        resolved.livekitApiKey &&
+        resolved.livekitApiSecret,
+    ),
+  });
 }
 
 /** POST — preferred (Apache/aaPanel often mishandles PATCH and returns HTML). */

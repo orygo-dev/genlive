@@ -3,7 +3,11 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LiveKitRoom } from "@livekit/components-react";
-import { VideoPresets, type RoomOptions } from "livekit-client";
+import {
+  type DisconnectReason,
+  type RoomConnectOptions,
+  type RoomOptions,
+} from "livekit-client";
 import {
   ArrowLeft,
   Clock3,
@@ -19,12 +23,18 @@ import {
 } from "@/components/background-effects-context";
 import { BackgroundEffectsPrejoin } from "@/components/background-effects-prejoin";
 import { BackgroundEffectsRuntime } from "@/components/background-effects-runtime";
+import { MeetingConnectionBanner } from "@/components/meeting-connection-banner";
 import {
   MeetingStage,
   type MeetingLayoutMode,
 } from "@/components/meeting-stage";
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
-import { readStoredMediaDevices } from "@/lib/media-devices";
+import {
+  buildLocalAudioCapture,
+  buildLocalVideoCapture,
+  buildMeetingConnectOptions,
+  buildMeetingRoomOptions,
+} from "@/lib/livekit-room-options";
 
 type ConnectionDetails = {
   identity: string;
@@ -76,27 +86,11 @@ function MeetingRoom({
     connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
-  const roomOptions = useMemo<RoomOptions>(() => {
-    const devices = readStoredMediaDevices();
-    return {
-      adaptiveStream: true,
-      dynacast: true,
-      audioCaptureDefaults: devices.audioinput
-        ? { deviceId: devices.audioinput }
-        : undefined,
-      videoCaptureDefaults: {
-        resolution: VideoPresets.h720.resolution,
-        ...(devices.videoinput ? { deviceId: devices.videoinput } : {}),
-      },
-      audioOutput: devices.audiooutput
-        ? { deviceId: devices.audiooutput }
-        : undefined,
-      publishDefaults: {
-        simulcast: true,
-        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
-      },
-    };
-  }, []);
+  const roomOptions = useMemo<RoomOptions>(() => buildMeetingRoomOptions(), []);
+  const connectOptions = useMemo<RoomConnectOptions>(
+    () => buildMeetingConnectOptions(),
+    [],
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -117,18 +111,31 @@ function MeetingRoom({
     router.push(`/meeting/left?${params.toString()}`);
   }
 
+  function handleDisconnected(_reason?: DisconnectReason) {
+    goToLeftScreen();
+  }
+
   return (
     <div className="live-room" data-lk-theme="default">
       <LiveKitRoom
         token={connection.token}
         serverUrl={connection.serverUrl}
         connect
-        video={cameraEnabled}
-        audio={micEnabled}
+        video={buildLocalVideoCapture(cameraEnabled)}
+        audio={buildLocalAudioCapture(micEnabled)}
         options={roomOptions}
-        onDisconnected={goToLeftScreen}
+        connectOptions={connectOptions}
+        onDisconnected={handleDisconnected}
         onError={(roomError) => onError(roomError.message)}
+        onMediaDeviceFailure={(failure, kind) => {
+          onError(
+            failure
+              ? `Perangkat ${kind ?? "media"} gagal: ${String(failure)}`
+              : "Perangkat media gagal dibuka.",
+          );
+        }}
       >
+        <MeetingConnectionBanner />
         <div className="room-chrome">
           <div className="room-brand">
             <Video size={16} />

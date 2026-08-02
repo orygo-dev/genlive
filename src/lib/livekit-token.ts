@@ -19,7 +19,7 @@ export async function createParticipantToken(input: ParticipantTokenInput) {
     {
       identity: input.identity,
       name: input.name,
-      ttl: "2h",
+      ttl: "6h",
     },
   );
 
