@@ -120,17 +120,18 @@ export function MeetingHistory({
 
   useEffect(() => {
     if (!openId) return;
+    const activeId = openId;
 
     function onPointerDown(event: MouseEvent) {
       const target = event.target as Node;
-      const trigger = triggerRefs.current.get(openId);
+      const trigger = triggerRefs.current.get(activeId);
       if (trigger?.contains(target)) return;
       if (dropdownRef.current?.contains(target)) return;
       closeMenu();
     }
 
     function onReposition() {
-      updateMenuPosition(openId);
+      updateMenuPosition(activeId);
     }
 
     document.addEventListener("mousedown", onPointerDown);
