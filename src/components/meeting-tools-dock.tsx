@@ -120,6 +120,8 @@ type MeetingToolsDockProps = {
   meetingTitle: string;
   layoutMode: MeetingLayoutMode;
   onLayoutChange: (mode: MeetingLayoutMode) => void;
+  /** Call before intentional room.disconnect() so leave screen can show. */
+  onLeaveIntent?: () => void;
 };
 
 const REACTION_EMOJIS = ["👍", "👏", "❤️", "😂", "🎉", "🤔"];
@@ -215,6 +217,7 @@ export function MeetingToolsDock({
   meetingTitle,
   layoutMode,
   onLayoutChange,
+  onLeaveIntent,
 }: MeetingToolsDockProps) {
   const router = useRouter();
   const room = useRoomContext();
@@ -981,6 +984,7 @@ export function MeetingToolsDock({
     } catch {
       // Still leave locally even if end fails.
     } finally {
+      onLeaveIntent?.();
       room.disconnect();
       setEnding(false);
     }
@@ -1224,6 +1228,7 @@ export function MeetingToolsDock({
                 className="button button-ghost"
                 onClick={() => {
                   setActivePanel("none");
+                  onLeaveIntent?.();
                   room.disconnect();
                 }}
               >

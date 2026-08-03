@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import {
   createLocalVideoTrack,
   type LocalVideoTrack,
@@ -28,14 +35,24 @@ type BackgroundEffectsPrejoinProps = {
   onCameraChange: (enabled: boolean) => void;
 };
 
-export function BackgroundEffectsPrejoin({
-  effectId,
-  onEffectChange,
-  micEnabled,
-  cameraEnabled,
-  onMicChange,
-  onCameraChange,
-}: BackgroundEffectsPrejoinProps) {
+export type BackgroundEffectsPrejoinHandle = {
+  disposePreview: () => Promise<void>;
+};
+
+export const BackgroundEffectsPrejoin = forwardRef<
+  BackgroundEffectsPrejoinHandle,
+  BackgroundEffectsPrejoinProps
+>(function BackgroundEffectsPrejoin(
+  {
+    effectId,
+    onEffectChange,
+    micEnabled,
+    cameraEnabled,
+    onMicChange,
+    onCameraChange,
+  },
+  ref,
+) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trackRef = useRef<LocalVideoTrack | null>(null);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
@@ -66,16 +83,35 @@ export function BackgroundEffectsPrejoin({
     void el.play().catch(() => undefined);
   }, []);
 
-  const setVideoNode = useCallback(
-    (node: HTMLVideoElement | null) => {
-      videoRef.current = node;
-      if (node && trackRef.current) {
-        trackRef.current.attach(node);
-        void node.play().catch(() => undefined);
+  const setVideoNode = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node && trackRef.current) {
+      trackRef.current.attach(node);
+      void node.play().catch(() => undefined);
+    }
+  }, []);
+
+  const disposePreview = useCallback(async () => {
+    const current = trackRef.current;
+    trackRef.current = null;
+    setTrack(null);
+    if (current) {
+      try {
+        current.detach();
+      } catch {
+        // ignore
       }
-    },
-    [],
-  );
+      try {
+        current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    // Give the browser a beat to release the capture device before room join.
+    await new Promise((resolve) => window.setTimeout(resolve, 180));
+  }, []);
+
+  useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +138,6 @@ export function BackgroundEffectsPrejoin({
             resolution: { width: 1280, height: 720, frameRate: 24 },
           });
         } catch {
-          // Stale deviceId / overconstrained — fall back to any camera.
           localTrack = await createLocalVideoTrack({
             facingMode: "user",
             resolution: { width: 1280, height: 720, frameRate: 24 },
@@ -211,4 +246,4 @@ export function BackgroundEffectsPrejoin({
       />
     </div>
   );
-}
+});

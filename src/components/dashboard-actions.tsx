@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -13,26 +13,56 @@ import {
 } from "lucide-react";
 import { normalizeRoomName } from "@/lib/meeting";
 
+type CreateMode = "now" | "schedule";
+
+function defaultLocalStartsAt() {
+  const date = new Date(Date.now() + 60 * 60_000);
+  date.setMinutes(0, 0, 0);
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 export function DashboardActions({ organizationId }: { organizationId: string }) {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [waitingRoom, setWaitingRoom] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<CreateMode>("now");
+  const [title, setTitle] = useState("Meeting instan");
+  const [startsAtLocal, setStartsAtLocal] = useState(defaultLocalStartsAt);
+  const [waitingRoom, setWaitingRoom] = useState(false);
+  const [password, setPassword] = useState("");
+  const [inviteEmails, setInviteEmails] = useState("");
+  const [invitePhones, setInvitePhones] = useState("");
 
-  async function requestMeeting(
-    payload: {
-      title: string;
-      startsAt?: string;
-      waitingRoom?: boolean;
-      password?: string;
-      inviteEmails?: string;
-      invitePhones?: string;
-    },
-    enterMeeting: boolean,
-  ) {
+  const modalTitle = useMemo(
+    () => (createMode === "now" ? "Meeting baru" : "Jadwalkan meeting"),
+    [createMode],
+  );
+
+  function openCreateModal(mode: CreateMode) {
+    setError("");
+    setCreateMode(mode);
+    setTitle(mode === "now" ? "Meeting instan" : "");
+    setStartsAtLocal(defaultLocalStartsAt());
+    setWaitingRoom(false);
+    setPassword("");
+    setInviteEmails("");
+    setInvitePhones("");
+    setIsCreateOpen(true);
+  }
+
+  async function requestMeeting(payload: {
+    title: string;
+    startsAt?: string;
+    waitingRoom?: boolean;
+    password?: string;
+    inviteEmails?: string;
+    invitePhones?: string;
+  }) {
     setError("");
     setIsCreating(true);
 
@@ -51,13 +81,9 @@ export function DashboardActions({ organizationId }: { organizationId: string })
         throw new Error(result.error ?? "Meeting belum dapat dibuat.");
       }
 
-      if (enterMeeting) {
-        router.push(`/meeting/${result.meeting.roomName}`);
-      } else {
-        setIsScheduleOpen(false);
-        router.push(`/dashboard/meetings/${result.meeting.id}`);
-        router.refresh();
-      }
+      setIsCreateOpen(false);
+      router.push(`/dashboard/meetings/${result.meeting.id}`);
+      router.refresh();
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -69,35 +95,37 @@ export function DashboardActions({ organizationId }: { organizationId: string })
     }
   }
 
-  function createMeeting() {
-    void requestMeeting(
-      { title: "Meeting instan", waitingRoom },
-      true,
-    );
-  }
-
-  function scheduleMeeting(event: FormEvent<HTMLFormElement>) {
+  function submitCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const localStart = String(formData.get("startsAt") ?? "");
-    const startsAt = new Date(localStart);
+    const trimmedTitle = title.trim() || "Meeting instan";
 
-    if (!localStart || Number.isNaN(startsAt.getTime()) || startsAt <= new Date()) {
-      setError("Pilih waktu meeting di masa mendatang.");
+    if (createMode === "schedule") {
+      const startsAt = new Date(startsAtLocal);
+      if (
+        !startsAtLocal ||
+        Number.isNaN(startsAt.getTime()) ||
+        startsAt <= new Date()
+      ) {
+        setError("Pilih waktu meeting di masa mendatang.");
+        return;
+      }
+
+      void requestMeeting({
+        title: trimmedTitle,
+        startsAt: startsAt.toISOString(),
+        waitingRoom,
+        password,
+        inviteEmails,
+        invitePhones,
+      });
       return;
     }
 
-    void requestMeeting(
-      {
-        title: String(formData.get("title") ?? ""),
-        startsAt: startsAt.toISOString(),
-        waitingRoom: formData.get("waitingRoom") === "on",
-        password: String(formData.get("password") ?? ""),
-        inviteEmails: String(formData.get("inviteEmails") ?? ""),
-        invitePhones: String(formData.get("invitePhones") ?? ""),
-      },
-      false,
-    );
+    void requestMeeting({
+      title: trimmedTitle,
+      waitingRoom,
+      password: password || undefined,
+    });
   }
 
   function joinMeeting(event: FormEvent<HTMLFormElement>) {
@@ -142,21 +170,18 @@ export function DashboardActions({ organizationId }: { organizationId: string })
       <div className="dashboard-zoom-strip" aria-label="Aksi meeting">
         <button
           className="dashboard-zoom-tile dashboard-zoom-tile-primary"
-          onClick={createMeeting}
+          onClick={() => openCreateModal("now")}
           disabled={isCreating}
           type="button"
         >
           <Plus size={22} />
           <strong>Meeting baru</strong>
-          <span>Mulai rapat instan sekarang</span>
+          <span>Atur judul lalu mulai atau jadwalkan</span>
         </button>
         <button
           className="dashboard-zoom-tile"
           type="button"
-          onClick={() => {
-            setError("");
-            setIsScheduleOpen(true);
-          }}
+          onClick={() => openCreateModal("schedule")}
         >
           <CalendarDays size={22} />
           <strong>Jadwalkan</strong>
@@ -173,7 +198,7 @@ export function DashboardActions({ organizationId }: { organizationId: string })
             }}
             placeholder="Kode meeting"
             aria-label="Kode meeting"
-            aria-invalid={Boolean(error)}
+            aria-invalid={Boolean(error) && !isCreateOpen}
           />
           <button type="submit" aria-label="Gabung meeting">
             <ArrowRight size={18} />
@@ -181,91 +206,141 @@ export function DashboardActions({ organizationId }: { organizationId: string })
         </form>
       </div>
 
-      <label className="dashboard-waiting-toggle">
-        <input
-          type="checkbox"
-          checked={waitingRoom}
-          onChange={(event) => setWaitingRoom(event.target.checked)}
-        />
-        <span>
-          <strong>Ruang tunggu</strong> untuk meeting baru
-        </span>
-      </label>
+      {error && !isCreateOpen ? (
+        <p className="form-error dashboard-error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      {error && <p className="form-error dashboard-error" role="alert">{error}</p>}
-
-      {isScheduleOpen && (
+      {isCreateOpen ? (
         <div className="schedule-backdrop" role="presentation">
           <section
             className="schedule-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="schedule-title"
+            aria-labelledby="create-meeting-title"
           >
             <header>
               <div>
-                <span><CalendarDays size={19} /></span>
+                <span>
+                  {createMode === "now" ? <Plus size={19} /> : <CalendarDays size={19} />}
+                </span>
                 <div>
-                  <h2 id="schedule-title">Jadwalkan meeting</h2>
-                  <p>Atur waktu dan akses peserta.</p>
+                  <h2 id="create-meeting-title">{modalTitle}</h2>
+                  <p>Satu langkah: isi detail, lalu masuk dari halaman meeting.</p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setIsScheduleOpen(false)}
+                onClick={() => setIsCreateOpen(false)}
                 aria-label="Tutup"
               >
                 <X size={18} />
               </button>
             </header>
 
-            <form onSubmit={scheduleMeeting}>
+            <form onSubmit={submitCreate}>
+              <div className="create-mode-toggle" role="radiogroup" aria-label="Jenis meeting">
+                <label className={createMode === "now" ? "active" : undefined}>
+                  <input
+                    type="radio"
+                    name="createMode"
+                    checked={createMode === "now"}
+                    onChange={() => {
+                      setCreateMode("now");
+                      setError("");
+                      if (!title.trim()) setTitle("Meeting instan");
+                    }}
+                  />
+                  Mulai sekarang
+                </label>
+                <label className={createMode === "schedule" ? "active" : undefined}>
+                  <input
+                    type="radio"
+                    name="createMode"
+                    checked={createMode === "schedule"}
+                    onChange={() => {
+                      setCreateMode("schedule");
+                      setError("");
+                      if (title === "Meeting instan") setTitle("");
+                    }}
+                  />
+                  Jadwalkan
+                </label>
+              </div>
+
               <label>
                 Judul meeting
-                <input name="title" placeholder="Contoh: Weekly product sync" required />
+                <input
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Contoh: Weekly product sync"
+                  required={createMode === "schedule"}
+                />
               </label>
-              <label>
-                Waktu mulai
-                <input name="startsAt" type="datetime-local" required />
-              </label>
+
+              {createMode === "schedule" ? (
+                <>
+                  <label>
+                    Waktu mulai
+                    <input
+                      type="datetime-local"
+                      value={startsAtLocal}
+                      onChange={(event) => setStartsAtLocal(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Undang via email (opsional)
+                    <input
+                      value={inviteEmails}
+                      onChange={(event) => setInviteEmails(event.target.value)}
+                      type="text"
+                      placeholder="nama@perusahaan.com, teman@email.com"
+                    />
+                  </label>
+                  <label>
+                    Undang via WhatsApp (opsional)
+                    <input
+                      value={invitePhones}
+                      onChange={(event) => setInvitePhones(event.target.value)}
+                      type="text"
+                      placeholder="081234567890, 62812xxxxxxx"
+                    />
+                  </label>
+                </>
+              ) : null}
+
               <label>
                 Password opsional
                 <input
-                  name="password"
                   type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Kosongkan jika tidak diperlukan"
                   maxLength={72}
                 />
               </label>
-              <label>
-                Undang via email (opsional)
-                <input
-                  name="inviteEmails"
-                  type="text"
-                  placeholder="nama@perusahaan.com, teman@email.com"
-                />
-              </label>
-              <label>
-                Undang via WhatsApp (opsional)
-                <input
-                  name="invitePhones"
-                  type="text"
-                  placeholder="081234567890, 62812xxxxxxx"
-                />
-              </label>
+
               <label className="schedule-check">
-                <input name="waitingRoom" type="checkbox" defaultChecked />
+                <input
+                  type="checkbox"
+                  checked={waitingRoom}
+                  onChange={(event) => setWaitingRoom(event.target.checked)}
+                />
                 <span>
                   <strong>Aktifkan waiting room</strong>
                   <small>Host menyetujui peserta sebelum masuk.</small>
                 </span>
               </label>
-              {error && <p className="auth-error" role="alert">{error}</p>}
+
+              {error ? <p className="auth-error" role="alert">{error}</p> : null}
+
               <div className="schedule-footer">
                 <button
                   className="button button-ghost"
                   type="button"
-                  onClick={() => setIsScheduleOpen(false)}
+                  onClick={() => setIsCreateOpen(false)}
                 >
                   Batal
                 </button>
@@ -275,7 +350,11 @@ export function DashboardActions({ organizationId }: { organizationId: string })
                   disabled={isCreating}
                 >
                   {isCreating ? (
-                    <><LoaderCircle className="spinner" size={17} /> Menyimpan...</>
+                    <>
+                      <LoaderCircle className="spinner" size={17} /> Menyimpan...
+                    </>
+                  ) : createMode === "now" ? (
+                    "Buat meeting"
                   ) : (
                     "Simpan jadwal"
                   )}
@@ -284,7 +363,7 @@ export function DashboardActions({ organizationId }: { organizationId: string })
             </form>
           </section>
         </div>
-      )}
+      ) : null}
     </>
   );
 }

@@ -1,10 +1,17 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { LiveKitRoom } from "@livekit/components-react";
 import {
-  type DisconnectReason,
+  DisconnectReason,
   type RoomConnectOptions,
   type RoomOptions,
 } from "livekit-client";
@@ -21,7 +28,10 @@ import {
   BackgroundEffectsProvider,
   useBackgroundEffects,
 } from "@/components/background-effects-context";
-import { BackgroundEffectsPrejoin } from "@/components/background-effects-prejoin";
+import {
+  BackgroundEffectsPrejoin,
+  type BackgroundEffectsPrejoinHandle,
+} from "@/components/background-effects-prejoin";
 import { BackgroundEffectsRuntime } from "@/components/background-effects-runtime";
 import { MeetingConnectionBanner } from "@/components/meeting-connection-banner";
 import {
@@ -29,6 +39,7 @@ import {
   type MeetingLayoutMode,
 } from "@/components/meeting-stage";
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
+import { meetingStatusLabel } from "@/lib/meeting-access";
 import {
   buildLocalAudioCapture,
   buildLocalVideoCapture,
@@ -50,6 +61,7 @@ type AdmissionRequest = {
 
 type MeetingExperienceProps = {
   roomName: string;
+  defaultDisplayName?: string;
   meetingConfig: {
     id: string | null;
     title: string;
@@ -60,6 +72,13 @@ type MeetingExperienceProps = {
   } | null;
 };
 
+const PERMANENT_DISCONNECT = new Set<DisconnectReason>([
+  DisconnectReason.PARTICIPANT_REMOVED,
+  DisconnectReason.ROOM_DELETED,
+  DisconnectReason.DUPLICATE_IDENTITY,
+  DisconnectReason.SERVER_SHUTDOWN,
+]);
+
 function MeetingRoom({
   connection,
   roomName,
@@ -68,6 +87,7 @@ function MeetingRoom({
   micEnabled,
   cameraEnabled,
   onError,
+  onUnexpectedDisconnect,
 }: {
   connection: ConnectionDetails;
   roomName: string;
@@ -76,12 +96,15 @@ function MeetingRoom({
   micEnabled: boolean;
   cameraEnabled: boolean;
   onError: (message: string) => void;
+  onUnexpectedDisconnect: (message: string) => void;
 }) {
   const router = useRouter();
   const { effectId, setEffectId } = useBackgroundEffects();
   const [layoutMode, setLayoutMode] = useState<MeetingLayoutMode>("gallery");
   const [joinedAt] = useState(() => Date.now());
   const [elapsedLabel, setElapsedLabel] = useState("00:00");
+  const leaveIntentRef = useRef(false);
+  const suppressLeaveNavRef = useRef(false);
   const isHost =
     connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
@@ -90,6 +113,14 @@ function MeetingRoom({
   const connectOptions = useMemo<RoomConnectOptions>(
     () => buildMeetingConnectOptions(),
     [],
+  );
+  const videoCapture = useMemo(
+    () => buildLocalVideoCapture(cameraEnabled),
+    [cameraEnabled],
+  );
+  const audioCapture = useMemo(
+    () => buildLocalAudioCapture(micEnabled),
+    [micEnabled],
   );
 
   useEffect(() => {
@@ -102,18 +133,68 @@ function MeetingRoom({
     return () => window.clearInterval(timer);
   }, [joinedAt]);
 
-  function goToLeftScreen() {
+  useEffect(() => {
+    return () => {
+      // LiveKitRoom disconnects on unmount (Strict Mode / remount) — don't treat as leave.
+      suppressLeaveNavRef.current = true;
+    };
+  }, []);
+
+  const markLeaveIntent = useCallback(() => {
+    leaveIntentRef.current = true;
+  }, []);
+
+  const goToLeftScreen = useCallback(() => {
     const params = new URLSearchParams({
       room: roomName,
       title: meetingTitle,
       role: connection.role,
     });
     router.push(`/meeting/left?${params.toString()}`);
-  }
+  }, [connection.role, meetingTitle, roomName, router]);
 
-  function handleDisconnected(_reason?: DisconnectReason) {
-    goToLeftScreen();
-  }
+  const handleDisconnected = useCallback(
+    (reason?: DisconnectReason) => {
+      if (suppressLeaveNavRef.current) {
+        return;
+      }
+
+      if (
+        leaveIntentRef.current ||
+        (reason != null && PERMANENT_DISCONNECT.has(reason))
+      ) {
+        goToLeftScreen();
+        return;
+      }
+
+      // Prevent the LiveKitRoom unmount disconnect from navigating to left screen.
+      suppressLeaveNavRef.current = true;
+      const message =
+        reason === DisconnectReason.JOIN_FAILURE
+          ? "Gagal bergabung ke meeting. Periksa kamera/mikrofon lalu coba lagi."
+          : "Koneksi terputus. Silakan gabung ulang.";
+      onUnexpectedDisconnect(message);
+    },
+    [goToLeftScreen, onUnexpectedDisconnect],
+  );
+
+  const handleRoomError = useCallback(
+    (roomError: Error) => {
+      onError(roomError.message);
+    },
+    [onError],
+  );
+
+  const handleMediaFailure = useCallback(
+    (failure?: unknown, kind?: MediaDeviceKind) => {
+      onError(
+        failure
+          ? `Perangkat ${kind ?? "media"} gagal: ${String(failure)}`
+          : "Perangkat media gagal dibuka.",
+      );
+    },
+    [onError],
+  );
 
   return (
     <div className="live-room" data-lk-theme="default">
@@ -121,19 +202,13 @@ function MeetingRoom({
         token={connection.token}
         serverUrl={connection.serverUrl}
         connect
-        video={buildLocalVideoCapture(cameraEnabled)}
-        audio={buildLocalAudioCapture(micEnabled)}
+        video={videoCapture}
+        audio={audioCapture}
         options={roomOptions}
         connectOptions={connectOptions}
         onDisconnected={handleDisconnected}
-        onError={(roomError) => onError(roomError.message)}
-        onMediaDeviceFailure={(failure, kind) => {
-          onError(
-            failure
-              ? `Perangkat ${kind ?? "media"} gagal: ${String(failure)}`
-              : "Perangkat media gagal dibuka.",
-          );
-        }}
+        onError={handleRoomError}
+        onMediaDeviceFailure={handleMediaFailure}
       >
         <MeetingConnectionBanner />
         <div className="room-chrome">
@@ -167,6 +242,7 @@ function MeetingRoom({
           isHost={isHost}
           layoutMode={layoutMode}
           onLayoutChange={setLayoutMode}
+          onLeaveIntent={markLeaveIntent}
         />
       </LiveKitRoom>
     </div>
@@ -176,15 +252,21 @@ function MeetingRoom({
 function MeetingExperienceInner({
   roomName,
   meetingConfig,
+  defaultDisplayName = "",
 }: MeetingExperienceProps) {
   const router = useRouter();
   const { effectId, setEffectId } = useBackgroundEffects();
+  const previewRef = useRef<BackgroundEffectsPrejoinHandle | null>(null);
   const [participantName, setParticipantName] = useState(() => {
-    if (typeof window === "undefined") return "";
+    if (typeof window === "undefined") return defaultDisplayName;
     try {
-      return window.sessionStorage.getItem("genmeet_display_name") ?? "";
+      return (
+        window.sessionStorage.getItem("genmeet_display_name") ||
+        defaultDisplayName ||
+        ""
+      );
     } catch {
-      return "";
+      return defaultDisplayName || "";
     }
   });
   const [password, setPassword] = useState("");
@@ -196,6 +278,14 @@ function MeetingExperienceInner({
   const [isJoining, setIsJoining] = useState(false);
 
   const meetingTitle = meetingConfig?.title ?? roomName;
+  const backHref = meetingConfig?.id
+    ? `/dashboard/meetings/${meetingConfig.id}`
+    : "/dashboard";
+
+  const handleUnexpectedDisconnect = useCallback((message: string) => {
+    setConnection(null);
+    setError(message);
+  }, []);
 
   useEffect(() => {
     if (!admission) return;
@@ -237,6 +327,7 @@ function MeetingExperienceInner({
         }
         if (payload.status === "ADMITTED" && payload.token) {
           setAdmission(null);
+          await previewRef.current?.disposePreview();
           setConnection(payload);
           return;
         }
@@ -315,11 +406,13 @@ function MeetingExperienceInner({
       }
 
       if (payload.waiting) {
+        await previewRef.current?.disposePreview();
         setAdmission({
           requestId: payload.requestId,
           admissionToken: payload.admissionToken,
         });
       } else {
+        await previewRef.current?.disposePreview();
         setConnection(payload);
       }
     } catch (requestError) {
@@ -343,6 +436,7 @@ function MeetingExperienceInner({
         micEnabled={micEnabled}
         cameraEnabled={cameraEnabled}
         onError={setError}
+        onUnexpectedDisconnect={handleUnexpectedDisconnect}
       />
     );
   }
@@ -400,7 +494,7 @@ function MeetingExperienceInner({
       <button
         className="back-link"
         type="button"
-        onClick={() => router.push("/")}
+        onClick={() => router.push(backHref)}
       >
         <ArrowLeft size={18} /> Kembali
       </button>
@@ -414,7 +508,12 @@ function MeetingExperienceInner({
         </div>
         <p className="prejoin-kicker">Anda akan bergabung ke</p>
         <h1>{meetingTitle}</h1>
-        {meetingConfig?.startsAt && meetingConfig.status === "SCHEDULED" && (
+        {meetingConfig ? (
+          <p className="meeting-status-chip">
+            {meetingStatusLabel(meetingConfig.status)}
+          </p>
+        ) : null}
+        {meetingConfig?.startsAt ? (
           <p className="meeting-schedule">
             <Clock3 size={14} />
             {new Intl.DateTimeFormat("id-ID", {
@@ -422,7 +521,7 @@ function MeetingExperienceInner({
               timeStyle: "short",
             }).format(new Date(meetingConfig.startsAt))}
           </p>
-        )}
+        ) : null}
         <p className="prejoin-description">
           {meetingConfig?.waitingRoom
             ? "Atur kamera, mikrofon, dan nama. Host akan menyetujui sebelum Anda masuk."
@@ -430,6 +529,7 @@ function MeetingExperienceInner({
         </p>
 
         <BackgroundEffectsPrejoin
+          ref={previewRef}
           effectId={effectId}
           onEffectChange={setEffectId}
           micEnabled={micEnabled}
@@ -495,7 +595,7 @@ function MeetingExperienceInner({
               </>
             ) : (
               <>
-                <Video size={18} /> Gabung
+                <Video size={18} /> Masuk ke meeting
               </>
             )}
           </button>

@@ -45,6 +45,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
   return (
     <MeetingExperience
       roomName={result.data}
+      defaultDisplayName={user?.name ?? ""}
       meetingConfig={
         meeting
           ? {

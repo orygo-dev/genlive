@@ -314,9 +314,11 @@ export function MeetingDetailPanel({
           <ArrowLeft size={16} /> Kembali
         </Link>
         <div className="meeting-detail-actions">
-          <button type="button" className="button button-ghost" onClick={() => void copyInvite()}>
-            <Copy size={15} /> Salin tautan
-          </button>
+          {meeting.status === "ACTIVE" ? (
+            <Link className="btn primary" href={`/meeting/${meeting.roomName}`}>
+              <Play size={16} /> Masuk ke meeting
+            </Link>
+          ) : null}
           {canManage && canStartMeeting(meeting.status) ? (
             <button
               type="button"
@@ -329,14 +331,12 @@ export function MeetingDetailPanel({
               ) : (
                 <Play size={16} />
               )}
-              Mulai
+              Mulai meeting
             </button>
           ) : null}
-          {meeting.status === "ACTIVE" ? (
-            <Link className="btn primary" href={`/meeting/${meeting.roomName}`}>
-              <Play size={16} /> Masuk room
-            </Link>
-          ) : null}
+          <button type="button" className="button button-ghost" onClick={() => void copyInvite()}>
+            <Copy size={15} /> Salin tautan
+          </button>
           {canManage && canCancelMeeting(meeting.status) ? (
             <button
               type="button"
@@ -364,6 +364,36 @@ export function MeetingDetailPanel({
           {meetingStatusLabel(meeting.status)}
         </span>
       </header>
+
+      <section className="meeting-invite-strip" aria-label="Undangan meeting">
+        <div>
+          <strong>Kode meeting</strong>
+          <code>{meeting.roomName}</code>
+        </div>
+        <div>
+          <strong>Tautan undangan</strong>
+          <p>{inviteUrl}</p>
+        </div>
+        <button type="button" className="button button-ghost" onClick={() => void copyInvite()}>
+          <Copy size={15} /> Salin
+        </button>
+        {meeting.status === "ACTIVE" || canStartMeeting(meeting.status) ? (
+          meeting.status === "ACTIVE" ? (
+            <Link className="button button-primary" href={`/meeting/${meeting.roomName}`}>
+              <Video size={15} /> Masuk
+            </Link>
+          ) : canManage ? (
+            <button
+              type="button"
+              className="button button-primary"
+              disabled={busy === "start"}
+              onClick={() => void startMeeting()}
+            >
+              <Play size={15} /> Mulai
+            </button>
+          ) : null
+        ) : null}
+      </section>
 
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}

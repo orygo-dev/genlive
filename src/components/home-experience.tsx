@@ -15,7 +15,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { createRoomName, normalizeRoomName } from "@/lib/meeting";
+import { normalizeRoomName } from "@/lib/meeting";
 import { AppBrand } from "@/components/app-brand";
 import type { PlatformBranding } from "@/lib/platform-branding";
 import { DEFAULT_PLAN_CATALOG, formatIdr } from "@/lib/plans";
@@ -31,6 +31,7 @@ export function HomeExperience({
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const free = DEFAULT_PLAN_CATALOG.FREE;
   const pro = DEFAULT_PLAN_CATALOG.PRO;
 
@@ -55,9 +56,41 @@ export function HomeExperience({
     };
   }, [menuOpen]);
 
-  function startMeeting() {
+  async function startMeeting() {
     setMenuOpen(false);
-    router.push(`/meeting/${createRoomName()}`);
+    setError("");
+    setIsStarting(true);
+
+    try {
+      const response = await fetch("/api/meetings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Meeting instan", waitingRoom: false }),
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        meeting?: { id: string; roomName: string };
+      };
+
+      if (response.status === 401 || response.status === 403) {
+        router.push("/auth");
+        return;
+      }
+
+      if (!response.ok || !result.meeting) {
+        throw new Error(result.error ?? "Meeting belum dapat dibuat.");
+      }
+
+      router.push(`/dashboard/meetings/${result.meeting.id}`);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Meeting belum dapat dibuat. Silakan masuk terlebih dahulu.",
+      );
+    } finally {
+      setIsStarting(false);
+    }
   }
 
   function joinMeeting(event: FormEvent<HTMLFormElement>) {
@@ -148,8 +181,13 @@ export function HomeExperience({
           <Link href="/auth" className="landing-nav-drawer-cta" onClick={closeMenu}>
             Daftar gratis
           </Link>
-          <button type="button" className="landing-nav-drawer-quick" onClick={startMeeting}>
-            <Plus size={16} /> Meeting cepat
+          <button
+            type="button"
+            className="landing-nav-drawer-quick"
+            onClick={() => void startMeeting()}
+            disabled={isStarting}
+          >
+            <Plus size={16} /> {isStarting ? "Menyiapkan..." : "Meeting cepat"}
           </button>
         </nav>
 
@@ -189,9 +227,10 @@ export function HomeExperience({
               <button
                 type="button"
                 className="landing-btn landing-btn-ghost"
-                onClick={startMeeting}
+                onClick={() => void startMeeting()}
+                disabled={isStarting}
               >
-                <Plus size={16} /> Meeting cepat
+                <Plus size={16} /> {isStarting ? "Menyiapkan..." : "Meeting cepat"}
               </button>
             </div>
             {error ? (
@@ -283,9 +322,10 @@ export function HomeExperience({
             <button
               className="landing-show-quick"
               type="button"
-              onClick={startMeeting}
+              onClick={() => void startMeeting()}
+              disabled={isStarting}
             >
-              <Plus size={16} /> Meeting cepat
+              <Plus size={16} /> {isStarting ? "Menyiapkan..." : "Meeting cepat"}
             </button>
           </article>
         </section>

@@ -66,6 +66,29 @@ export async function POST(request: Request) {
 
       if (event.event === "room_finished") {
         const endedAt = eventTime(event.createdAt);
+        const meeting = await transaction.meeting.findUnique({
+          where: { roomName },
+          select: {
+            status: true,
+            actualStartedAt: true,
+            startsAt: true,
+          },
+        });
+
+        // Grace: brief empty room (Strict Mode / reconnect) must not ENDED the meeting.
+        if (
+          meeting &&
+          (meeting.status === "SCHEDULED" || meeting.status === "ACTIVE")
+        ) {
+          const startedAt = meeting.actualStartedAt ?? meeting.startsAt;
+          if (startedAt) {
+            const ageMs = endedAt.getTime() - startedAt.getTime();
+            if (ageMs >= 0 && ageMs < 90_000) {
+              return;
+            }
+          }
+        }
+
         await transaction.meeting.updateMany({
           where: {
             roomName,
