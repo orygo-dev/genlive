@@ -56,9 +56,20 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
   );
 
   const focusTrack = useMemo(() => pickFocusTrack(tracks), [tracks]);
-  const stageClass = `meeting-stage meeting-stage-${layoutMode}`;
+  const hasScreenShare = Boolean(
+    tracks.find(
+      (track) =>
+        track.source === Track.Source.ScreenShare &&
+        track.publication &&
+        !track.publication.isMuted,
+    ),
+  );
+  // Gallery + screen share on a phone crops the document; prefer focus layout.
+  const effectiveMode =
+    layoutMode === "gallery" && hasScreenShare ? "focus" : layoutMode;
+  const stageClass = `meeting-stage meeting-stage-${effectiveMode}`;
 
-  if (layoutMode === "gallery") {
+  if (effectiveMode === "gallery") {
     return (
       <div className={stageClass}>
         <div className="meeting-stage-main">

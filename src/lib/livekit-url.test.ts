@@ -3,6 +3,7 @@ import {
   isValidLivekitUrl,
   normalizeLivekitApiUrl,
   normalizeLivekitUrl,
+  sanitizeLivekitCredential,
 } from "./livekit-url";
 
 describe("livekit-url", () => {
@@ -28,5 +29,11 @@ describe("livekit-url", () => {
     expect(isValidLivekitUrl("wss://x.livekit.cloud")).toBe(true);
     expect(isValidLivekitUrl("https://x.livekit.cloud")).toBe(true);
     expect(isValidLivekitUrl("notaurl")).toBe(false);
+  });
+
+  it("sanitizes credentials", () => {
+    expect(sanitizeLivekitCredential('  "APIxxx"  ')).toBe("APIxxx");
+    expect(sanitizeLivekitCredential("'secret'")).toBe("secret");
+    expect(sanitizeLivekitCredential("")).toBeNull();
   });
 });

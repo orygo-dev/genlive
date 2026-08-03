@@ -180,7 +180,15 @@ function MeetingRoom({
 
   const handleRoomError = useCallback(
     (roomError: Error) => {
-      onError(roomError.message);
+      const raw = roomError.message || "";
+      const lower = raw.toLowerCase();
+      if (lower.includes("invalid token") || lower.includes("unauthorized")) {
+        onError(
+          "Token LiveKit ditolak server. Di Super Admin → Integrasi, simpan ulang LIVEKIT_URL + API Key + API Secret dari project Cloud yang sama, lalu klik Uji koneksi.",
+        );
+        return;
+      }
+      onError(raw);
     },
     [onError],
   );

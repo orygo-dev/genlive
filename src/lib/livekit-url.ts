@@ -17,6 +17,21 @@ export function normalizeLivekitUrl(
   return value;
 }
 
+/** Strip quotes/whitespace that often sneak in from .env or admin paste. */
+export function sanitizeLivekitCredential(
+  value: string | null | undefined,
+): string | null {
+  if (value == null) return null;
+  let next = value.trim();
+  if (
+    (next.startsWith('"') && next.endsWith('"')) ||
+    (next.startsWith("'") && next.endsWith("'"))
+  ) {
+    next = next.slice(1, -1).trim();
+  }
+  return next || null;
+}
+
 export function normalizeLivekitApiUrl(
   raw: string | null | undefined,
   livekitUrl?: string | null,

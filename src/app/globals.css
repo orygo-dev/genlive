@@ -5671,6 +5671,14 @@ footer p {
   background: #0f141c;
 }
 
+/* Screen share must letterbox — cover crops documents on portrait / mobile. */
+.meeting-stage-main .lk-participant-tile[data-lk-source="screen_share"] video,
+.meeting-stage-main .lk-participant-tile[data-lk-source="screen_share"] .lk-participant-media-video,
+.meeting-stage-main .lk-focus-layout .lk-participant-tile[data-lk-source="screen_share"] video {
+  object-fit: contain;
+  background: #0a0e14;
+}
+
 .meeting-stage-gallery .meeting-stage-main,
 .meeting-stage-focus .meeting-stage-main {
   background: #0f141c;
