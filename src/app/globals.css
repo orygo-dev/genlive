@@ -5645,6 +5645,57 @@ footer p {
   }
 }
 
+.admin-popup-ad-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-popup-ad-preview {
+  min-height: 200px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed #d0d7e2;
+  border-radius: 14px;
+  background: #0f141c;
+}
+
+.admin-popup-ad-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: contain;
+}
+
+.admin-popup-ad-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-popup-ad-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.admin-popup-ad-fields input[type="text"],
+.admin-popup-ad-fields input:not([type]) {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+@media (max-width: 720px) {
+  .admin-popup-ad-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Meeting tools dock & stage */
 .meeting-stage {
   display: flex;

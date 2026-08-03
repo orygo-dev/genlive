@@ -389,6 +389,7 @@ model PlatformSettings {
   splashBackgroundUrl  String?  @map("splash_background_url") @db.VarChar(1000)
   splashLogoUrl        String?  @map("splash_logo_url") @db.VarChar(1000)
   mobileBannerSlides   Json?    @map("mobile_banner_slides")
+  mobilePopupAd        Json?    @map("mobile_popup_ad")
   supportEmail         String?  @map("support_email") @db.VarChar(255)
   maintenanceMode      Boolean  @default(false) @map("maintenance_mode")
   integrationsCipher   String?  @map("integrations_cipher") @db.LongText

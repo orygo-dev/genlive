@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import {
   MOBILE_BANNER_RECOMMENDED,
+  MOBILE_POPUP_RECOMMENDED,
+  defaultMobilePopupAd,
   type MobileBannerSlide,
+  type MobilePopupAd,
   type PlatformBranding,
 } from "@/lib/platform-branding";
 
@@ -76,6 +79,9 @@ export function AdminBrandingPanel({
   const [slides, setSlides] = useState<MobileBannerSlide[]>(
     initialBranding.mobileBannerSlides ?? [],
   );
+  const [popupAd, setPopupAd] = useState<MobilePopupAd>(
+    initialBranding.mobilePopupAd ?? defaultMobilePopupAd,
+  );
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -95,6 +101,7 @@ export function AdminBrandingPanel({
     }
     setBranding(payload.branding);
     setSlides(payload.branding.mobileBannerSlides ?? []);
+    setPopupAd(payload.branding.mobilePopupAd ?? defaultMobilePopupAd);
     return payload.branding;
   }
 
@@ -294,6 +301,77 @@ export function AdminBrandingPanel({
 
   function removeSlide(slideId: string) {
     setSlides((current) => current.filter((slide) => slide.id !== slideId));
+  }
+
+  async function uploadPopupImage(file: File) {
+    setError("");
+    setMessage("");
+    setBusy("popup-upload");
+    try {
+      const url = await uploadFile("mobilePopup", file);
+      const next: MobilePopupAd = {
+        ...popupAd,
+        imageUrl: url,
+        enabled: true,
+      };
+      setPopupAd(next);
+      await patchBranding({ mobilePopupAd: next });
+      setMessage("Gambar popup ads diunggah.");
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Gambar popup belum dapat diunggah.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function savePopupAd() {
+    setError("");
+    setMessage("");
+    setBusy("popup-save");
+    try {
+      await patchBranding({ mobilePopupAd: popupAd });
+      setMessage("Popup ads disimpan.");
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Popup ads belum dapat disimpan.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function clearPopupAd() {
+    setError("");
+    setMessage("");
+    setBusy("popup-clear");
+    try {
+      const next: MobilePopupAd = {
+        enabled: false,
+        imageUrl: null,
+        linkUrl: null,
+        updatedAt: null,
+      };
+      setPopupAd(next);
+      await patchBranding({ mobilePopupAd: next });
+      setMessage("Popup ads dihapus.");
+      router.refresh();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Popup ads belum dapat dihapus.",
+      );
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -572,6 +650,128 @@ export function AdminBrandingPanel({
               </>
             )}
           </button>
+        </div>
+      </section>
+
+      <section className="settings-card">
+        <header>
+          <div>
+            <h2>Popup ads (aplikasi mobile)</h2>
+            <p>
+              Tampil sekali setiap kali aplikasi dibuka (cold start), bukan saat
+              refresh beranda. Gambar penuh tanpa frame.
+            </p>
+          </div>
+        </header>
+
+        <div className="admin-banner-size-hint" role="note">
+          <strong>Ukuran upload yang disarankan</strong>
+          <ul>
+            <li>
+              Resolusi ideal:{" "}
+              <code>
+                {MOBILE_POPUP_RECOMMENDED.width}×
+                {MOBILE_POPUP_RECOMMENDED.height} px
+              </code>{" "}
+              (rasio {MOBILE_POPUP_RECOMMENDED.aspectLabel})
+            </li>
+            <li>
+              Alternatif: <code>1080×1080 px</code> (persegi) · desain isi
+              gambar sampai tepi (edge-to-edge)
+            </li>
+            <li>
+              Format: JPG / PNG / WEBP · maksimal{" "}
+              {MOBILE_POPUP_RECOMMENDED.maxBytesLabel}
+            </li>
+            <li>
+              Hindari menambahkan bingkai/padding di file gambar — aplikasi
+              menampilkan gambar utuh apa adanya
+            </li>
+          </ul>
+        </div>
+
+        <div className="admin-popup-ad-grid">
+          <div className="admin-popup-ad-preview">
+            {popupAd.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={popupAd.imageUrl} alt="Preview popup ads" />
+            ) : (
+              <p className="admin-muted">Belum ada gambar popup.</p>
+            )}
+          </div>
+          <div className="admin-popup-ad-fields">
+            <label className="admin-check">
+              <input
+                type="checkbox"
+                checked={popupAd.enabled}
+                disabled={!popupAd.imageUrl}
+                onChange={(event) =>
+                  setPopupAd((current) => ({
+                    ...current,
+                    enabled: event.target.checked,
+                  }))
+                }
+              />
+              Aktifkan popup saat aplikasi dibuka
+            </label>
+            <label>
+              Tautan opsional (dibuka saat gambar diketuk)
+              <input
+                value={popupAd.linkUrl ?? ""}
+                maxLength={1000}
+                onChange={(event) =>
+                  setPopupAd((current) => ({
+                    ...current,
+                    linkUrl: event.target.value,
+                  }))
+                }
+                placeholder="https://…"
+              />
+            </label>
+            <div className="admin-mobile-banner-item-actions">
+              <label className="button button-ghost admin-upload">
+                <ImagePlus size={14} />
+                {popupAd.imageUrl ? "Ganti gambar" : "Unggah gambar"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  hidden
+                  disabled={Boolean(busy)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) void uploadPopupImage(file);
+                  }}
+                />
+              </label>
+              {popupAd.imageUrl ? (
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  disabled={Boolean(busy)}
+                  onClick={() => void clearPopupAd()}
+                >
+                  <Trash2 size={14} /> Hapus
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="button button-primary"
+                disabled={busy === "popup-save"}
+                onClick={() => void savePopupAd()}
+              >
+                {busy === "popup-save" ? (
+                  <>
+                    <LoaderCircle className="spinner" size={16} /> Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} /> Simpan popup ads
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </div>

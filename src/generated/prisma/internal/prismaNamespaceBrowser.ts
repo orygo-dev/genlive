@@ -324,6 +324,8 @@ export const PlatformSettingsScalarFieldEnum = {
   loginBackgroundUrl: 'loginBackgroundUrl',
   splashBackgroundUrl: 'splashBackgroundUrl',
   splashLogoUrl: 'splashLogoUrl',
+  mobileBannerSlides: 'mobileBannerSlides',
+  mobilePopupAd: 'mobilePopupAd',
   supportEmail: 'supportEmail',
   maintenanceMode: 'maintenanceMode',
   integrationsCipher: 'integrationsCipher',

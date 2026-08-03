@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:genmeet/app/config/providers.dart';
@@ -10,6 +12,7 @@ import 'package:genmeet/core/widgets/gm_avatar.dart';
 import 'package:genmeet/core/widgets/gm_shimmer.dart';
 import 'package:genmeet/features/authentication/application/session_controller.dart';
 import 'package:genmeet/features/branding/application/branding_providers.dart';
+import 'package:genmeet/features/branding/presentation/widgets/mobile_popup_ad.dart';
 import 'package:genmeet/features/contacts/application/contacts_controllers.dart';
 import 'package:genmeet/features/meetings/application/meetings_controllers.dart';
 import 'package:genmeet/features/meetings/domain/entities/meeting.dart';
@@ -21,10 +24,25 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// Home dashboard — layout matched to GenMeet commercial light mockup.
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
-  Future<void> _refresh(WidgetRef ref) async {
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Cold start only: in-memory gate ignores pull-to-refresh branding reload.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(maybeShowMobilePopupAd(context, ref));
+    });
+  }
+
+  Future<void> _refresh() async {
     await Future.wait([
       ref.read(upcomingMeetingsProvider.notifier).refresh(),
       ref.read(previousMeetingsProvider.notifier).refresh(),
@@ -36,7 +54,7 @@ class HomePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final tokens = context.tokens;
     final profile = ref.watch(profileProvider);
     final sessionUser = ref.watch(sessionControllerProvider).user;
@@ -58,7 +76,7 @@ class HomePage extends ConsumerWidget {
         child: SafeArea(
           child: RefreshIndicator(
             color: tokens.primary,
-            onRefresh: () => _refresh(ref),
+            onRefresh: _refresh,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [

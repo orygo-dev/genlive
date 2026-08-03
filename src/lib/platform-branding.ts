@@ -9,6 +9,14 @@ export const MOBILE_BANNER_RECOMMENDED = {
   maxBytesLabel: "2 MB",
 } as const;
 
+/** Recommended upload size for mobile cold-start popup ad. */
+export const MOBILE_POPUP_RECOMMENDED = {
+  width: 1080,
+  height: 1350,
+  aspectLabel: "4:5",
+  maxBytesLabel: "2 MB",
+} as const;
+
 export type MobileBannerSlide = {
   id: string;
   imageUrl: string;
@@ -18,6 +26,13 @@ export type MobileBannerSlide = {
   active: boolean;
 };
 
+export type MobilePopupAd = {
+  enabled: boolean;
+  imageUrl: string | null;
+  linkUrl: string | null;
+  updatedAt: string | null;
+};
+
 export type PlatformBranding = {
   appName: string;
   logoUrl: string | null;
@@ -25,6 +40,14 @@ export type PlatformBranding = {
   splashBackgroundUrl: string | null;
   splashLogoUrl: string | null;
   mobileBannerSlides: MobileBannerSlide[];
+  mobilePopupAd: MobilePopupAd;
+};
+
+export const defaultMobilePopupAd: MobilePopupAd = {
+  enabled: false,
+  imageUrl: null,
+  linkUrl: null,
+  updatedAt: null,
 };
 
 export const defaultPlatformBranding: PlatformBranding = {
@@ -34,6 +57,7 @@ export const defaultPlatformBranding: PlatformBranding = {
   splashBackgroundUrl: null,
   splashLogoUrl: null,
   mobileBannerSlides: [],
+  mobilePopupAd: defaultMobilePopupAd,
 };
 
 export function normalizeMobileBannerSlides(
@@ -62,4 +86,29 @@ export function normalizeMobileBannerSlides(
     if (slides.length >= MOBILE_BANNER_RECOMMENDED.maxSlides) break;
   }
   return slides;
+}
+
+export function normalizeMobilePopupAd(value: unknown): MobilePopupAd {
+  if (!value || typeof value !== "object") {
+    return { ...defaultMobilePopupAd };
+  }
+  const record = value as Record<string, unknown>;
+  const imageUrl =
+    typeof record.imageUrl === "string" && record.imageUrl.trim()
+      ? record.imageUrl.trim()
+      : null;
+  const linkUrl =
+    typeof record.linkUrl === "string" && record.linkUrl.trim()
+      ? record.linkUrl.trim()
+      : null;
+  const updatedAt =
+    typeof record.updatedAt === "string" && record.updatedAt.trim()
+      ? record.updatedAt.trim()
+      : null;
+  return {
+    enabled: record.enabled === true && Boolean(imageUrl),
+    imageUrl,
+    linkUrl,
+    updatedAt,
+  };
 }

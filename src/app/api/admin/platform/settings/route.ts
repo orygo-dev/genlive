@@ -19,6 +19,13 @@ const slideSchema = z.object({
   active: z.boolean().default(true),
 });
 
+const popupSchema = z.object({
+  enabled: z.boolean(),
+  imageUrl: z.string().trim().max(1000).nullable(),
+  linkUrl: z.string().trim().max(1000).nullable().optional(),
+  updatedAt: z.string().trim().max(40).nullable().optional(),
+});
+
 const updateSchema = z.object({
   appName: z.string().trim().min(2).max(80).optional(),
   logoUrl: z.string().trim().max(1000).nullable().optional(),
@@ -29,6 +36,7 @@ const updateSchema = z.object({
     .array(slideSchema)
     .max(MOBILE_BANNER_RECOMMENDED.maxSlides)
     .optional(),
+  mobilePopupAd: popupSchema.optional(),
 });
 
 export async function GET() {

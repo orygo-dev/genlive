@@ -6,7 +6,9 @@ import {
   DEFAULT_APP_NAME,
   defaultPlatformBranding,
   normalizeMobileBannerSlides,
+  normalizeMobilePopupAd,
   type MobileBannerSlide,
+  type MobilePopupAd,
   type PlatformBranding,
 } from "@/lib/platform-branding";
 
@@ -17,6 +19,7 @@ function toBranding(settings: {
   splashBackgroundUrl: string | null;
   splashLogoUrl: string | null;
   mobileBannerSlides: unknown;
+  mobilePopupAd: unknown;
 }): PlatformBranding {
   return {
     appName: settings.appName || DEFAULT_APP_NAME,
@@ -25,6 +28,7 @@ function toBranding(settings: {
     splashBackgroundUrl: settings.splashBackgroundUrl,
     splashLogoUrl: settings.splashLogoUrl,
     mobileBannerSlides: normalizeMobileBannerSlides(settings.mobileBannerSlides),
+    mobilePopupAd: normalizeMobilePopupAd(settings.mobilePopupAd),
   };
 }
 
@@ -35,6 +39,7 @@ const brandingSelect = {
   splashBackgroundUrl: true,
   splashLogoUrl: true,
   mobileBannerSlides: true,
+  mobilePopupAd: true,
 } as const;
 
 export const getPlatformBranding = cache(async (): Promise<PlatformBranding> => {
@@ -62,6 +67,7 @@ export async function updatePlatformBranding(
     splashBackgroundUrl?: string | null;
     splashLogoUrl?: string | null;
     mobileBannerSlides?: MobileBannerSlide[];
+    mobilePopupAd?: MobilePopupAd;
     updatedById?: string | null;
   } = {};
 
@@ -79,6 +85,13 @@ export async function updatePlatformBranding(
       input.mobileBannerSlides,
     );
   }
+  if (input.mobilePopupAd !== undefined) {
+    const normalized = normalizeMobilePopupAd(input.mobilePopupAd);
+    data.mobilePopupAd = {
+      ...normalized,
+      updatedAt: new Date().toISOString(),
+    };
+  }
 
   const settings = await prisma.platformSettings.upsert({
     where: { id: 1 },
@@ -90,6 +103,7 @@ export async function updatePlatformBranding(
       splashBackgroundUrl: input.splashBackgroundUrl ?? null,
       splashLogoUrl: input.splashLogoUrl ?? null,
       mobileBannerSlides: data.mobileBannerSlides ?? [],
+      mobilePopupAd: data.mobilePopupAd ?? null,
       updatedById: input.updatedById ?? null,
     },
     update: {
