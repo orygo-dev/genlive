@@ -15,13 +15,35 @@ export function smoothstep(edge0: number, edge1: number, x: number): number {
 
 /**
  * Soft person threshold: values near mid-gray become soft alpha instead of binary cut.
+ * Wider band keeps hair / shoulder edges from hard clipping.
  */
 export function softThreshold(
   value: number,
-  low = 0.35,
-  high = 0.65,
+  low = 0.22,
+  high = 0.78,
 ): number {
   return smoothstep(low, high, value);
+}
+
+/**
+ * Pull the soft edge inward so residual background / dark halo is less visible.
+ * `amount` 0 = no change, ~0.12–0.2 is typical.
+ */
+export function chokeAlpha(
+  alpha: Uint8ClampedArray,
+  amount = 0.12,
+): Uint8ClampedArray {
+  const a = Math.min(0.4, Math.max(0, amount));
+  if (a <= 0) {
+    return alpha;
+  }
+  const inv = 1 / (1 - a);
+  for (let i = 0; i < alpha.length; i += 1) {
+    const t = alpha[i] / 255;
+    const choked = Math.min(1, Math.max(0, (t - a) * inv));
+    alpha[i] = Math.round(choked * 255);
+  }
+  return alpha;
 }
 
 /**
@@ -82,7 +104,7 @@ export function refineMaskToAlpha(
 
 /**
  * Box blur feather on alpha mask (in-place ping-pong with scratch).
- * radius ~2–4 px at inference resolution.
+ * radius ~3–6 px at inference resolution (edges are refined again after upsample).
  */
 export function featherAlpha(
   alpha: Uint8ClampedArray,
@@ -91,7 +113,7 @@ export function featherAlpha(
   radius: number,
   scratch: Uint8ClampedArray | null,
 ): Uint8ClampedArray {
-  const r = Math.max(0, Math.min(8, Math.round(radius)));
+  const r = Math.max(0, Math.min(12, Math.round(radius)));
   if (r === 0) {
     return alpha;
   }

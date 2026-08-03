@@ -2153,7 +2153,8 @@ footer p {
 /* Soften local tile slightly when virtual BG is active — reduces harsh cutout look. */
 .live-room[data-bg-effect="virtual"] .lk-participant-tile[data-lk-local-participant] video,
 .live-room[data-bg-effect="virtual"] .lk-participant-tile[data-lk-local-participant] .lk-participant-media-video {
-  filter: contrast(1.02) saturate(1.03);
+  /* Mild grade only — edge quality comes from the mask pipeline, not CSS blur. */
+  filter: contrast(1.03) saturate(1.04) brightness(1.02);
 }
 
 .bg-effects-swatch {

@@ -14,10 +14,12 @@ import {
 } from "./deviceCapability";
 import {
   acquireImageSegmenter,
+  fillPersonOccupancy,
   releaseImageSegmenter,
   segmentVideoFrame,
 } from "./imageSegmenter";
 import {
+  chokeAlpha,
   featherAlpha,
   maybeDowngradeQuality,
   refineMaskToAlpha,
@@ -26,10 +28,12 @@ import {
 import {
   ADAPTIVE_COOLDOWN_MS,
   ADAPTIVE_INFERENCE_BUDGET_MS,
+  DEFAULT_EDGE_CHOKE,
   DEFAULT_FEATHER_PX,
   DEFAULT_TEMPORAL_ALPHA,
   INFERENCE_RESOLUTIONS,
   OUTPUT_HEIGHT,
+  OUTPUT_MASK_BLUR_PX,
   OUTPUT_WIDTH,
   type ProcessorStats,
   type QualityMode,
@@ -64,6 +68,10 @@ export class VirtualBackgroundProcessor
   private blurCtx: CanvasRenderingContext2D | null = null;
   private personCanvas: HTMLCanvasElement | null = null;
   private personCtx: CanvasRenderingContext2D | null = null;
+  private softMaskCanvas: HTMLCanvasElement | null = null;
+  private softMaskCtx: CanvasRenderingContext2D | null = null;
+  private softMaskBlurCanvas: HTMLCanvasElement | null = null;
+  private softMaskBlurCtx: CanvasRenderingContext2D | null = null;
   private capturedStream: MediaStream | null = null;
   private segmenter: ImageSegmenter | null = null;
   private running = false;
@@ -85,6 +93,7 @@ export class VirtualBackgroundProcessor
   private targetFps = 20;
   private temporalAlpha = DEFAULT_TEMPORAL_ALPHA;
   private featherPx = DEFAULT_FEATHER_PX;
+  private edgeChoke = DEFAULT_EDGE_CHOKE;
   private autoDowngraded = false;
   private lastQualityChangeAt = 0;
   private rollingInferenceMs = 0;
@@ -141,6 +150,7 @@ export class VirtualBackgroundProcessor
     this.qualityMode = config.qualityMode;
     this.temporalAlpha = config.temporalAlpha ?? DEFAULT_TEMPORAL_ALPHA;
     this.featherPx = config.featherPx ?? DEFAULT_FEATHER_PX;
+    this.edgeChoke = DEFAULT_EDGE_CHOKE;
 
     if (config.qualityMode !== "auto") {
       this.activeQuality = config.qualityMode;
@@ -227,6 +237,22 @@ export class VirtualBackgroundProcessor
     this.personCanvas.height = OUTPUT_HEIGHT;
     this.personCtx = this.personCanvas.getContext("2d");
 
+    this.softMaskCanvas = document.createElement("canvas");
+    this.softMaskCanvas.width = OUTPUT_WIDTH;
+    this.softMaskCanvas.height = OUTPUT_HEIGHT;
+    this.softMaskCtx = this.softMaskCanvas.getContext("2d", {
+      willReadFrequently: false,
+    });
+    if (this.softMaskCtx) {
+      this.softMaskCtx.imageSmoothingEnabled = true;
+      this.softMaskCtx.imageSmoothingQuality = "high";
+    }
+
+    this.softMaskBlurCanvas = document.createElement("canvas");
+    this.softMaskBlurCanvas.width = OUTPUT_WIDTH;
+    this.softMaskBlurCanvas.height = OUTPUT_HEIGHT;
+    this.softMaskBlurCtx = this.softMaskBlurCanvas.getContext("2d");
+
     this.capturedStream = this.outputCanvas.captureStream(30);
     this.processedTrack = this.capturedStream.getVideoTracks()[0];
 
@@ -275,6 +301,10 @@ export class VirtualBackgroundProcessor
     this.blurCtx = null;
     this.personCanvas = null;
     this.personCtx = null;
+    this.softMaskCanvas = null;
+    this.softMaskCtx = null;
+    this.softMaskBlurCanvas = null;
+    this.softMaskBlurCtx = null;
     this.sourceTrack = null;
     this.prevMask = null;
     this.alphaMask = null;
@@ -363,21 +393,20 @@ export class VirtualBackgroundProcessor
       );
       this.lastInferAt = now;
 
-      const mask = result.categoryMask;
-      if (mask) {
-        const data = mask.getAsFloat32Array();
-        const length = data.length;
-        if (!this.rawMaskBuffer || this.rawMaskBuffer.length !== length) {
-          this.rawMaskBuffer = new Float32Array(length);
-        }
-        // MediaPipe category mask: person category often 0 — invert soft occupancy.
-        for (let i = 0; i < length; i += 1) {
-          const v = data[i];
-          // selfie_segmenter: 0 = person, >0 = background in category mask
-          this.rawMaskBuffer[i] = v < 0.5 ? 1 : 0;
-        }
-        mask.close();
+      const maskLen = res.width * res.height;
+      if (!this.rawMaskBuffer || this.rawMaskBuffer.length !== maskLen) {
+        this.rawMaskBuffer = new Float32Array(maskLen);
+      }
 
+      const gotMask = fillPersonOccupancy(
+        result,
+        this.rawMaskBuffer,
+        res.width,
+        res.height,
+      );
+      result.close();
+
+      if (gotMask) {
         const refined = refineMaskToAlpha(
           this.rawMaskBuffer,
           this.prevMask,
@@ -399,11 +428,11 @@ export class VirtualBackgroundProcessor
           this.featherPx,
           this.featherScratch,
         );
+        chokeAlpha(this.alphaMask, this.edgeChoke);
         this.lastAlpha = this.alphaMask;
         this.lastMaskWidth = res.width;
         this.lastMaskHeight = res.height;
       }
-      result.close();
 
       this.maybeAdapt(now);
     } else if (!shouldInfer) {
@@ -479,21 +508,41 @@ export class VirtualBackgroundProcessor
     }
     this.maskCtx.putImageData(imageData, 0, 0);
 
-    // Draw person with mask
-    outCtx.save();
+    // Upscale mask to output resolution with smoothing, then slight blur
+    // so blocky inference edges don't show after 1280×720 composite.
+    const softMaskCanvas = this.softMaskCanvas;
+    const softMaskCtx = this.softMaskCtx;
+    const softMaskBlurCanvas = this.softMaskBlurCanvas;
+    const softMaskBlurCtx = this.softMaskBlurCtx;
+    let maskSource: CanvasImageSource = this.maskCanvas;
+    if (softMaskCanvas && softMaskCtx) {
+      softMaskCtx.clearRect(0, 0, w, h);
+      softMaskCtx.imageSmoothingEnabled = true;
+      softMaskCtx.imageSmoothingQuality = "high";
+      softMaskCtx.drawImage(this.maskCanvas, 0, 0, w, h);
+
+      if (softMaskBlurCanvas && softMaskBlurCtx && OUTPUT_MASK_BLUR_PX > 0) {
+        softMaskBlurCtx.clearRect(0, 0, w, h);
+        softMaskBlurCtx.filter = `blur(${OUTPUT_MASK_BLUR_PX}px)`;
+        softMaskBlurCtx.drawImage(softMaskCanvas, 0, 0);
+        softMaskBlurCtx.filter = "none";
+        maskSource = softMaskBlurCanvas;
+      } else {
+        maskSource = softMaskCanvas;
+      }
+    }
+
     const personCanvas = this.personCanvas;
     const personCtx = this.personCtx;
     if (!personCanvas || !personCtx) {
-      outCtx.restore();
       return;
     }
     personCtx.clearRect(0, 0, w, h);
     personCtx.drawImage(video, 0, 0, w, h);
     personCtx.globalCompositeOperation = "destination-in";
-    personCtx.drawImage(this.maskCanvas, 0, 0, w, h);
+    personCtx.drawImage(maskSource, 0, 0, w, h);
     personCtx.globalCompositeOperation = "source-over";
     outCtx.drawImage(personCanvas, 0, 0);
-    outCtx.restore();
   }
 
   private maybeAdapt(now: number) {

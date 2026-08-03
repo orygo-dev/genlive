@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   maybeDowngradeQuality,
+  chokeAlpha,
   smoothstep,
   softThreshold,
   temporalBlend,
@@ -27,6 +28,14 @@ describe("maskSmoothing", () => {
     expect(softThreshold(1)).toBe(1);
     expect(softThreshold(0.5)).toBeGreaterThan(0);
     expect(softThreshold(0.5)).toBeLessThan(1);
+  });
+
+  it("chokeAlpha pulls soft edge inward", () => {
+    const alpha = new Uint8ClampedArray([0, 64, 128, 192, 255]);
+    chokeAlpha(alpha, 0.25);
+    expect(alpha[0]).toBe(0);
+    expect(alpha[4]).toBe(255);
+    expect(alpha[2]).toBeLessThan(128);
   });
 
   it("temporalBlend favors previous at alpha 0.78", () => {
