@@ -1,7 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
-import { VirtualBackgroundProcessor } from "./VirtualBackgroundProcessor";
+import {
+  VirtualBackgroundProcessor,
+  calculateCoverCrop,
+} from "./VirtualBackgroundProcessor";
 
 describe("VirtualBackgroundProcessor cleanup", () => {
+  it("calculates a centered cover crop without stretching the camera", () => {
+    expect(calculateCoverCrop(1920, 1080, 1280, 720)).toEqual({
+      sourceX: 0,
+      sourceY: 0,
+      sourceWidth: 1920,
+      sourceHeight: 1080,
+    });
+    expect(calculateCoverCrop(640, 480, 1280, 720)).toEqual({
+      sourceX: 0,
+      sourceY: 60,
+      sourceWidth: 640,
+      sourceHeight: 360,
+    });
+  });
+
   it("destroy is safe before init", async () => {
     const processor = new VirtualBackgroundProcessor();
     await expect(processor.destroy()).resolves.toBeUndefined();

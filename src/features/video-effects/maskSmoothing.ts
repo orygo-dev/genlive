@@ -48,7 +48,7 @@ export function chokeAlpha(
 
 /**
  * Temporal EMA: out = alpha * previous + (1 - alpha) * current
- * Higher alpha = smoother (more previous), default 0.78.
+ * Higher alpha = smoother (more previous).
  */
 export function temporalBlend(
   previous: number,
@@ -90,11 +90,18 @@ export function refineMaskToAlpha(
   temporalAlpha: number,
 ): { previous: Float32Array; alpha: Uint8ClampedArray } {
   const length = raw.length;
+  const hasPrevious = previous !== null && previous.length === length;
   const prev = ensureFloatBuffer(previous, length);
   const alpha = ensureUint8Buffer(alphaOut, length);
 
   for (let i = 0; i < length; i += 1) {
-    const blended = temporalBlend(prev[i] ?? raw[i], raw[i], temporalAlpha);
+    // Never blend the first mask with a new zero-filled buffer. At moving
+    // edges, reduce history so hands and hair do not leave a visible trail.
+    const previousValue = hasPrevious ? prev[i] : raw[i];
+    const motion = Math.abs(previousValue - raw[i]);
+    const motionFactor = smoothstep(0.04, 0.32, motion);
+    const adaptiveAlpha = temporalAlpha * (1 - motionFactor * 0.82);
+    const blended = temporalBlend(previousValue, raw[i], adaptiveAlpha);
     prev[i] = blended;
     alpha[i] = Math.round(softThreshold(blended) * 255);
   }
@@ -104,7 +111,7 @@ export function refineMaskToAlpha(
 
 /**
  * Box blur feather on alpha mask (in-place ping-pong with scratch).
- * radius ~3–6 px at inference resolution (edges are refined again after upsample).
+ * Keep the radius small at inference resolution so fine details survive upsample.
  */
 export function featherAlpha(
   alpha: Uint8ClampedArray,

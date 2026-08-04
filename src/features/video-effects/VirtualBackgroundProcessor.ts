@@ -362,7 +362,7 @@ export class VirtualBackgroundProcessor
       this.mode !== "none" && now - this.lastInferAt >= interval;
 
     if (this.mode === "none") {
-      outCtx.drawImage(video, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
+      drawVideoCover(outCtx, video, OUTPUT_WIDTH, OUTPUT_HEIGHT);
       this.tickFps(now);
       return;
     }
@@ -379,7 +379,7 @@ export class VirtualBackgroundProcessor
         this.lastAlpha = null;
       }
 
-      this.inferCtx.drawImage(video, 0, 0, res.width, res.height);
+      drawVideoCover(this.inferCtx, video, res.width, res.height);
       const inferStart = performance.now();
       const result = await segmentVideoFrame(
         this.segmenter,
@@ -401,8 +401,6 @@ export class VirtualBackgroundProcessor
       const gotMask = fillPersonOccupancy(
         result,
         this.rawMaskBuffer,
-        res.width,
-        res.height,
       );
       result.close();
 
@@ -459,22 +457,22 @@ export class VirtualBackgroundProcessor
       const blurPx = this.mode === "blur-strong" ? 28 : 16;
       if (this.blurCtx && this.blurCanvas) {
         this.blurCtx.filter = `blur(${blurPx}px)`;
-        this.blurCtx.drawImage(video, 0, 0, w, h);
+        drawVideoCover(this.blurCtx, video, w, h);
         this.blurCtx.filter = "none";
         outCtx.drawImage(this.blurCanvas, 0, 0);
       } else {
         outCtx.filter = `blur(${blurPx}px)`;
-        outCtx.drawImage(video, 0, 0, w, h);
+        drawVideoCover(outCtx, video, w, h);
         outCtx.filter = "none";
       }
     } else {
-      outCtx.drawImage(video, 0, 0, w, h);
+      drawVideoCover(outCtx, video, w, h);
       return;
     }
 
     if (!this.lastAlpha || !this.maskCanvas || !this.maskCtx) {
       // Fallback: show person without mask until first inference
-      outCtx.drawImage(video, 0, 0, w, h);
+      drawVideoCover(outCtx, video, w, h);
       return;
     }
 
@@ -538,7 +536,7 @@ export class VirtualBackgroundProcessor
       return;
     }
     personCtx.clearRect(0, 0, w, h);
-    personCtx.drawImage(video, 0, 0, w, h);
+    drawVideoCover(personCtx, video, w, h);
     personCtx.globalCompositeOperation = "destination-in";
     personCtx.drawImage(maskSource, 0, 0, w, h);
     personCtx.globalCompositeOperation = "source-over";
@@ -605,6 +603,79 @@ export class VirtualBackgroundProcessor
   private emitStats() {
     this.hooks.onStats?.(this.getStats());
   }
+}
+
+export type CoverCrop = {
+  sourceX: number;
+  sourceY: number;
+  sourceWidth: number;
+  sourceHeight: number;
+};
+
+export function calculateCoverCrop(
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+): CoverCrop {
+  if (
+    sourceWidth <= 0 ||
+    sourceHeight <= 0 ||
+    targetWidth <= 0 ||
+    targetHeight <= 0
+  ) {
+    return {
+      sourceX: 0,
+      sourceY: 0,
+      sourceWidth: Math.max(1, sourceWidth),
+      sourceHeight: Math.max(1, sourceHeight),
+    };
+  }
+
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = targetWidth / targetHeight;
+  if (sourceRatio > targetRatio) {
+    const croppedWidth = sourceHeight * targetRatio;
+    return {
+      sourceX: (sourceWidth - croppedWidth) / 2,
+      sourceY: 0,
+      sourceWidth: croppedWidth,
+      sourceHeight,
+    };
+  }
+
+  const croppedHeight = sourceWidth / targetRatio;
+  return {
+    sourceX: 0,
+    sourceY: (sourceHeight - croppedHeight) / 2,
+    sourceWidth,
+    sourceHeight: croppedHeight,
+  };
+}
+
+function drawVideoCover(
+  context: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  targetWidth: number,
+  targetHeight: number,
+) {
+  const crop = calculateCoverCrop(
+    video.videoWidth || targetWidth,
+    video.videoHeight || targetHeight,
+    targetWidth,
+    targetHeight,
+  );
+  context.drawImage(
+    video,
+    crop.sourceX,
+    crop.sourceY,
+    crop.sourceWidth,
+    crop.sourceHeight,
+    0,
+    0,
+    targetWidth,
+    targetHeight,
+  );
 }
 
 function SEGMENTATION_FPS_MIN(quality: QualityTier): number {

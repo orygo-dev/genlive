@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   maybeDowngradeQuality,
   chokeAlpha,
+  refineMaskToAlpha,
   smoothstep,
   softThreshold,
   temporalBlend,
@@ -15,6 +16,26 @@ import { ADAPTIVE_COOLDOWN_MS } from "./types";
 import { getImageSegmenterRefCount } from "./imageSegmenter";
 
 describe("maskSmoothing", () => {
+  it("uses the raw mask on the first frame instead of blending with zero", () => {
+    const raw = new Float32Array([1, 0.8, 0.2, 0]);
+    const result = refineMaskToAlpha(raw, null, null, 0.72);
+
+    expect(Array.from(result.previous)).toEqual(Array.from(raw));
+    expect(result.alpha[0]).toBe(255);
+    expect(result.alpha[3]).toBe(0);
+  });
+
+  it("reacts quickly at moving edges", () => {
+    const result = refineMaskToAlpha(
+      new Float32Array([1]),
+      new Float32Array([0]),
+      null,
+      0.72,
+    );
+
+    expect(result.previous[0]).toBeGreaterThan(0.75);
+  });
+
   it("smoothstep clamps and eases", () => {
     expect(smoothstep(0, 1, -1)).toBe(0);
     expect(smoothstep(0, 1, 2)).toBe(1);
