@@ -96,7 +96,6 @@ export function BackgroundEffectsRuntime({
             onChange={onEffectChange}
             qualityMode={qualityMode}
             onQualityChange={setQualityMode}
-            disabled={vb.busy}
             unsupported={!vb.supported}
             loading={vb.loading}
             error={vb.error}

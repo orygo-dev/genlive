@@ -255,6 +255,7 @@ export function MeetingToolsDock({
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [captionLines, setCaptionLines] = useState<CaptionLine[]>([]);
   const [captionSupported, setCaptionSupported] = useState(true);
+  const captionsEnabledRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const captionSeqRef = useRef(0);
   const autoJoinRef = useRef(false);
@@ -434,6 +435,7 @@ export function MeetingToolsDock({
           }
           break;
         case "caption":
+          if (!captionsEnabledRef.current) break;
           setCaptionLines((current) => {
             const withoutSame = current.filter((line) => line.id !== message.id);
             const next = [
@@ -779,10 +781,14 @@ export function MeetingToolsDock({
     }
 
     if (!captionsEnabled) {
+      captionsEnabledRef.current = false;
       recognitionRef.current?.stop();
       recognitionRef.current = null;
+      setCaptionLines([]);
       return;
     }
+
+    captionsEnabledRef.current = true;
 
     const recognition = new Recognition();
     recognition.continuous = true;
@@ -828,6 +834,7 @@ export function MeetingToolsDock({
         recognition.start();
       } catch {
         setCaptionSupported(false);
+        captionsEnabledRef.current = false;
         setCaptionsEnabled(false);
       }
     }
@@ -1017,7 +1024,7 @@ export function MeetingToolsDock({
         ))}
       </div>
 
-      {captionsEnabled || captionLines.length > 0 ? (
+      {captionsEnabled ? (
         <div className="meeting-caption-overlay" aria-live="polite">
           {captionLines.length === 0 ? (
             <p className="meeting-caption-empty">
@@ -1158,7 +1165,14 @@ export function MeetingToolsDock({
             className={captionsEnabled ? "active" : ""}
             onClick={() => {
               if (!captionSupported) return;
-              setCaptionsEnabled((current) => !current);
+              setCaptionsEnabled((current) => {
+                const next = !current;
+                captionsEnabledRef.current = next;
+                if (!next) {
+                  setCaptionLines([]);
+                }
+                return next;
+              });
             }}
             title={
               captionSupported

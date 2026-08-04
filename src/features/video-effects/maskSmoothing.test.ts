@@ -89,7 +89,7 @@ describe("deviceCapability", () => {
     ).toBe("balanced");
   });
 
-  it("selects high for capable devices", () => {
+  it("keeps auto mode balanced on capable devices", () => {
     expect(
       selectDeviceQuality({
         hardwareConcurrency: 8,
@@ -97,7 +97,7 @@ describe("deviceCapability", () => {
         hasWebGl2: true,
         hasModernTrackProcessor: true,
       }),
-    ).toBe("high");
+    ).toBe("balanced");
   });
 
   it("maps quality to target fps ranges", () => {

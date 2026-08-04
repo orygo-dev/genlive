@@ -97,6 +97,9 @@ export class VirtualBackgroundProcessor
   private autoDowngraded = false;
   private lastQualityChangeAt = 0;
   private rollingInferenceMs = 0;
+  private effectRevision = 0;
+  private lastStatsEmitAt = 0;
+  private maskDirty = false;
 
   private prevMask: Float32Array | null = null;
   private alphaMask: Uint8ClampedArray | null = null;
@@ -139,6 +142,7 @@ export class VirtualBackgroundProcessor
   }
 
   async destroy(): Promise<void> {
+    this.effectRevision += 1;
     this.destroyed = true;
     this.running = false;
     await this.teardownPipeline(true);
@@ -146,6 +150,7 @@ export class VirtualBackgroundProcessor
   }
 
   async setEffect(config: VirtualBackgroundEffectConfig): Promise<void> {
+    const revision = ++this.effectRevision;
     this.mode = config.mode;
     this.qualityMode = config.qualityMode;
     this.temporalAlpha = config.temporalAlpha ?? DEFAULT_TEMPORAL_ALPHA;
@@ -166,7 +171,11 @@ export class VirtualBackgroundProcessor
     if (config.mode === "image" && nextPath) {
       if (nextPath !== this.imagePath || !this.backgroundBitmap) {
         const raster = await rasterizeToJpegDataUrl(nextPath);
-        this.backgroundBitmap = await loadBackgroundBitmap(raster);
+        const bitmap = await loadBackgroundBitmap(raster);
+        if (revision !== this.effectRevision || this.destroyed) {
+          return;
+        }
+        this.backgroundBitmap = bitmap;
         this.imagePath = nextPath;
       }
     } else if (config.mode !== "image") {
@@ -258,6 +267,7 @@ export class VirtualBackgroundProcessor
 
     this.running = true;
     this.fpsWindowStart = performance.now();
+    this.lastStatsEmitAt = 0;
     this.frameCount = 0;
     this.processedFrames = 0;
     this.useRvfc =
@@ -312,6 +322,7 @@ export class VirtualBackgroundProcessor
     this.lastAlpha = null;
     this.rawMaskBuffer = null;
     this.maskImageData = null;
+    this.maskDirty = false;
 
     if (releaseSegmenter && this.segmenter) {
       this.segmenter = null;
@@ -377,6 +388,7 @@ export class VirtualBackgroundProcessor
         this.inferCanvas.height = res.height;
         this.prevMask = null;
         this.lastAlpha = null;
+        this.maskDirty = false;
       }
 
       drawVideoCover(this.inferCtx, video, res.width, res.height);
@@ -430,6 +442,7 @@ export class VirtualBackgroundProcessor
         this.lastAlpha = this.alphaMask;
         this.lastMaskWidth = res.width;
         this.lastMaskHeight = res.height;
+        this.maskDirty = true;
       }
 
       this.maybeAdapt(now);
@@ -440,7 +453,7 @@ export class VirtualBackgroundProcessor
     this.composite(video, outCtx);
     this.processedFrames += 1;
     this.tickFps(now);
-    this.emitStats();
+    this.emitStats(now);
   }
 
   private composite(
@@ -476,58 +489,66 @@ export class VirtualBackgroundProcessor
       return;
     }
 
-    if (
-      this.maskCanvas.width !== this.lastMaskWidth ||
-      this.maskCanvas.height !== this.lastMaskHeight
-    ) {
-      this.maskCanvas.width = this.lastMaskWidth;
-      this.maskCanvas.height = this.lastMaskHeight;
-      this.maskImageData = null;
-    }
-
-    if (
-      !this.maskImageData ||
-      this.maskImageData.width !== this.lastMaskWidth ||
-      this.maskImageData.height !== this.lastMaskHeight
-    ) {
-      this.maskImageData = this.maskCtx.createImageData(
-        this.lastMaskWidth,
-        this.lastMaskHeight,
-      );
-    }
-    const imageData = this.maskImageData;
-    for (let i = 0; i < this.lastAlpha.length; i += 1) {
-      const a = this.lastAlpha[i];
-      const o = i * 4;
-      imageData.data[o] = 255;
-      imageData.data[o + 1] = 255;
-      imageData.data[o + 2] = 255;
-      imageData.data[o + 3] = a;
-    }
-    this.maskCtx.putImageData(imageData, 0, 0);
-
-    // Upscale mask to output resolution with smoothing, then slight blur
-    // so blocky inference edges don't show after 1280×720 composite.
     const softMaskCanvas = this.softMaskCanvas;
     const softMaskCtx = this.softMaskCtx;
     const softMaskBlurCanvas = this.softMaskBlurCanvas;
     const softMaskBlurCtx = this.softMaskBlurCtx;
-    let maskSource: CanvasImageSource = this.maskCanvas;
-    if (softMaskCanvas && softMaskCtx) {
-      softMaskCtx.clearRect(0, 0, w, h);
-      softMaskCtx.imageSmoothingEnabled = true;
-      softMaskCtx.imageSmoothingQuality = "high";
-      softMaskCtx.drawImage(this.maskCanvas, 0, 0, w, h);
+    let maskSource: CanvasImageSource =
+      softMaskBlurCanvas && softMaskBlurCtx && OUTPUT_MASK_BLUR_PX > 0
+        ? softMaskBlurCanvas
+        : softMaskCanvas && softMaskCtx
+          ? softMaskCanvas
+          : this.maskCanvas;
 
-      if (softMaskBlurCanvas && softMaskBlurCtx && OUTPUT_MASK_BLUR_PX > 0) {
-        softMaskBlurCtx.clearRect(0, 0, w, h);
-        softMaskBlurCtx.filter = `blur(${OUTPUT_MASK_BLUR_PX}px)`;
-        softMaskBlurCtx.drawImage(softMaskCanvas, 0, 0);
-        softMaskBlurCtx.filter = "none";
-        maskSource = softMaskBlurCanvas;
-      } else {
-        maskSource = softMaskCanvas;
+    if (this.maskDirty) {
+      if (
+        this.maskCanvas.width !== this.lastMaskWidth ||
+        this.maskCanvas.height !== this.lastMaskHeight
+      ) {
+        this.maskCanvas.width = this.lastMaskWidth;
+        this.maskCanvas.height = this.lastMaskHeight;
+        this.maskImageData = null;
       }
+
+      if (
+        !this.maskImageData ||
+        this.maskImageData.width !== this.lastMaskWidth ||
+        this.maskImageData.height !== this.lastMaskHeight
+      ) {
+        this.maskImageData = this.maskCtx.createImageData(
+          this.lastMaskWidth,
+          this.lastMaskHeight,
+        );
+      }
+      const imageData = this.maskImageData;
+      for (let i = 0; i < this.lastAlpha.length; i += 1) {
+        const a = this.lastAlpha[i];
+        const o = i * 4;
+        imageData.data[o] = 255;
+        imageData.data[o + 1] = 255;
+        imageData.data[o + 2] = 255;
+        imageData.data[o + 3] = a;
+      }
+      this.maskCtx.putImageData(imageData, 0, 0);
+
+      // Cache the upscaled mask until a new inference result arrives.
+      if (softMaskCanvas && softMaskCtx) {
+        softMaskCtx.clearRect(0, 0, w, h);
+        softMaskCtx.imageSmoothingEnabled = true;
+        softMaskCtx.imageSmoothingQuality = "high";
+        softMaskCtx.drawImage(this.maskCanvas, 0, 0, w, h);
+
+        if (softMaskBlurCanvas && softMaskBlurCtx && OUTPUT_MASK_BLUR_PX > 0) {
+          softMaskBlurCtx.clearRect(0, 0, w, h);
+          softMaskBlurCtx.filter = `blur(${OUTPUT_MASK_BLUR_PX}px)`;
+          softMaskBlurCtx.drawImage(softMaskCanvas, 0, 0);
+          softMaskBlurCtx.filter = "none";
+          maskSource = softMaskBlurCanvas;
+        } else {
+          maskSource = softMaskCanvas;
+        }
+      }
+      this.maskDirty = false;
     }
 
     const personCanvas = this.personCanvas;
@@ -600,7 +621,9 @@ export class VirtualBackgroundProcessor
     }
   }
 
-  private emitStats() {
+  private emitStats(now: number) {
+    if (now - this.lastStatsEmitAt < 1000) return;
+    this.lastStatsEmitAt = now;
     this.hooks.onStats?.(this.getStats());
   }
 }

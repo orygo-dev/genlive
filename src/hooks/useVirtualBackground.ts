@@ -43,6 +43,8 @@ export function useVirtualBackground({
 }: UseVirtualBackgroundOptions): UseVirtualBackgroundResult {
   const processorRef = useRef<VirtualBackgroundProcessor | null>(null);
   const attachedTrackRef = useRef<LocalVideoTrack | null>(null);
+  const operationIdRef = useRef(0);
+  const operationQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [supported] = useState(() => supportsVideoEffects());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -74,21 +76,30 @@ export function useVirtualBackground({
   }, []);
 
   useEffect(() => {
-    if (!enabled || !supported || !track) {
-      return;
-    }
-
-    let cancelled = false;
+    const operationId = ++operationIdRef.current;
     const activeTrack = track;
 
     async function sync() {
-      setBusy(true);
-      setError("");
-
       try {
-        if (effectId === "none") {
-          setLoading(false);
+        if (operationId !== operationIdRef.current) return;
+        setBusy(true);
+        setLoading(
+          Boolean(enabled && supported && activeTrack && effectId !== "none"),
+        );
+        setError("");
+
+        if (!enabled || !supported || !activeTrack) {
           await detachProcessor();
+          if (operationId !== operationIdRef.current) return;
+          setAutoDowngraded(false);
+          setActiveQuality(null);
+          setStats(null);
+          return;
+        }
+
+        if (effectId === "none") {
+          await detachProcessor();
+          if (operationId !== operationIdRef.current) return;
           storeBackgroundEffect("none");
           setAutoDowngraded(false);
           setActiveQuality(null);
@@ -96,11 +107,11 @@ export function useVirtualBackground({
           return;
         }
 
-        setLoading(true);
-
         if (attachedTrackRef.current && attachedTrackRef.current !== activeTrack) {
           await detachProcessor();
         }
+
+        if (operationId !== operationIdRef.current) return;
 
         if (!processorRef.current) {
           const processor = new VirtualBackgroundProcessor({
@@ -115,10 +126,19 @@ export function useVirtualBackground({
           });
           processorRef.current = processor;
           attachedTrackRef.current = activeTrack;
-          await activeTrack.setProcessor(processor);
+          try {
+            await activeTrack.setProcessor(processor);
+          } catch (error) {
+            if (processorRef.current === processor) {
+              processorRef.current = null;
+              attachedTrackRef.current = null;
+            }
+            await processor.destroy().catch(() => undefined);
+            throw error;
+          }
         }
 
-        if (cancelled) return;
+        if (operationId !== operationIdRef.current) return;
 
         const processor = processorRef.current;
         if (!processor) return;
@@ -132,10 +152,11 @@ export function useVirtualBackground({
           imagePath,
           qualityMode,
         });
+        if (operationId !== operationIdRef.current) return;
         storeBackgroundEffect(effectId);
         setActiveQuality(processor.getStats().activeQuality);
       } catch (err) {
-        if (!cancelled) {
+        if (operationId === operationIdRef.current) {
           setError(
             err instanceof Error
               ? err.message
@@ -143,18 +164,14 @@ export function useVirtualBackground({
           );
         }
       } finally {
-        if (!cancelled) {
+        if (operationId === operationIdRef.current) {
           setLoading(false);
           setBusy(false);
         }
       }
     }
 
-    void sync();
-
-    return () => {
-      cancelled = true;
-    };
+    operationQueueRef.current = operationQueueRef.current.then(sync, sync);
   }, [
     effectId,
     qualityMode,
@@ -167,7 +184,11 @@ export function useVirtualBackground({
 
   useEffect(() => {
     return () => {
-      void detachProcessor();
+      operationIdRef.current += 1;
+      operationQueueRef.current = operationQueueRef.current.then(
+        detachProcessor,
+        detachProcessor,
+      );
     };
   }, [detachProcessor]);
 

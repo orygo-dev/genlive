@@ -1,8 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  loadBackgroundBitmap,
+  rasterizeToJpegDataUrl,
+} from "./backgroundLoader";
+import {
   VirtualBackgroundProcessor,
   calculateCoverCrop,
 } from "./VirtualBackgroundProcessor";
+
+vi.mock("./backgroundLoader", () => ({
+  drawImageCover: vi.fn(),
+  loadBackgroundBitmap: vi.fn(),
+  rasterizeToJpegDataUrl: vi.fn(),
+}));
 
 describe("VirtualBackgroundProcessor cleanup", () => {
   it("calculates a centered cover crop without stretching the camera", () => {
@@ -48,5 +58,46 @@ describe("VirtualBackgroundProcessor cleanup", () => {
     expect(stats.activeQuality).toBeTruthy();
     expect(stats.segmentationWidth).toBeGreaterThan(0);
     expect(stats.segmentationHeight).toBeGreaterThan(0);
+  });
+
+  it("keeps the latest background when image loads finish out of order", async () => {
+    let resolveFirst: ((bitmap: ImageBitmap) => void) | undefined;
+    const firstBitmap = { width: 1280, height: 720 } as ImageBitmap;
+    const secondBitmap = { width: 1280, height: 720 } as ImageBitmap;
+
+    vi.mocked(rasterizeToJpegDataUrl).mockImplementation(async (src) => src);
+    vi.mocked(loadBackgroundBitmap).mockImplementation((src) => {
+      if (src === "first") {
+        return new Promise<ImageBitmap>((resolve) => {
+          resolveFirst = resolve;
+        });
+      }
+      return Promise.resolve(secondBitmap);
+    });
+
+    const processor = new VirtualBackgroundProcessor();
+    const first = processor.setEffect({
+      mode: "image",
+      imagePath: "first",
+      qualityMode: "auto",
+    });
+    await vi.waitFor(() => {
+      expect(loadBackgroundBitmap).toHaveBeenCalledWith("first");
+    });
+
+    await processor.setEffect({
+      mode: "image",
+      imagePath: "second",
+      qualityMode: "auto",
+    });
+    resolveFirst?.(firstBitmap);
+    await first;
+
+    const state = processor as unknown as {
+      imagePath: string | null;
+      backgroundBitmap: ImageBitmap | null;
+    };
+    expect(state.imagePath).toBe("second");
+    expect(state.backgroundBitmap).toBe(secondBitmap);
   });
 });

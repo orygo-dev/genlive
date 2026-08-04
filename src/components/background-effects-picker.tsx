@@ -94,10 +94,16 @@ export function BackgroundEffectsPicker({
     }
   }
 
-  const locked = disabled || uploading || loading;
+  // Applying an effect can include loading the segmentation model or an image.
+  // Keep choices responsive while that work is running; the processor resolves
+  // overlapping requests using latest-selection-wins semantics.
+  const locked = disabled || uploading;
 
   return (
-    <div className={`bg-effects-picker${compact ? " is-compact" : ""}`}>
+    <div
+      className={`bg-effects-picker${compact ? " is-compact" : ""}`}
+      aria-busy={loading || undefined}
+    >
       <p className="bg-effects-label">Background</p>
       <div
         className="bg-effects-options"

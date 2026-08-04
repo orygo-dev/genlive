@@ -51,7 +51,9 @@ export function selectDeviceQuality(
   if (!modern || cores <= 4 || memory <= 4) {
     return "balanced";
   }
-  return "high";
+  // MediaPipe and canvas compositing still share the browser main thread.
+  // Keep automatic mode responsive; High remains available as an opt-in.
+  return "balanced";
 }
 
 export function targetFpsForQuality(quality: QualityTier): number {
