@@ -63,19 +63,22 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
                             mode: LaunchMode.externalApplication,
                           );
                         },
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.contain,
-                          fadeInDuration: Duration.zero,
-                          fadeOutDuration: Duration.zero,
-                          placeholder: (_, __) => const SizedBox(
-                            width: 120,
-                            height: 120,
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.contain,
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholder: (_, __) => const SizedBox(
+                              width: 120,
+                              height: 120,
+                              child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
+                            errorWidget: (_, __, ___) => const SizedBox.shrink(),
                           ),
-                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
                         ),
                       ),
                       Positioned(

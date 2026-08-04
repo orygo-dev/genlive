@@ -5668,6 +5668,7 @@ footer p {
   height: auto;
   max-height: 320px;
   object-fit: contain;
+  border-radius: 12px;
 }
 
 .admin-popup-ad-fields {
@@ -5734,6 +5735,7 @@ footer p {
   max-width: min(92vw, 520px);
   max-height: 82vh;
   object-fit: contain;
+  border-radius: 14px;
 }
 
 .brand-popup-ad-close {
