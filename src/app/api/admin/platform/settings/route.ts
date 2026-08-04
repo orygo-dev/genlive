@@ -22,8 +22,18 @@ const slideSchema = z.object({
 const popupSchema = z.object({
   enabled: z.boolean(),
   imageUrl: z.string().trim().max(1000).nullable(),
-  linkUrl: z.string().trim().max(1000).nullable().optional(),
-  updatedAt: z.string().trim().max(40).nullable().optional(),
+  linkUrl: z
+    .string()
+    .trim()
+    .max(1000)
+    .nullish()
+    .transform((value) => value ?? null),
+  updatedAt: z
+    .string()
+    .trim()
+    .max(40)
+    .nullish()
+    .transform((value) => value ?? null),
 });
 
 const updateSchema = z.object({
