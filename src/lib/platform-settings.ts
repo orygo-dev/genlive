@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import {
   DEFAULT_APP_NAME,
@@ -8,8 +9,6 @@ import {
   defaultPlatformBranding,
   normalizeMobileBannerSlides,
   normalizeMobilePopupAd,
-  type MobileBannerSlide,
-  type MobilePopupAd,
   type PlatformBranding,
 } from "@/lib/platform-branding";
 
@@ -107,8 +106,8 @@ export async function updatePlatformBranding(
     loginBackgroundUrl?: string | null;
     splashBackgroundUrl?: string | null;
     splashLogoUrl?: string | null;
-    mobileBannerSlides?: MobileBannerSlide[];
-    mobilePopupAd?: MobilePopupAd;
+    mobileBannerSlides?: Prisma.InputJsonValue;
+    mobilePopupAd?: Prisma.InputJsonValue;
     updatedById?: string | null;
   } = {};
 
@@ -124,14 +123,14 @@ export async function updatePlatformBranding(
   if (input.mobileBannerSlides !== undefined) {
     data.mobileBannerSlides = normalizeMobileBannerSlides(
       input.mobileBannerSlides,
-    );
+    ) as Prisma.InputJsonValue;
   }
   if (input.mobilePopupAd !== undefined) {
     const normalized = normalizeMobilePopupAd(input.mobilePopupAd);
     data.mobilePopupAd = {
       ...normalized,
       updatedAt: new Date().toISOString(),
-    };
+    } as Prisma.InputJsonValue;
   }
 
   try {
@@ -145,7 +144,9 @@ export async function updatePlatformBranding(
         splashBackgroundUrl: input.splashBackgroundUrl ?? null,
         splashLogoUrl: input.splashLogoUrl ?? null,
         mobileBannerSlides: data.mobileBannerSlides ?? [],
-        mobilePopupAd: data.mobilePopupAd ?? null,
+        ...(data.mobilePopupAd !== undefined
+          ? { mobilePopupAd: data.mobilePopupAd }
+          : {}),
         updatedById: input.updatedById ?? null,
       },
       update: {
