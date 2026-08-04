@@ -14,6 +14,7 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
   if (!popup.canShow || popup.imageUrl == null) return;
   if (!context.mounted) return;
 
+  // Mark before show so concurrent shell/home mounts cannot double-open.
   ref.read(popupAdShownThisSessionProvider.notifier).state = true;
 
   final imageUrl = resolveBrandAssetUrl(
@@ -24,6 +25,7 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
 
   await showGeneralDialog<void>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: true,
     barrierLabel: 'Tutup popup',
     barrierColor: Colors.black.withValues(alpha: 0.72),
@@ -37,7 +39,7 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
             children: [
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(dialogContext).pop(),
+                onTap: () => Navigator.of(dialogContext, rootNavigator: true).pop(),
                 child: const SizedBox.expand(),
               ),
               Center(
@@ -48,6 +50,7 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
                   ),
                   child: Stack(
                     clipBehavior: Clip.none,
+                    alignment: Alignment.center,
                     children: [
                       GestureDetector(
                         onTap: () async {
@@ -86,7 +89,9 @@ Future<void> maybeShowMobilePopupAd(BuildContext context, WidgetRef ref) async {
                             minimumSize: const Size(36, 36),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          onPressed: () =>
+                              Navigator.of(dialogContext, rootNavigator: true)
+                                  .pop(),
                           icon: const Icon(Icons.close, size: 18),
                           tooltip: 'Tutup',
                         ),

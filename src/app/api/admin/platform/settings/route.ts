@@ -87,7 +87,12 @@ export async function PATCH(request: Request) {
     }
     console.error("Update platform branding failed", error);
     return NextResponse.json(
-      { error: "Pengaturan brand belum dapat disimpan." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Pengaturan brand belum dapat disimpan.",
+      },
       { status: 500 },
     );
   }
