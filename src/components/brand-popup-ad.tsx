@@ -10,6 +10,11 @@ type BrandPopupAdProps = {
   popupAd: MobilePopupAd | null | undefined;
 };
 
+function sessionKeyFor(popupAd: MobilePopupAd) {
+  const stamp = popupAd.updatedAt?.trim() || popupAd.imageUrl?.trim() || "1";
+  return `${POPUP_SESSION_KEY}:${stamp}`;
+}
+
 /**
  * Full-bleed image popup once per browser tab session (survives refresh,
  * resets when the tab/session ends) — mirrors mobile cold-start behavior.
@@ -22,18 +27,33 @@ export function BrandPopupAd({ popupAd }: BrandPopupAdProps) {
       return;
     }
 
+    const storageKey = sessionKeyFor(popupAd);
+
     try {
-      if (sessionStorage.getItem(POPUP_SESSION_KEY) === "1") {
+      if (sessionStorage.getItem(storageKey) === "1") {
         return;
       }
-      sessionStorage.setItem(POPUP_SESSION_KEY, "1");
     } catch {
-      // If storage is blocked, still show once for this mount.
+      // ignore storage errors; still attempt to show
     }
 
-    const timer = window.setTimeout(() => setOpen(true), 120);
-    return () => window.clearTimeout(timer);
-  }, [popupAd?.enabled, popupAd?.imageUrl]);
+    let cancelled = false;
+    // Mark only AFTER open so React Strict Mode remount cannot swallow the popup.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      try {
+        sessionStorage.setItem(storageKey, "1");
+      } catch {
+        // ignore
+      }
+      setOpen(true);
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [popupAd]);
 
   useEffect(() => {
     if (!open) return;
