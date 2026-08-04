@@ -5696,6 +5696,65 @@ footer p {
   }
 }
 
+.brand-popup-ad {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.brand-popup-ad-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(8, 12, 20, 0.72);
+}
+
+.brand-popup-ad-stage {
+  position: relative;
+  z-index: 1;
+  max-width: min(92vw, 520px);
+  max-height: 82vh;
+}
+
+.brand-popup-ad-link {
+  display: block;
+  line-height: 0;
+}
+
+.brand-popup-ad-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(92vw, 520px);
+  max-height: 82vh;
+  object-fit: contain;
+}
+
+.brand-popup-ad-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(10, 14, 22, 0.92);
+}
+
+.brand-popup-ad-close:hover {
+  background: #000;
+}
+
 /* Meeting tools dock & stage */
 .meeting-stage {
   display: flex;

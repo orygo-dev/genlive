@@ -435,10 +435,11 @@ export function AdminBrandingPanel({
       <section id="popup-ads" className="settings-card">
         <header>
           <div>
-            <h2>Popup ads (aplikasi mobile)</h2>
+            <h2>Popup ads (aplikasi mobile & web)</h2>
             <p>
-              Tampil sekali setiap kali aplikasi dibuka (cold start), bukan saat
-              refresh beranda. Gambar penuh tanpa frame.
+              Tampil sekali setiap kali sesi dibuka (cold start / tab baru),
+              bukan saat refresh. Gambar penuh tanpa frame — berlaku di aplikasi
+              mobile dan dashboard web pengguna.
             </p>
           </div>
         </header>

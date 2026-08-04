@@ -10,6 +10,7 @@ import {
   Video,
 } from "lucide-react";
 import { AppBrand } from "@/components/app-brand";
+import { BrandPopupAd } from "@/components/brand-popup-ad";
 import { EmailVerifyBanner } from "@/components/email-verify-banner";
 import { OrgSwitcher } from "@/components/org-switcher";
 import type { PlatformBranding } from "@/lib/platform-branding";
@@ -46,6 +47,7 @@ export function DashboardShell({
 
   return (
     <div className="dashboard-shell">
+      <BrandPopupAd popupAd={branding.mobilePopupAd} />
       <aside className="dashboard-sidebar">
         <AppBrand branding={branding} className="brand dashboard-brand" markSize={19} />
 
