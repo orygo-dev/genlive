@@ -2,6 +2,11 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import {
+  findActiveLiveKitServer,
+  normalizeLiveKitServerProfiles,
+  type LiveKitServerProfile,
+} from "@/lib/livekit-config";
+import {
   decryptSecretPayload,
   encryptSecretPayload,
   isEncryptionConfigured,
@@ -21,6 +26,8 @@ export type PlatformIntegrations = {
   livekitApiKey?: string | null;
   livekitApiSecret?: string | null;
   livekitApiUrl?: string | null;
+  livekitServers?: LiveKitServerProfile[] | null;
+  activeLivekitServerId?: string | null;
   livekitEgressS3AccessKey?: string | null;
   livekitEgressS3Secret?: string | null;
   livekitEgressS3Bucket?: string | null;
@@ -52,6 +59,8 @@ export type ResolvedPlatformConfig = {
   livekitApiKey: string | null;
   livekitApiSecret: string | null;
   livekitApiUrl: string | null;
+  livekitServers: LiveKitServerProfile[];
+  activeLivekitServerId: string | null;
   livekitEgressS3AccessKey: string | null;
   livekitEgressS3Secret: string | null;
   livekitEgressS3Bucket: string | null;
@@ -139,16 +148,51 @@ async function loadPlatformConfig(): Promise<ResolvedPlatformConfig> {
     // DB may be unavailable during build; fall back to env defaults.
   }
 
+  const livekitServers = normalizeLiveKitServerProfiles(integrations.livekitServers);
+  const activeLivekitServer = findActiveLiveKitServer(
+    livekitServers,
+    integrations.activeLivekitServerId,
+  );
+  const legacyDatabaseComplete = Boolean(
+    integrations.livekitUrl?.trim() &&
+      integrations.livekitApiKey?.trim() &&
+      integrations.livekitApiSecret?.trim(),
+  );
+  const legacyEnvironmentComplete = Boolean(
+    process.env.LIVEKIT_URL?.trim() &&
+      process.env.LIVEKIT_API_KEY?.trim() &&
+      process.env.LIVEKIT_API_SECRET?.trim(),
+  );
+  const legacyUrl = legacyDatabaseComplete
+    ? integrations.livekitUrl?.trim() || null
+    : legacyEnvironmentComplete
+      ? process.env.LIVEKIT_URL?.trim() || null
+      : null;
+  const legacyApiKey = legacyDatabaseComplete
+    ? integrations.livekitApiKey?.trim() || null
+    : legacyEnvironmentComplete
+      ? process.env.LIVEKIT_API_KEY?.trim() || null
+      : null;
+  const legacyApiSecret = legacyDatabaseComplete
+    ? integrations.livekitApiSecret?.trim() || null
+    : legacyEnvironmentComplete
+      ? process.env.LIVEKIT_API_SECRET?.trim() || null
+      : null;
+  const legacyApiUrl = legacyDatabaseComplete
+    ? integrations.livekitApiUrl?.trim() || null
+    : legacyEnvironmentComplete
+      ? process.env.LIVEKIT_API_URL?.trim() || null
+      : null;
+
   const value: ResolvedPlatformConfig = {
     appUrl: pick(integrations.appUrl, process.env.APP_URL),
     cronSecret: pick(integrations.cronSecret, process.env.CRON_SECRET),
-    livekitUrl: pick(integrations.livekitUrl, process.env.LIVEKIT_URL),
-    livekitApiKey: pick(integrations.livekitApiKey, process.env.LIVEKIT_API_KEY),
-    livekitApiSecret: pick(
-      integrations.livekitApiSecret,
-      process.env.LIVEKIT_API_SECRET,
-    ),
-    livekitApiUrl: pick(integrations.livekitApiUrl, process.env.LIVEKIT_API_URL),
+    livekitUrl: activeLivekitServer?.url ?? legacyUrl,
+    livekitApiKey: activeLivekitServer?.apiKey ?? legacyApiKey,
+    livekitApiSecret: activeLivekitServer?.apiSecret ?? legacyApiSecret,
+    livekitApiUrl: activeLivekitServer?.apiUrl ?? legacyApiUrl,
+    livekitServers,
+    activeLivekitServerId: activeLivekitServer?.id ?? null,
     livekitEgressS3AccessKey: pick(
       integrations.livekitEgressS3AccessKey,
       process.env.LIVEKIT_EGRESS_S3_ACCESS_KEY,

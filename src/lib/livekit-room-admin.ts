@@ -12,10 +12,10 @@ import {
 export type { RoomLockMetadata };
 export { parseRoomMetadata, serializeRoomMetadata };
 
-export async function getRoomServiceClient() {
-  const environment = await getLiveKitEnvironment();
+export async function getRoomServiceClient(serverId?: string | null) {
+  const environment = await getLiveKitEnvironment(serverId);
   return new RoomServiceClient(
-    await getLiveKitApiHost(),
+    await getLiveKitApiHost(serverId),
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,
   );

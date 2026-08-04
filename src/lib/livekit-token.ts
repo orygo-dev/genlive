@@ -9,6 +9,7 @@ type ParticipantTokenInput = {
   name: string;
   role: ParticipantRole;
   roomName: string;
+  serverId?: string | null;
 };
 
 function assertJwtLooksValid(jwt: string, apiKey: string) {
@@ -53,7 +54,7 @@ function assertJwtLooksValid(jwt: string, apiKey: string) {
 }
 
 export async function createParticipantToken(input: ParticipantTokenInput) {
-  const environment = await getLiveKitEnvironment();
+  const environment = await getLiveKitEnvironment(input.serverId);
   const token = new AccessToken(
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,

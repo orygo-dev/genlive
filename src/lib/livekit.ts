@@ -1,6 +1,15 @@
+import "server-only";
+
 import { z } from "zod";
-import { getPlatformConfig } from "@/lib/platform-config";
 import {
+  findActiveLiveKitServer,
+  normalizeLiveKitServerProfile,
+  normalizeLiveKitServerProfiles,
+  type LiveKitServerProfile,
+} from "@/lib/livekit-config";
+import { getStoredIntegrations } from "@/lib/platform-config";
+import {
+  normalizeLivekitApiUrl,
   normalizeLivekitUrl,
   sanitizeLivekitCredential,
 } from "@/lib/livekit-url";
@@ -8,89 +17,89 @@ import {
 export { sanitizeLivekitCredential } from "@/lib/livekit-url";
 
 const liveKitEnvironmentSchema = z.object({
+  LIVEKIT_SERVER_ID: z.string().min(1),
+  LIVEKIT_SERVER_NAME: z.string().min(1),
   LIVEKIT_URL: z.string().url().startsWith("wss://"),
+  LIVEKIT_API_URL: z.string().url().startsWith("https://"),
   LIVEKIT_API_KEY: z.string().min(1),
   LIVEKIT_API_SECRET: z.string().min(1),
 });
 
 export type LiveKitEnvironment = z.infer<typeof liveKitEnvironmentSchema>;
 
-type LiveKitTriplet = {
-  url: string;
-  apiKey: string;
-  apiSecret: string;
-};
-
-/**
- * Resolve URL + key + secret as one set.
- * Mixing admin URL with .env keys (or vice versa) causes "invalid token".
- */
-function resolveLiveKitTriplet(config: {
-  livekitUrl: string | null;
-  livekitApiKey: string | null;
-  livekitApiSecret: string | null;
-}): LiveKitTriplet | null {
-  const dbUrl = normalizeLivekitUrl(sanitizeLivekitCredential(config.livekitUrl));
-  const dbKey = sanitizeLivekitCredential(config.livekitApiKey);
-  const dbSecret = sanitizeLivekitCredential(config.livekitApiSecret);
-
-  const envUrl = normalizeLivekitUrl(
-    sanitizeLivekitCredential(process.env.LIVEKIT_URL),
-  );
-  const envKey = sanitizeLivekitCredential(process.env.LIVEKIT_API_KEY);
-  const envSecret = sanitizeLivekitCredential(process.env.LIVEKIT_API_SECRET);
-
-  // Prefer a complete database set (from Super Admin → Integrasi).
-  if (dbUrl && dbKey && dbSecret) {
-    return { url: dbUrl, apiKey: dbKey, apiSecret: dbSecret };
-  }
-
-  // Else a complete env set.
-  if (envUrl && envKey && envSecret) {
-    return { url: envUrl, apiKey: envKey, apiSecret: envSecret };
-  }
-
-  // Last resort: fill gaps, but only when the result is complete.
-  const url = dbUrl || envUrl;
-  const apiKey = dbKey || envKey;
-  const apiSecret = dbSecret || envSecret;
-  if (url && apiKey && apiSecret) {
-    if (
-      (dbUrl && !dbKey) ||
-      (dbKey && !dbSecret) ||
-      (dbUrl && envKey && dbKey !== envKey)
-    ) {
-      console.warn(
-        "[livekit] Kredensial LiveKit tercampur antara database dan .env — pastikan URL/key/secret dari project yang sama.",
-      );
-    }
-    return { url, apiKey, apiSecret };
-  }
-
-  return null;
+function legacyProfile(input: {
+  id: string;
+  name: string;
+  url: string | null | undefined;
+  apiUrl: string | null | undefined;
+  apiKey: string | null | undefined;
+  apiSecret: string | null | undefined;
+}): LiveKitServerProfile | null {
+  return normalizeLiveKitServerProfile({
+    id: input.id,
+    name: input.name,
+    kind: input.url?.includes(".livekit.cloud") ? "CLOUD" : "SELF_HOSTED",
+    url: normalizeLivekitUrl(sanitizeLivekitCredential(input.url)) ?? undefined,
+    apiUrl:
+      normalizeLivekitApiUrl(input.apiUrl, input.url) ?? undefined,
+    apiKey: sanitizeLivekitCredential(input.apiKey) ?? undefined,
+    apiSecret: sanitizeLivekitCredential(input.apiSecret) ?? undefined,
+  });
 }
 
-export async function getLiveKitEnvironment(): Promise<LiveKitEnvironment> {
-  const config = await getPlatformConfig();
-  const triplet = resolveLiveKitTriplet(config);
+export async function getLiveKitServerProfiles() {
+  const stored = await getStoredIntegrations();
+  const profiles = normalizeLiveKitServerProfiles(stored.livekitServers);
+  if (profiles.length > 0) return profiles;
+
+  const database = legacyProfile({
+    id: "legacy-database",
+    name: "LiveKit tersimpan",
+    url: stored.livekitUrl,
+    apiUrl: stored.livekitApiUrl,
+    apiKey: stored.livekitApiKey,
+    apiSecret: stored.livekitApiSecret,
+  });
+  if (database) return [database];
+
+  const environment = legacyProfile({
+    id: "environment",
+    name: "LiveKit environment",
+    url: process.env.LIVEKIT_URL,
+    apiUrl: process.env.LIVEKIT_API_URL,
+    apiKey: process.env.LIVEKIT_API_KEY,
+    apiSecret: process.env.LIVEKIT_API_SECRET,
+  });
+  return environment ? [environment] : [];
+}
+
+export async function getLiveKitEnvironment(
+  serverId?: string | null,
+): Promise<LiveKitEnvironment> {
+  const stored = await getStoredIntegrations();
+  const profiles = await getLiveKitServerProfiles();
+  const selected = serverId
+    ? profiles.find((profile) => profile.id === serverId)
+    : findActiveLiveKitServer(profiles, stored.activeLivekitServerId);
 
   const result = liveKitEnvironmentSchema.safeParse(
-    triplet
+    selected
       ? {
-          LIVEKIT_URL: triplet.url,
-          LIVEKIT_API_KEY: triplet.apiKey,
-          LIVEKIT_API_SECRET: triplet.apiSecret,
+          LIVEKIT_SERVER_ID: selected.id,
+          LIVEKIT_SERVER_NAME: selected.name,
+          LIVEKIT_URL: selected.url,
+          LIVEKIT_API_URL: selected.apiUrl,
+          LIVEKIT_API_KEY: selected.apiKey,
+          LIVEKIT_API_SECRET: selected.apiSecret,
         }
-      : {
-          LIVEKIT_URL: normalizeLivekitUrl(config.livekitUrl),
-          LIVEKIT_API_KEY: sanitizeLivekitCredential(config.livekitApiKey),
-          LIVEKIT_API_SECRET: sanitizeLivekitCredential(config.livekitApiSecret),
-        },
+      : {},
   );
 
   if (!result.success) {
     throw new Error(
-      "Konfigurasi LiveKit belum lengkap. Isi URL wss://, API Key, dan API Secret dari project yang sama di Super Admin → Integrasi (atau .env).",
+      serverId
+        ? "Server LiveKit yang dipilih tidak ditemukan atau konfigurasinya belum lengkap."
+        : "Konfigurasi LiveKit belum lengkap. Pilih satu profil aktif dengan URL, API URL, API Key, dan API Secret dari server yang sama.",
     );
   }
 

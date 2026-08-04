@@ -16,21 +16,15 @@ export {
   recordingStatusLabel,
 } from "@/lib/recording-helpers";
 
-export async function getLiveKitApiHost() {
-  const config = await getPlatformConfig();
-  const configured = config.livekitApiUrl;
-  if (configured) {
-    return configured.replace(/\/$/, "");
-  }
-
-  const { LIVEKIT_URL } = await getLiveKitEnvironment();
-  return LIVEKIT_URL.replace(/^wss:/, "https:").replace(/^ws:/, "http:");
+export async function getLiveKitApiHost(serverId?: string | null) {
+  const environment = await getLiveKitEnvironment(serverId);
+  return environment.LIVEKIT_API_URL.replace(/\/$/, "");
 }
 
 export async function getEgressClient() {
   const environment = await getLiveKitEnvironment();
   return new EgressClient(
-    await getLiveKitApiHost(),
+    environment.LIVEKIT_API_URL,
     environment.LIVEKIT_API_KEY,
     environment.LIVEKIT_API_SECRET,
   );

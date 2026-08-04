@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, LoaderCircle, PlugZap, Save, Wifi } from "lucide-react";
+import { CheckCircle2, LoaderCircle, Plus, PlugZap, Save, Trash2, Wifi } from "lucide-react";
 import {
   isValidLivekitUrl,
   normalizeLivekitApiUrl,
@@ -10,8 +10,20 @@ import {
 
 type IntegrationsView = Record<
   string,
-  string | boolean | string[] | null | undefined
+  string | boolean | string[] | LiveKitServerView[] | null | undefined
 >;
+
+type LiveKitServerView = {
+  id: string;
+  name: string;
+  kind: "CLOUD" | "SELF_HOSTED";
+  url: string;
+  apiUrl: string;
+  apiKey: string;
+  apiSecret: string;
+  apiKeySet: boolean;
+  apiSecretSet: boolean;
+};
 
 async function readApiJson<T extends { error?: string }>(
   response: Response,
@@ -43,17 +55,22 @@ export function AdminIntegrationsPanel() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [testingServerId, setTestingServerId] = useState("");
   const [form, setForm] = useState<Record<string, string>>({});
-
+  const [livekitServers, setLivekitServers] = useState<LiveKitServerView[]>([]);
+  const [activeLivekitServerId, setActiveLivekitServerId] = useState("");
+  const testing = Boolean(testingServerId);
+  const activeLivekitServer = livekitServers.find(
+    (server) => server.id === activeLivekitServerId,
+  );
   const livekitStatus = useMemo(() => {
     const urlOk = isValidLivekitUrl(form.livekitUrl);
-    const keyOk = Boolean(form.livekitApiKey?.trim() || data?.livekitApiKeySet);
+    const keyOk = Boolean(form.livekitApiKey?.trim() || activeLivekitServer?.apiKeySet);
     const secretOk = Boolean(
-      form.livekitApiSecret?.trim() || data?.livekitApiSecretSet,
+      form.livekitApiSecret?.trim() || activeLivekitServer?.apiSecretSet,
     );
     return { urlOk, keyOk, secretOk, ready: urlOk && keyOk && secretOk };
-  }, [form.livekitUrl, form.livekitApiKey, form.livekitApiSecret, data]);
+  }, [form.livekitUrl, form.livekitApiKey, form.livekitApiSecret, activeLivekitServer]);
 
   async function load() {
     setBusy(true);
@@ -72,10 +89,21 @@ export function AdminIntegrationsPanel() {
       setData(payload.integrations);
       setEncryptionConfigured(Boolean(payload.encryptionConfigured));
       setLivekitReady(Boolean(payload.livekitReady));
+      const servers = Array.isArray(payload.integrations.livekitServers)
+        ? (payload.integrations.livekitServers as LiveKitServerView[]).map((server) => ({
+            ...server,
+            apiKey: "",
+            apiSecret: "",
+          }))
+        : [];
+      setLivekitServers(servers);
+      setActiveLivekitServerId(
+        String(payload.integrations.activeLivekitServerId || servers[0]?.id || ""),
+      );
       setForm({
         appUrl: String(payload.integrations.appUrl || ""),
-        livekitUrl: String(payload.integrations.livekitUrl || ""),
-        livekitApiUrl: String(payload.integrations.livekitApiUrl || ""),
+        livekitUrl: servers.find((server) => server.id === String(payload.integrations!.activeLivekitServerId || servers[0]?.id))?.url || "",
+        livekitApiUrl: servers.find((server) => server.id === String(payload.integrations!.activeLivekitServerId || servers[0]?.id))?.apiUrl || "",
         livekitApiKey: "",
         livekitApiSecret: "",
         emailFrom: String(payload.integrations.emailFrom || ""),
@@ -114,23 +142,95 @@ export function AdminIntegrationsPanel() {
   }
 
   useEffect(() => {
+    // Initial data hydration from the admin API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, []);
 
   function setField(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    const livekitKey = {
+      livekitUrl: "url",
+      livekitApiUrl: "apiUrl",
+      livekitApiKey: "apiKey",
+      livekitApiSecret: "apiSecret",
+    }[key] as keyof LiveKitServerView | undefined;
+    if (livekitKey && activeLivekitServerId) {
+      updateLivekitServer(activeLivekitServerId, { [livekitKey]: value });
+    }
+  }
+
+  function selectLivekitServer(id: string) {
+    const server = livekitServers.find((item) => item.id === id);
+    if (!server) return;
+    setActiveLivekitServerId(id);
+    setForm((current) => ({
+      ...current,
+      livekitUrl: server.url,
+      livekitApiUrl: server.apiUrl,
+      livekitApiKey: server.apiKey,
+      livekitApiSecret: server.apiSecret,
+    }));
   }
 
   function normalizeLivekitFields() {
     const url = normalizeLivekitUrl(form.livekitUrl) || "";
-    const apiUrl =
-      normalizeLivekitApiUrl(form.livekitApiUrl, url) || form.livekitApiUrl || "";
-    setForm((prev) => ({
-      ...prev,
-      livekitUrl: url,
-      livekitApiUrl: apiUrl,
-    }));
+    const apiUrl = normalizeLivekitApiUrl(form.livekitApiUrl, url) || "";
+    setForm((prev) => ({ ...prev, livekitUrl: url, livekitApiUrl: apiUrl }));
+    if (activeLivekitServerId) {
+      updateLivekitServer(activeLivekitServerId, { url, apiUrl });
+    }
     return { url, apiUrl };
+  }
+
+  function updateLivekitServer(id: string, patch: Partial<LiveKitServerView>) {
+    setLivekitServers((current) =>
+      current.map((server) => (server.id === id ? { ...server, ...patch } : server)),
+    );
+  }
+
+  function addLivekitServer() {
+    const id = `livekit-${Date.now().toString(36)}`;
+    setLivekitServers((current) => [
+      ...current,
+      {
+        id,
+        name: `Server ${current.length + 1}`,
+        kind: "CLOUD",
+        url: "",
+        apiUrl: "",
+        apiKey: "",
+        apiSecret: "",
+        apiKeySet: false,
+        apiSecretSet: false,
+      },
+    ]);
+    setActiveLivekitServerId(id);
+    setForm((current) => ({
+      ...current,
+      livekitUrl: "",
+      livekitApiUrl: "",
+      livekitApiKey: "",
+      livekitApiSecret: "",
+    }));
+  }
+
+  function removeLivekitServer(id: string) {
+    setLivekitServers((current) => {
+      const next = current.filter((server) => server.id !== id);
+      if (activeLivekitServerId === id) {
+        const replacement = next[0];
+        setActiveLivekitServerId(replacement?.id || "");
+        setForm((formValue) => ({
+          ...formValue,
+          livekitUrl: replacement?.url || "",
+          livekitApiUrl: replacement?.apiUrl || "",
+          livekitApiKey: replacement?.apiKey || "",
+          livekitApiSecret: replacement?.apiSecret || "",
+        }));
+      }
+      return next;
+    });
   }
 
   async function saveIntegrations(body: Record<string, unknown>) {
@@ -154,17 +254,8 @@ export function AdminIntegrationsPanel() {
     setError("");
     setMessage("");
     try {
-      const { url, apiUrl } = normalizeLivekitFields();
-      if (form.livekitUrl.trim() && !isValidLivekitUrl(url)) {
-        throw new Error(
-          "LIVEKIT_URL tidak valid. Gunakan wss://xxxx.livekit.cloud dari dashboard Cloud.",
-        );
-      }
-
       const body: Record<string, unknown> = {
         appUrl: form.appUrl || null,
-        livekitUrl: url || null,
-        livekitApiUrl: apiUrl || null,
         emailFrom: form.emailFrom || null,
         fonnteCountryCode: form.fonnteCountryCode || "62",
         paymentProvider: form.paymentProvider || null,
@@ -173,10 +264,6 @@ export function AdminIntegrationsPanel() {
         ipaymuIsProduction: form.ipaymuIsProduction === "true",
         flipIsProduction: form.flipIsProduction === "true",
       };
-      if (form.livekitApiKey.trim()) body.livekitApiKey = form.livekitApiKey.trim();
-      if (form.livekitApiSecret.trim()) {
-        body.livekitApiSecret = form.livekitApiSecret.trim();
-      }
       if (form.resendApiKey.trim()) body.resendApiKey = form.resendApiKey.trim();
       if (form.fonnteToken.trim()) body.fonnteToken = form.fonnteToken.trim();
       if (form.midtransServerKey.trim()) {
@@ -213,30 +300,38 @@ export function AdminIntegrationsPanel() {
     setError("");
     setMessage("");
     try {
-      const { url, apiUrl } = normalizeLivekitFields();
-      if (!isValidLivekitUrl(url)) {
-        throw new Error(
-          "Isi LIVEKIT_URL dengan wss://xxxx.livekit.cloud dari LiveKit Cloud.",
-        );
+      if (livekitServers.length === 0) {
+        throw new Error("Tambahkan minimal satu server LiveKit.");
       }
-      if (!form.livekitApiKey.trim() && !data?.livekitApiKeySet) {
-        throw new Error("Isi API Key LiveKit.");
-      }
-      if (!form.livekitApiSecret.trim() && !data?.livekitApiSecretSet) {
-        throw new Error("Isi API Secret LiveKit.");
-      }
+      const normalized = livekitServers.map((server) => {
+        const url = normalizeLivekitUrl(server.url) || "";
+        const apiUrl = normalizeLivekitApiUrl(server.apiUrl, url) || "";
+        if (!server.name.trim()) throw new Error("Nama server LiveKit wajib diisi.");
+        if (!isValidLivekitUrl(url)) {
+          throw new Error(`URL server “${server.name}” tidak valid.`);
+        }
+        if (!server.apiKey.trim() && !server.apiKeySet) {
+          throw new Error(`API Key server “${server.name}” wajib diisi.`);
+        }
+        if (!server.apiSecret.trim() && !server.apiSecretSet) {
+          throw new Error(`API Secret server “${server.name}” wajib diisi.`);
+        }
+        return { ...server, url, apiUrl };
+      });
 
-      const body: Record<string, unknown> = {
-        livekitUrl: url,
-        livekitApiUrl: apiUrl || null,
-      };
-      if (form.livekitApiKey.trim()) body.livekitApiKey = form.livekitApiKey.trim();
-      if (form.livekitApiSecret.trim()) {
-        body.livekitApiSecret = form.livekitApiSecret.trim();
-      }
-
-      await saveIntegrations(body);
-      setMessage("Pengaturan LiveKit tersimpan. Silakan uji koneksi.");
+      await saveIntegrations({
+        livekitServers: normalized.map((server) => ({
+          id: server.id,
+          name: server.name,
+          kind: server.kind,
+          url: server.url,
+          apiUrl: server.apiUrl,
+          apiKey: server.apiKey,
+          apiSecret: server.apiSecret,
+        })),
+        activeLivekitServerId,
+      });
+      setMessage("Profil LiveKit tersimpan dan server aktif telah diterapkan.");
       await load();
     } catch (saveError) {
       setError(
@@ -247,13 +342,15 @@ export function AdminIntegrationsPanel() {
     }
   }
 
-  async function testLivekit() {
-    setTesting(true);
+  async function testLivekit(serverId: string) {
+    setTestingServerId(serverId);
     setError("");
     setMessage("");
     try {
       const response = await fetch("/api/admin/integrations/test-livekit", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serverId }),
       });
       const payload = await readApiJson<{
         ok?: boolean;
@@ -264,13 +361,13 @@ export function AdminIntegrationsPanel() {
       if (!response.ok || !payload.ok) {
         throw new Error(payload.error ?? "Tes LiveKit gagal.");
       }
-      setLivekitReady(true);
+      if (serverId === activeLivekitServerId) setLivekitReady(true);
       setMessage(payload.message || "LiveKit OK.");
     } catch (testError) {
-      setLivekitReady(false);
+      if (serverId === activeLivekitServerId) setLivekitReady(false);
       setError(testError instanceof Error ? testError.message : "Tes gagal.");
     } finally {
-      setTesting(false);
+      setTestingServerId("");
     }
   }
 
@@ -297,15 +394,15 @@ export function AdminIntegrationsPanel() {
 
       <form className="admin-integrations-form" onSubmit={onSubmit}>
         <fieldset className="admin-livekit-fieldset">
-          <legend>LiveKit Cloud</legend>
+          <legend>Server LiveKit (multi-server)</legend>
           <div className="admin-livekit-status">
             {livekitReady || livekitStatus.ready ? (
               <span className="admin-livekit-badge is-ok">
-                <CheckCircle2 size={14} /> Siap dipakai
+                <CheckCircle2 size={14} /> Konfigurasi aktif lengkap
               </span>
             ) : (
               <span className="admin-livekit-badge is-warn">
-                <Wifi size={14} /> Belum lengkap
+                <Wifi size={14} /> Konfigurasi belum lengkap
               </span>
             )}
             {data?.livekitStoredInDatabase ? (
@@ -315,11 +412,52 @@ export function AdminIntegrationsPanel() {
             )}
           </div>
           <p className="admin-muted">
-            Dari dashboard LiveKit Cloud salin <strong>WebSocket URL</strong>{" "}
+            Gunakan <strong>WebSocket URL</strong>{" "}
             (<code>wss://…</code>), <strong>API Key</strong>, dan{" "}
             <strong>API Secret</strong>. URL <code>https://</code> akan
             dikonversi otomatis ke <code>wss://</code>.
           </p>
+          <div className="admin-livekit-profile-picker">
+            <label>
+              Profil aktif
+              <select
+                value={activeLivekitServerId}
+                onChange={(event) => selectLivekitServer(event.target.value)}
+              >
+                {livekitServers.map((server) => (
+                  <option key={server.id} value={server.id}>
+                    {server.name} ({server.kind === "CLOUD" ? "Cloud" : "Self-hosted"})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Nama profil
+              <input
+                value={activeLivekitServer?.name || ""}
+                onChange={(event) =>
+                  activeLivekitServerId &&
+                  updateLivekitServer(activeLivekitServerId, { name: event.target.value })
+                }
+                placeholder="LiveKit utama"
+              />
+            </label>
+            <label>
+              Jenis server
+              <select
+                value={activeLivekitServer?.kind || "CLOUD"}
+                onChange={(event) =>
+                  activeLivekitServerId &&
+                  updateLivekitServer(activeLivekitServerId, {
+                    kind: event.target.value as LiveKitServerView["kind"],
+                  })
+                }
+              >
+                <option value="CLOUD">LiveKit Cloud</option>
+                <option value="SELF_HOSTED">Self-hosted</option>
+              </select>
+            </label>
+          </div>
           <label>
             LIVEKIT_URL (wss://)
             <input
@@ -346,30 +484,30 @@ export function AdminIntegrationsPanel() {
             />
           </label>
           <label>
-            API Key {data?.livekitApiKeySet ? "(tersimpan — isi ulang untuk ganti)" : ""}
+            API Key {activeLivekitServer?.apiKeySet ? "(tersimpan — isi ulang untuk ganti)" : ""}
             <input
               value={form.livekitApiKey || ""}
               onChange={(e) => setField("livekitApiKey", e.target.value)}
               type="password"
               placeholder={
-                data?.livekitApiKeySet
+                activeLivekitServer?.apiKeySet
                   ? "•••••••• (tersimpan)"
-                  : "API Key dari LiveKit Cloud"
+                  : "API Key server LiveKit"
               }
               autoComplete="new-password"
             />
           </label>
           <label>
             API Secret{" "}
-            {data?.livekitApiSecretSet ? "(tersimpan — isi ulang untuk ganti)" : ""}
+            {activeLivekitServer?.apiSecretSet ? "(tersimpan — isi ulang untuk ganti)" : ""}
             <input
               value={form.livekitApiSecret || ""}
               onChange={(e) => setField("livekitApiSecret", e.target.value)}
               type="password"
               placeholder={
-                data?.livekitApiSecretSet
+                activeLivekitServer?.apiSecretSet
                   ? "•••••••• (tersimpan)"
-                  : "API Secret dari LiveKit Cloud"
+                  : "API Secret server LiveKit"
               }
               autoComplete="new-password"
             />
@@ -377,18 +515,34 @@ export function AdminIntegrationsPanel() {
           <div className="admin-livekit-actions">
             <button
               type="button"
+              className="button button-ghost"
+              disabled={busy || livekitServers.length >= 10}
+              onClick={addLivekitServer}
+            >
+              <Plus size={16} /> Tambah server
+            </button>
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={busy || livekitServers.length <= 1 || !activeLivekitServerId}
+              onClick={() => activeLivekitServerId && removeLivekitServer(activeLivekitServerId)}
+            >
+              <Trash2 size={16} /> Hapus profil
+            </button>
+            <button
+              type="button"
               className="button button-primary"
               disabled={busy || !encryptionConfigured}
               onClick={() => void saveLivekitOnly()}
             >
               {busy ? <LoaderCircle className="spin" size={16} /> : <Save size={16} />}
-              Simpan LiveKit
+              Simpan & terapkan
             </button>
             <button
               type="button"
               className="button button-ghost"
-              disabled={busy || testing || !encryptionConfigured}
-              onClick={() => void testLivekit()}
+              disabled={busy || testing || !encryptionConfigured || !activeLivekitServerId}
+              onClick={() => void testLivekit(activeLivekitServerId)}
             >
               {testing ? (
                 <LoaderCircle className="spin" size={16} />

@@ -5328,6 +5328,22 @@ footer p {
   gap: 8px;
 }
 
+.admin-livekit-profile-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbe5ef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  .admin-livekit-profile-picker {
+    grid-template-columns: 1fr;
+  }
+}
+
 .meeting-connection-banner {
   position: fixed;
   z-index: 40;

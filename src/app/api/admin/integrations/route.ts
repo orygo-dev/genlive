@@ -13,12 +13,26 @@ import {
   normalizeLivekitApiUrl,
   normalizeLivekitUrl,
 } from "@/lib/livekit-url";
+import {
+  normalizeLiveKitServerProfile,
+} from "@/lib/livekit-config";
+import { getLiveKitServerProfiles } from "@/lib/livekit";
+import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const optionalString = z.string().trim().max(2000).nullable().optional();
 const optionalBool = z.boolean().nullable().optional();
+const livekitServerSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(2).max(80),
+  kind: z.enum(["CLOUD", "SELF_HOSTED"]),
+  url: z.string().trim().min(1).max(2000),
+  apiUrl: z.string().trim().max(2000).nullable().optional(),
+  apiKey: z.string().trim().max(2000).nullable().optional(),
+  apiSecret: z.string().trim().max(2000).nullable().optional(),
+});
 const optionalLivekitUrl = z
   .string()
   .trim()
@@ -46,6 +60,8 @@ const patchSchema = z.object({
   livekitApiKey: optionalString,
   livekitApiSecret: optionalString,
   livekitApiUrl: optionalString,
+  livekitServers: z.array(livekitServerSchema).min(1).max(10).optional(),
+  activeLivekitServerId: optionalString,
   livekitEgressS3AccessKey: optionalString,
   livekitEgressS3Secret: optionalString,
   livekitEgressS3Bucket: optionalString,
@@ -115,9 +131,10 @@ export async function GET() {
     const gate = await requireSuperAdminApi();
     if (gate.error || !gate.context) return gate.error!;
 
-    const [resolved, stored] = await Promise.all([
+    const [resolved, stored, livekitServers] = await Promise.all([
       getPlatformConfig(),
       getStoredIntegrations(),
+      getLiveKitServerProfiles(),
     ]);
 
     const livekitReady = Boolean(
@@ -139,6 +156,16 @@ export async function GET() {
         livekitApiSecret: maskSecret(resolved.livekitApiSecret),
         livekitApiSecretSet: Boolean(resolved.livekitApiSecret),
         livekitApiUrl: resolved.livekitApiUrl,
+        activeLivekitServerId: resolved.activeLivekitServerId,
+        livekitServers: livekitServers.map((server) => ({
+          id: server.id,
+          name: server.name,
+          kind: server.kind,
+          url: server.url,
+          apiUrl: server.apiUrl,
+          apiKeySet: Boolean(server.apiKey),
+          apiSecretSet: Boolean(server.apiSecret),
+        })),
         livekitStoredInDatabase: Boolean(
           stored.livekitUrl || stored.livekitApiKey || stored.livekitApiSecret,
         ),
@@ -218,6 +245,51 @@ async function saveIntegrationsRequest(request: Request) {
 
   const current = await getStoredIntegrations();
   const next = applyPatch(current, parsed.data);
+
+  if (parsed.data.livekitServers) {
+    const currentProfiles = await getLiveKitServerProfiles();
+    const currentById = new Map(
+      currentProfiles.map((server) => [server.id, server]),
+    );
+    const ids = new Set<string>();
+    const profiles = parsed.data.livekitServers.map((server) => {
+      if (ids.has(server.id)) {
+        throw new Error(`ID profil LiveKit duplikat: ${server.id}`);
+      }
+      ids.add(server.id);
+      const previous = currentById.get(server.id);
+      const normalized = normalizeLiveKitServerProfile({
+        ...server,
+        apiUrl: server.apiUrl ?? undefined,
+        apiKey: server.apiKey || previous?.apiKey,
+        apiSecret: server.apiSecret || previous?.apiSecret,
+      });
+      if (!normalized) {
+        throw new Error(
+          `Profil LiveKit “${server.name}” belum lengkap. Isi URL, API Key, dan API Secret.`,
+        );
+      }
+      return normalized;
+    });
+    next.livekitServers = profiles;
+    const requestedActive = parsed.data.activeLivekitServerId?.trim();
+    next.activeLivekitServerId = profiles.some(
+      (server) => server.id === requestedActive,
+    )
+      ? requestedActive!
+      : profiles[0].id;
+    const currentActiveId =
+      current.activeLivekitServerId || currentProfiles[0]?.id || null;
+    if (
+      currentActiveId &&
+      next.activeLivekitServerId !== currentActiveId &&
+      (await prisma.meeting.count({ where: { status: "ACTIVE" } })) > 0
+    ) {
+      throw new Error(
+        "Server aktif tidak dapat diganti saat masih ada meeting berlangsung. Akhiri meeting aktif terlebih dahulu.",
+      );
+    }
+  }
 
   if (Object.prototype.hasOwnProperty.call(parsed.data, "livekitUrl")) {
     next.livekitUrl = normalizeLivekitUrl(next.livekitUrl ?? null);

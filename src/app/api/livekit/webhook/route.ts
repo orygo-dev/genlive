@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { WebhookReceiver } from "livekit-server-sdk";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { getLiveKitEnvironment } from "@/lib/livekit";
+import { getLiveKitServerProfiles } from "@/lib/livekit";
 import { accumulateDuration } from "@/lib/meeting-lifecycle";
 import { syncRecordingFromEgress } from "@/lib/recording";
 
@@ -14,16 +14,21 @@ function eventTime(timestamp: bigint) {
 }
 
 export async function POST(request: Request) {
-  const environment = await getLiveKitEnvironment();
-  const receiver = new WebhookReceiver(
-    environment.LIVEKIT_API_KEY,
-    environment.LIVEKIT_API_SECRET,
-  );
-
   let event;
   try {
     const body = await request.text();
-    event = await receiver.receive(body, request.headers.get("authorization") ?? undefined);
+    const authorization = request.headers.get("authorization") ?? undefined;
+    const profiles = await getLiveKitServerProfiles();
+    for (const profile of profiles) {
+      try {
+        const receiver = new WebhookReceiver(profile.apiKey, profile.apiSecret);
+        event = await receiver.receive(body, authorization);
+        break;
+      } catch {
+        // Try the next configured server. Each profile has an independent secret.
+      }
+    }
+    if (!event) throw new Error("No LiveKit profile accepted this webhook.");
   } catch {
     return NextResponse.json({ error: "Webhook tidak valid." }, { status: 401 });
   }
@@ -32,19 +37,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Event ID tidak tersedia." }, { status: 400 });
   }
 
+  const isEgressEvent =
+    event.event === "egress_started" ||
+    event.event === "egress_updated" ||
+    event.event === "egress_ended";
+
   try {
+    // Persist the recording state before marking the webhook as processed.
+    // If the database write fails, LiveKit can retry this event safely.
+    if (isEgressEvent) {
+      if (event.egressInfo) {
+        await syncRecordingFromEgress(event.egressInfo);
+      }
+      await prisma.liveKitWebhookEvent.create({
+        data: { eventId: event.id, eventType: event.event },
+      });
+      return NextResponse.json({ received: true });
+    }
+
     await prisma.$transaction(async (transaction) => {
       await transaction.liveKitWebhookEvent.create({
         data: { eventId: event.id, eventType: event.event },
       });
-
-      if (
-        event.event === "egress_started" ||
-        event.event === "egress_updated" ||
-        event.event === "egress_ended"
-      ) {
-        return;
-      }
 
       const roomName = event.room?.name;
       if (!roomName) {
@@ -282,17 +296,6 @@ export async function POST(request: Request) {
         }
       }
     });
-
-    if (
-      event.event === "egress_started" ||
-      event.event === "egress_updated" ||
-      event.event === "egress_ended"
-    ) {
-      const egressInfo = event.egressInfo;
-      if (egressInfo) {
-        await syncRecordingFromEgress(egressInfo);
-      }
-    }
 
     return NextResponse.json({ received: true });
   } catch (error) {

@@ -7,13 +7,16 @@ import { normalizeLivekitUrl } from "@/lib/livekit-url";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(request: Request) {
   const gate = await requireSuperAdminApi();
   if (gate.error || !gate.context) return gate.error!;
 
   try {
-    const environment = await getLiveKitEnvironment();
-    const host = await getLiveKitApiHost();
+    const payload = (await request.json().catch(() => ({}))) as {
+      serverId?: string;
+    };
+    const environment = await getLiveKitEnvironment(payload.serverId);
+    const host = await getLiveKitApiHost(payload.serverId);
     const client = new RoomServiceClient(
       host,
       environment.LIVEKIT_API_KEY,
@@ -25,6 +28,7 @@ export async function POST() {
       host,
       url: normalizeLivekitUrl(environment.LIVEKIT_URL),
       roomCount: rooms.length,
+      serverId: environment.LIVEKIT_SERVER_ID,
       message: `LiveKit OK — host ${host} · ${rooms.length} room aktif.`,
     });
   } catch (error) {
