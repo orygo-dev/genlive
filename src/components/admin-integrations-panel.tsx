@@ -158,33 +158,6 @@ export function AdminIntegrationsPanel() {
     if (livekitKey && activeLivekitServerId) {
       updateLivekitServer(activeLivekitServerId, { [livekitKey]: value });
     }
-    // #region agent log
-    if (key === "livekitApiKey" || key === "livekitApiSecret") {
-      fetch(
-        "http://127.0.0.1:7758/ingest/cf47dd30-7b6f-48f4-8e67-59c8a77569f7",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "a90ca2",
-          },
-          body: JSON.stringify({
-            sessionId: "a90ca2",
-            runId: "pre-fix",
-            hypothesisId: "H3-H5",
-            location: "admin-integrations-panel.tsx:setField",
-            message: "Credential field edited (length only)",
-            data: {
-              field: key,
-              valueLen: value.trim().length,
-              activeLivekitServerId,
-            },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-    }
-    // #endregion
   }
 
   function selectLivekitServer(id: string) {
@@ -395,52 +368,9 @@ export function AdminIntegrationsPanel() {
         form.livekitApiSecret ||
         ""
       ).trim();
-      // #region agent log
-      fetch("http://127.0.0.1:7758/ingest/cf47dd30-7b6f-48f4-8e67-59c8a77569f7", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "a90ca2",
-        },
-        body: JSON.stringify({
-          sessionId: "a90ca2",
-          runId: "pre-fix",
-          hypothesisId: "H1-H5",
-          location: "admin-integrations-panel.tsx:testLivekit",
-          message: "LiveKit test credential state (no secrets)",
-          data: {
-            serverId,
-            activeLivekitServerId,
-            sameServerAsActive: serverId === activeLivekitServerId,
-            urlHost: url.replace(/^wss?:\/\//, "").split("/")[0] || "",
-            kind,
-            formKeyLen: (form.livekitApiKey || "").trim().length,
-            formSecretLen: (form.livekitApiSecret || "").trim().length,
-            serverKeyLen: (server?.apiKey || "").trim().length,
-            serverSecretLen: (server?.apiSecret || "").trim().length,
-            draftKeyLen: draftKey.length,
-            draftSecretLen: draftSecret.length,
-            apiKeySet: Boolean(server?.apiKeySet),
-            apiSecretSet: Boolean(server?.apiSecretSet),
-            blockedEmptyDraft: !draftKey || !draftSecret,
-            missingKey: !draftKey,
-            missingSecret: !draftSecret,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       if (!draftKey || !draftSecret) {
         throw new Error(
-          [
-            "Tempel ulang API Key dan API Secret di form sebelum Tes (jangan mengandalkan “(tersimpan)” saja). Jangan kirim Secret ke chat dukungan.",
-            `[dbg formKey=${(form.livekitApiKey || "").trim().length}`,
-            `formSecret=${(form.livekitApiSecret || "").trim().length}`,
-            `serverKey=${(server?.apiKey || "").trim().length}`,
-            `serverSecret=${(server?.apiSecret || "").trim().length}`,
-            `savedKey=${Boolean(server?.apiKeySet)}`,
-            `savedSecret=${Boolean(server?.apiSecretSet)}]`,
-          ].join(" "),
+          "Tempel ulang API Key dan API Secret di form sebelum Tes (jangan mengandalkan “(tersimpan)” saja). Jangan kirim Secret ke chat dukungan.",
         );
       }
       const response = await fetch("/api/admin/integrations/test-livekit", {

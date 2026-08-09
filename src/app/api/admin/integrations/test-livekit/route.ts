@@ -159,29 +159,6 @@ export async function POST(request: Request) {
     }
 
     const meta = safeCredentialMeta(apiKey, apiSecret, kind);
-    // #region agent log
-    fetch("http://127.0.0.1:7758/ingest/cf47dd30-7b6f-48f4-8e67-59c8a77569f7", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "a90ca2",
-      },
-      body: JSON.stringify({
-        sessionId: "a90ca2",
-        runId: "post-fix",
-        hypothesisId: "H3-truncated",
-        location: "test-livekit/route.ts:beforeProbe",
-        message: "Cloud credential length check",
-        data: {
-          kind,
-          credentialSource,
-          ...meta,
-          host,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (meta.cloudSecretTooShort) {
       throw new Error(
         `API Secret Cloud terlihat terpotong (panjang ${meta.apiSecretLength}, biasanya 43–44). Buat key baru di LiveKit Cloud → Settings → Keys, salin Secret dengan tombol Copy, tempel di Notepad dulu untuk cek panjangnya, lalu isi form GenMeet.`,
