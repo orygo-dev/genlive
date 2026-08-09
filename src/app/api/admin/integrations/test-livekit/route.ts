@@ -127,8 +127,26 @@ export async function POST(request: Request) {
     }
 
     // 1) Admin API: listRooms proves key/secret accepted by this host.
-    const client = new RoomServiceClient(host, apiKey, apiSecret);
-    const rooms = await client.listRooms();
+    let rooms;
+    try {
+      const client = new RoomServiceClient(host, apiKey, apiSecret);
+      rooms = await client.listRooms();
+    } catch (listError) {
+      const raw =
+        listError instanceof Error
+          ? listError.message
+          : "Gagal memanggil LiveKit listRooms.";
+      const classified = classifyLiveKitFailure(raw, { url, kind });
+      // Surface a clear Cloud-focused message for the common "invalid token" reply.
+      if (classified.kind === "unauthorized") {
+        throw new Error(
+          `LiveKit menolak API Key/Secret (${raw}). Pastikan Key + Secret dari project Cloud yang sama dengan ${url}.`,
+        );
+      }
+      throw listError instanceof Error
+        ? listError
+        : new Error(raw);
+    }
 
     // 2) Mint a short-lived join token (same path as meeting join) and check iss.
     const probe = new AccessToken(apiKey, apiSecret, {

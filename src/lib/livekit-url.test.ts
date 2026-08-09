@@ -67,6 +67,13 @@ describe("livekit-url", () => {
 
   it("classifies LiveKit failures", () => {
     expect(
+      classifyLiveKitFailure("invalid token", {
+        url: "wss://x.livekit.cloud",
+      }),
+    ).toMatchObject({
+      kind: "unauthorized",
+    });
+    expect(
       classifyLiveKitFailure("unauthorized 401", {
         url: "wss://x.livekit.cloud",
       }).kind,
@@ -76,6 +83,9 @@ describe("livekit-url", () => {
     );
     expect(classifyLiveKitFailure("token is expired").kind).toBe(
       "expired_token",
+    );
+    expect(classifyLiveKitFailure("Token LiveKit rusak (bukan JWT).").kind).toBe(
+      "malformed_token",
     );
   });
 });

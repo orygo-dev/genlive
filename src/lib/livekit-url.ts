@@ -115,8 +115,24 @@ export function classifyLiveKitFailure(
   const isCloud =
     context?.kind === "CLOUD" || isLivekitCloudUrl(context?.url);
 
+  // LiveKit Server often replies "invalid token" when the admin JWT
+  // (signed with API Key/Secret) is rejected — that is unauthorized, NOT a
+  // malformed JWT string from GenMeet.
   if (
     lower.includes("invalid token") ||
+    lower.includes("401") ||
+    lower.includes("unauthorized") ||
+    lower.includes("permission denied")
+  ) {
+    return {
+      kind: "unauthorized",
+      hint: isCloud
+        ? "API Key/Secret ditolak project Cloud ini. Salin ulang Key + Secret dari project yang sama dengan LIVEKIT_URL (wss://…livekit.cloud), lalu Simpan & Tes lagi."
+        : "API Key/Secret ditolak server self-hosted (cek keys.yaml / LIVEKIT_KEYS).",
+    };
+  }
+  if (
+    lower.includes("bukan jwt") ||
     lower.includes("malformed") ||
     (lower.includes("jwt") && lower.includes("compact"))
   ) {
@@ -134,7 +150,7 @@ export function classifyLiveKitFailure(
   if (
     lower.includes("signature") ||
     lower.includes("cannot verify") ||
-    lower.includes("verify")
+    (lower.includes("verify") && lower.includes("token"))
   ) {
     return {
       kind: "invalid_signature",
@@ -146,21 +162,13 @@ export function classifyLiveKitFailure(
   if (
     lower.includes("unknown api key") ||
     lower.includes("invalid api key") ||
-    lower.includes("api key")
+    (lower.includes("api key") && lower.includes("invalid"))
   ) {
     return {
       kind: "invalid_api_key",
       hint: isCloud
         ? "API Key tidak dikenal di project Cloud tersebut."
         : "API Key tidak dikenal di server self-hosted.",
-    };
-  }
-  if (lower.includes("401") || lower.includes("unauthorized")) {
-    return {
-      kind: "unauthorized",
-      hint: isCloud
-        ? "URL Cloud + API Key + API Secret harus dari project yang sama."
-        : "API Key/Secret tidak diterima server self-hosted.",
     };
   }
   if (
@@ -189,8 +197,9 @@ export function classifyLiveKitFailure(
     };
   }
   if (
-    lower.includes("wrong") && lower.includes("server") ||
-    lower.includes("does not match")
+    (lower.includes("wrong") && lower.includes("server")) ||
+    lower.includes("does not match") ||
+    lower.includes("iss mismatch")
   ) {
     return {
       kind: "wrong_server",
