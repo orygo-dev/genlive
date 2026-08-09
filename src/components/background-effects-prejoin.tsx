@@ -206,7 +206,7 @@ async function openPreviewCamera(
 
 /** One-shot mic permission so enumerateDevices returns mic ids/labels. */
 async function unlockMicrophoneLabels() {
-  if (!navigator.mediaDevices?.getUserMedia) return;
+  if (!navigator.mediaDevices?.getUserMedia) return false;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
@@ -215,8 +215,19 @@ async function unlockMicrophoneLabels() {
     for (const mediaTrack of stream.getTracks()) {
       mediaTrack.stop();
     }
+    return true;
   } catch {
     // User may deny mic; camera preview can still work.
+    return false;
+  }
+}
+
+async function countVideoInputs(): Promise<number> {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((device) => device.kind === "videoinput").length;
+  } catch {
+    return 0;
   }
 }
 
@@ -311,12 +322,26 @@ export const BackgroundEffectsPrejoin = forwardRef<
     }
   }, []);
 
+  const onCameraChangeRef = useRef(onCameraChange);
+  onCameraChangeRef.current = onCameraChange;
+
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
 
   useEffect(() => {
     disposingRef.current = false;
     let cancelled = false;
     let localTrack: LocalVideoTrack | null = null;
+    const mountToken = ++previewOpenToken;
+
+    // #region agent log
+    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+      dbgCamera("J", "background-effects-prejoin.tsx:effect", "preview-effect-mount", {
+        mountToken,
+        cameraDeviceId,
+        previewRetry,
+      });
+    });
+    // #endregion
 
     async function startPreview() {
       setPreviewError("");
@@ -325,10 +350,38 @@ export const BackgroundEffectsPrejoin = forwardRef<
         dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-start", {
           cameraDeviceId,
           cameraEnabled,
+          mountToken,
         });
       });
       // #endregion
       try {
+        // Unlock mic first so device lists fill even when no webcam exists.
+        await unlockMicrophoneLabels();
+        if (cancelled) return;
+        setDevicesRevision((value) => value + 1);
+
+        const videoInputCount = await countVideoInputs();
+        if (cancelled) return;
+
+        // #region agent log
+        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+          dbgCamera("I", "background-effects-prejoin.tsx:startPreview", "video-input-count", {
+            videoInputCount,
+            mountToken,
+          });
+        });
+        // #endregion
+
+        if (videoInputCount === 0) {
+          setPreviewError(
+            "Tidak ada kamera pada perangkat ini (browser tidak mendeteksi videoinput). Anda tetap bisa join dengan mikrofon saja. Periksa webcam di Windows Settings → Privacy → Camera, atau coba browser Chrome.",
+          );
+          setTrack(null);
+          trackRef.current = null;
+          onCameraChangeRef.current(false);
+          return;
+        }
+
         const cams = await listMediaDevices("videoinput");
         if (cancelled) return;
 
@@ -371,8 +424,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
         });
         // #endregion
 
-        // Unlock mic device ids/labels without touching the live video track.
-        await unlockMicrophoneLabels();
         if (!cancelled) {
           setDevicesRevision((value) => value + 1);
         }
@@ -389,6 +440,10 @@ export const BackgroundEffectsPrejoin = forwardRef<
           setPreviewError(mediaErrorMessage(error));
           setTrack(null);
           trackRef.current = null;
+          await unlockMicrophoneLabels();
+          if (!cancelled) {
+            setDevicesRevision((value) => value + 1);
+          }
         }
       }
     }
@@ -397,10 +452,18 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
     return () => {
       cancelled = true;
-      previewOpenToken += 1;
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("J", "background-effects-prejoin.tsx:effect", "preview-effect-unmount", {
+          mountToken,
+        });
+      });
+      // #endregion
+      if (previewOpenToken === mountToken) {
+        previewOpenToken += 1;
+      }
       const current = localTrack ?? trackRef.current;
       trackRef.current = null;
-      setTrack(null);
       if (current) {
         try {
           current.detach();
