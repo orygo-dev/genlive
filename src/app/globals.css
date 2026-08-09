@@ -1989,6 +1989,19 @@ footer p {
   font-size: 12px;
 }
 
+.prejoin-cam-error {
+  position: absolute;
+  inset: auto 12px 12px;
+  display: grid;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+}
+
+.prejoin-cam-error p {
+  position: static;
+  inset: auto;
+}
+
 .bg-effects-picker {
   margin-top: 12px;
 }
