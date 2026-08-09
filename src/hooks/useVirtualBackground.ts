@@ -50,6 +50,9 @@ export function useVirtualBackground({
   const attachedTrackRef = useRef<LocalVideoTrack | null>(null);
   const operationIdRef = useRef(0);
   const operationQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const onAutoDowngradeRef = useRef(onAutoDowngrade);
+  onAutoDowngradeRef.current = onAutoDowngrade;
+  const idleLoggedRef = useRef(false);
   const [supported] = useState(() => supportsVideoEffects());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -58,14 +61,13 @@ export function useVirtualBackground({
   const [autoDowngraded, setAutoDowngraded] = useState(false);
   const [stats, setStats] = useState<ProcessorStats | null>(null);
 
-  const handleAutoDowngrade = useCallback(
-    (quality: QualityTier) => {
-      setAutoDowngraded(true);
-      setActiveQuality(quality);
-      onAutoDowngrade?.(quality);
-    },
-    [onAutoDowngrade],
-  );
+  // Stable forever — parent often passes an inline callback; never put that in
+  // effect deps or we infinite-loop setState → render → new callback → effect.
+  const handleAutoDowngrade = useCallback((quality: QualityTier) => {
+    setAutoDowngraded(true);
+    setActiveQuality(quality);
+    onAutoDowngradeRef.current?.(quality);
+  }, []);
 
   const detachProcessor = useCallback(async () => {
     const currentTrack = attachedTrackRef.current;
@@ -99,30 +101,58 @@ export function useVirtualBackground({
     async function sync() {
       try {
         if (operationId !== operationIdRef.current) return;
+
+        if (!wantsEffect) {
+          const hadProcessor = Boolean(processorRef.current);
+          if (hadProcessor) {
+            setBusy(true);
+            await detachProcessor();
+          }
+          if (operationId !== operationIdRef.current) return;
+          if (effectId === "none") {
+            storeBackgroundEffect("none");
+          }
+          // Avoid setState spam when already idle — that re-rendered forever
+          // when an unstable callback was in the effect dependency list.
+          setLoading((value) => (value ? false : value));
+          setBusy((value) => (value ? false : value));
+          setError((value) => (value ? "" : value));
+          setAutoDowngraded((value) => (value ? false : value));
+          setActiveQuality((value) => (value != null ? null : value));
+          setStats((value) => (value != null ? null : value));
+          // #region agent log
+          if (!idleLoggedRef.current) {
+            idleLoggedRef.current = true;
+            dbgJoin(
+              "useVirtualBackground.ts:sync",
+              "idle (no effect)",
+              {
+                effectId,
+                enabled,
+                hasTrack: Boolean(activeTrack),
+                hadProcessor,
+                runId: "post-fix",
+              },
+              "C",
+            );
+          }
+          // #endregion
+          return;
+        }
+
+        idleLoggedRef.current = false;
         setBusy(true);
-        setLoading(wantsEffect);
+        setLoading(true);
         setError("");
 
         // #region agent log
         dbgJoin(
           "useVirtualBackground.ts:sync",
-          wantsEffect ? "attaching effect" : "no effect / detach",
+          "attaching effect",
           { effectId, enabled, hasTrack: Boolean(activeTrack), wantsEffect },
           "C",
         );
         // #endregion
-
-        if (!wantsEffect) {
-          await detachProcessor();
-          if (operationId !== operationIdRef.current) return;
-          if (effectId === "none") {
-            storeBackgroundEffect("none");
-          }
-          setAutoDowngraded(false);
-          setActiveQuality(null);
-          setStats(null);
-          return;
-        }
 
         // Lazy-load MediaPipe only when an effect is actually selected.
         // #region agent log
