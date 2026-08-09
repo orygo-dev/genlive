@@ -264,6 +264,7 @@ async function saveIntegrationsRequest(request: Request) {
       const previous = currentById.get(server.id);
       const normalized = normalizeLiveKitServerProfile({
         ...server,
+        kind: server.kind,
         apiUrl: server.apiUrl ?? undefined,
         apiKey: server.apiKey || previous?.apiKey,
         apiSecret: server.apiSecret || previous?.apiSecret,

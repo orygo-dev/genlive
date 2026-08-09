@@ -186,17 +186,26 @@ export async function POST(request: Request) {
       },
     );
   } catch (error) {
+    const raw =
+      error instanceof Error ? error.message : "Tidak dapat membuat akses meeting.";
     const isConfigurationError =
-      error instanceof Error &&
-      (error.message.startsWith("Konfigurasi LiveKit") ||
-        error.message.startsWith("Server LiveKit"));
+      raw.startsWith("Konfigurasi LiveKit") ||
+      raw.startsWith("Server LiveKit") ||
+      raw.startsWith("LIVEKIT_URL") ||
+      raw.startsWith("Token LiveKit") ||
+      raw.startsWith("Jam server");
     const message = isConfigurationError
-      ? error.message
+      ? raw
       : "Tidak dapat membuat akses meeting.";
-    const status = error instanceof SyntaxError ? 400 : 500;
+    const status = error instanceof SyntaxError ? 400 : isConfigurationError ? 503 : 500;
 
-    if (!isConfigurationError && !(error instanceof SyntaxError)) {
-      console.error("LiveKit token creation failed", error);
+    if (!(error instanceof SyntaxError)) {
+      console.error("LiveKit token creation failed", {
+        scope: "livekit-token-route",
+        // Never log secrets or JWT.
+        error: raw,
+        configurationError: isConfigurationError,
+      });
     }
 
     return NextResponse.json({ error: message }, { status });

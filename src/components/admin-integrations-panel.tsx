@@ -175,10 +175,12 @@ export function AdminIntegrationsPanel() {
 
   function normalizeLivekitFields() {
     const url = normalizeLivekitUrl(form.livekitUrl) || "";
-    const apiUrl = normalizeLivekitApiUrl(form.livekitApiUrl, url) || "";
+    const kind = activeLivekitServer?.kind || "CLOUD";
+    const apiUrl =
+      normalizeLivekitApiUrl(form.livekitApiUrl, url, { kind }) || "";
     setForm((prev) => ({ ...prev, livekitUrl: url, livekitApiUrl: apiUrl }));
     if (activeLivekitServerId) {
-      updateLivekitServer(activeLivekitServerId, { url, apiUrl });
+      updateLivekitServer(activeLivekitServerId, { url, apiUrl, kind });
     }
     return { url, apiUrl };
   }
@@ -305,7 +307,9 @@ export function AdminIntegrationsPanel() {
       }
       const normalized = livekitServers.map((server) => {
         const url = normalizeLivekitUrl(server.url) || "";
-        const apiUrl = normalizeLivekitApiUrl(server.apiUrl, url) || "";
+        const apiUrl =
+          normalizeLivekitApiUrl(server.apiUrl, url, { kind: server.kind }) ||
+          "";
         if (!server.name.trim()) throw new Error("Nama server LiveKit wajib diisi.");
         if (!isValidLivekitUrl(url)) {
           throw new Error(`URL server “${server.name}” tidak valid.`);
@@ -325,7 +329,8 @@ export function AdminIntegrationsPanel() {
           name: server.name,
           kind: server.kind,
           url: server.url,
-          apiUrl: server.apiUrl,
+          // Cloud: omit custom apiUrl — server derives from url.
+          apiUrl: server.kind === "CLOUD" ? null : server.apiUrl || null,
           apiKey: server.apiKey,
           apiSecret: server.apiSecret,
         })),
@@ -349,8 +354,11 @@ export function AdminIntegrationsPanel() {
     try {
       const server = livekitServers.find((item) => item.id === serverId);
       const url = normalizeLivekitUrl(server?.url || form.livekitUrl) || "";
+      const kind = server?.kind || "CLOUD";
       const apiUrl =
-        normalizeLivekitApiUrl(server?.apiUrl || form.livekitApiUrl, url) || "";
+        normalizeLivekitApiUrl(server?.apiUrl || form.livekitApiUrl, url, {
+          kind,
+        }) || "";
       if (!isValidLivekitUrl(url)) {
         throw new Error("LIVEKIT_URL belum valid (wss:// atau ws://).");
       }
@@ -360,10 +368,10 @@ export function AdminIntegrationsPanel() {
         body: JSON.stringify({
           serverId,
           url,
-          apiUrl,
+          apiUrl: kind === "CLOUD" ? undefined : apiUrl || undefined,
           apiKey: server?.apiKey || form.livekitApiKey || undefined,
           apiSecret: server?.apiSecret || form.livekitApiSecret || undefined,
-          kind: server?.kind,
+          kind,
         }),
       });
       const payload = await readApiJson<{
@@ -490,18 +498,44 @@ export function AdminIntegrationsPanel() {
                 URL harus diawali wss://, ws://, https://, atau http://
               </small>
             ) : null}
+            <small>
+              Cloud: salin WebSocket URL dari project LiveKit Cloud (wss://…livekit.cloud).
+              Key + Secret harus dari project yang sama.
+            </small>
           </label>
-          <label>
-            LIVEKIT_API_URL (opsional, https://)
-            <input
-              value={form.livekitApiUrl || ""}
-              onChange={(e) => setField("livekitApiUrl", e.target.value)}
-              onBlur={() => normalizeLivekitFields()}
-              placeholder="Kosongkan jika sama dengan LIVEKIT_URL"
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </label>
+          {activeLivekitServer?.kind === "SELF_HOSTED" ? (
+            <label>
+              LIVEKIT_API_URL (opsional, https://)
+              <input
+                value={form.livekitApiUrl || ""}
+                onChange={(e) => setField("livekitApiUrl", e.target.value)}
+                onBlur={() => normalizeLivekitFields()}
+                placeholder="Kosongkan jika sama dengan host LIVEKIT_URL"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <small>
+                Hanya untuk self-hosted jika API HTTP beda host/port. Cloud tidak
+                membutuhkan field ini.
+              </small>
+            </label>
+          ) : (
+            <label>
+              Host API (otomatis dari LIVEKIT_URL)
+              <input
+                value={
+                  normalizeLivekitApiUrl("", form.livekitUrl, { kind: "CLOUD" }) ||
+                  ""
+                }
+                readOnly
+                disabled
+              />
+              <small>
+                LiveKit Cloud memakai host yang sama dengan URL WebSocket (https://…).
+                Tidak ada API URL terpisah.
+              </small>
+            </label>
+          )}
           <label>
             API Key{" "}
             {activeLivekitServer?.apiKeySet

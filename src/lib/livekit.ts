@@ -9,7 +9,8 @@ import {
 } from "@/lib/livekit-config";
 import { getStoredIntegrations } from "@/lib/platform-config";
 import {
-  normalizeLivekitApiUrl,
+  deriveLivekitApiUrl,
+  isLivekitCloudUrl,
   normalizeLivekitUrl,
   sanitizeLivekitCredential,
 } from "@/lib/livekit-url";
@@ -19,7 +20,8 @@ export { sanitizeLivekitCredential } from "@/lib/livekit-url";
 const liveKitEnvironmentSchema = z.object({
   LIVEKIT_SERVER_ID: z.string().min(1),
   LIVEKIT_SERVER_NAME: z.string().min(1),
-  // Cloud requires wss/https; self-hosted may use ws/http on private networks.
+  LIVEKIT_KIND: z.enum(["CLOUD", "SELF_HOSTED"]),
+  // Cloud requires wss; self-hosted may use ws on private networks.
   LIVEKIT_URL: z
     .string()
     .url()
@@ -27,12 +29,13 @@ const liveKitEnvironmentSchema = z.object({
       (value) => value.startsWith("wss://") || value.startsWith("ws://"),
       "LIVEKIT_URL harus diawali wss:// atau ws://",
     ),
+  // Always present for SDK admin calls; derived from LIVEKIT_URL for Cloud.
   LIVEKIT_API_URL: z
     .string()
     .url()
     .refine(
       (value) => value.startsWith("https://") || value.startsWith("http://"),
-      "LIVEKIT_API_URL harus diawali https:// atau http://",
+      "Host API LiveKit harus diawali https:// atau http://",
     ),
   LIVEKIT_API_KEY: z.string().min(1),
   LIVEKIT_API_SECRET: z.string().min(1),
@@ -48,13 +51,13 @@ function legacyProfile(input: {
   apiKey: string | null | undefined;
   apiSecret: string | null | undefined;
 }): LiveKitServerProfile | null {
+  const url = normalizeLivekitUrl(sanitizeLivekitCredential(input.url));
   return normalizeLiveKitServerProfile({
     id: input.id,
     name: input.name,
-    kind: input.url?.includes(".livekit.cloud") ? "CLOUD" : "SELF_HOSTED",
-    url: normalizeLivekitUrl(sanitizeLivekitCredential(input.url)) ?? undefined,
-    apiUrl:
-      normalizeLivekitApiUrl(input.apiUrl, input.url) ?? undefined,
+    kind: isLivekitCloudUrl(url) ? "CLOUD" : "SELF_HOSTED",
+    url: url ?? undefined,
+    apiUrl: input.apiUrl ?? undefined,
     apiKey: sanitizeLivekitCredential(input.apiKey) ?? undefined,
     apiSecret: sanitizeLivekitCredential(input.apiSecret) ?? undefined,
   });
@@ -100,8 +103,12 @@ export async function getLiveKitEnvironment(
       ? {
           LIVEKIT_SERVER_ID: selected.id,
           LIVEKIT_SERVER_NAME: selected.name,
+          LIVEKIT_KIND: selected.kind,
           LIVEKIT_URL: selected.url,
-          LIVEKIT_API_URL: selected.apiUrl,
+          LIVEKIT_API_URL:
+            selected.kind === "CLOUD"
+              ? deriveLivekitApiUrl(selected.url)
+              : selected.apiUrl || deriveLivekitApiUrl(selected.url),
           LIVEKIT_API_KEY: selected.apiKey,
           LIVEKIT_API_SECRET: selected.apiSecret,
         }
@@ -111,8 +118,8 @@ export async function getLiveKitEnvironment(
   if (!result.success) {
     throw new Error(
       serverId
-        ? "Server LiveKit yang dipilih tidak ditemukan atau konfigurasinya belum lengkap."
-        : "Konfigurasi LiveKit belum lengkap. Pilih satu profil aktif dengan URL, API URL, API Key, dan API Secret dari server yang sama.",
+        ? "Server LiveKit yang dipilih tidak ditemukan atau konfigurasinya belum lengkap (URL + API Key + API Secret)."
+        : "Konfigurasi LiveKit belum lengkap. Di Super Admin → Integrasi, set LIVEKIT_URL (wss://…livekit.cloud), API Key, dan API Secret dari project yang sama, lalu Simpan & Tes koneksi.",
     );
   }
 

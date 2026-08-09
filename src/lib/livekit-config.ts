@@ -1,4 +1,6 @@
 import {
+  deriveLivekitApiUrl,
+  isLivekitCloudUrl,
   normalizeLivekitApiUrl,
   normalizeLivekitUrl,
   sanitizeLivekitCredential,
@@ -10,7 +12,12 @@ export type LiveKitServerProfile = {
   id: string;
   name: string;
   kind: LiveKitServerKind;
+  /** WebSocket URL for participants (wss:// or ws://). */
   url: string;
+  /**
+   * HTTPS host for LiveKit Server SDK (RoomService / Egress).
+   * Always derived from `url` for Cloud. Optional override only for self-hosted.
+   */
   apiUrl: string;
   apiKey: string;
   apiSecret: string;
@@ -22,15 +29,29 @@ export function normalizeLiveKitServerProfile(
   const id = input.id?.trim();
   const name = input.name?.trim();
   const url = normalizeLivekitUrl(input.url);
-  const apiUrl = normalizeLivekitApiUrl(input.apiUrl, url);
   const apiKey = sanitizeLivekitCredential(input.apiKey);
   const apiSecret = sanitizeLivekitCredential(input.apiSecret);
-  if (!id || !name || !url || !apiUrl || !apiKey || !apiSecret) return null;
+  if (!id || !name || !url || !apiKey || !apiSecret) return null;
+
+  const kind: LiveKitServerKind =
+    input.kind === "SELF_HOSTED"
+      ? "SELF_HOSTED"
+      : isLivekitCloudUrl(url) || input.kind === "CLOUD"
+        ? "CLOUD"
+        : "SELF_HOSTED";
+
+  // Cloud never needs a separate API URL — force derive from LIVEKIT_URL.
+  const apiUrl =
+    kind === "CLOUD"
+      ? deriveLivekitApiUrl(url)
+      : normalizeLivekitApiUrl(input.apiUrl, url, { kind: "SELF_HOSTED" });
+
+  if (!apiUrl) return null;
 
   return {
     id,
     name,
-    kind: input.kind === "SELF_HOSTED" ? "SELF_HOSTED" : "CLOUD",
+    kind,
     url,
     apiUrl,
     apiKey,

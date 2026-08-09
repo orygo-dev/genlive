@@ -10,13 +10,13 @@ const cloud = {
   name: "Cloud utama",
   kind: "CLOUD" as const,
   url: "https://example.livekit.cloud/",
-  apiUrl: "",
+  apiUrl: "https://should-be-ignored.example.com",
   apiKey: " key-cloud ",
   apiSecret: " secret-cloud ",
 };
 
 describe("LiveKit multi-server configuration", () => {
-  it("keeps URL, API URL, key, and secret as one normalized profile", () => {
+  it("keeps Cloud URL+key+secret together and derives API host from URL", () => {
     expect(normalizeLiveKitServerProfile(cloud)).toEqual({
       id: "cloud",
       name: "Cloud utama",
@@ -25,6 +25,28 @@ describe("LiveKit multi-server configuration", () => {
       apiUrl: "https://example.livekit.cloud",
       apiKey: "key-cloud",
       apiSecret: "secret-cloud",
+    });
+  });
+
+  it("allows self-hosted API URL override", () => {
+    expect(
+      normalizeLiveKitServerProfile({
+        id: "selfhosted",
+        name: "Server lokal",
+        kind: "SELF_HOSTED",
+        url: "wss://meet.example.id",
+        apiUrl: "https://api.meet.example.id:7880",
+        apiKey: "key-local",
+        apiSecret: "secret-local",
+      }),
+    ).toEqual({
+      id: "selfhosted",
+      name: "Server lokal",
+      kind: "SELF_HOSTED",
+      url: "wss://meet.example.id",
+      apiUrl: "https://api.meet.example.id:7880",
+      apiKey: "key-local",
+      apiSecret: "secret-local",
     });
   });
 
@@ -53,5 +75,21 @@ describe("LiveKit multi-server configuration", () => {
         apiSecret: "",
       }),
     ).toBeNull();
+  });
+
+  it("accepts Cloud profile without explicit API URL", () => {
+    expect(
+      normalizeLiveKitServerProfile({
+        id: "cloud-2",
+        name: "Cloud",
+        kind: "CLOUD",
+        url: "wss://abc.livekit.cloud",
+        apiKey: "APIabc",
+        apiSecret: "secret",
+      }),
+    ).toMatchObject({
+      url: "wss://abc.livekit.cloud",
+      apiUrl: "https://abc.livekit.cloud",
+    });
   });
 });
