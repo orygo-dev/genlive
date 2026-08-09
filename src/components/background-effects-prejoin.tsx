@@ -39,64 +39,6 @@ export type BackgroundEffectsPrejoinHandle = {
 /** Discard overlapping preview opens (Strict Mode / device switch). */
 let previewOpenToken = 0;
 
-async function logMediaEnvironment(reason: string) {
-  // #region agent log
-  try {
-    const devices = navigator.mediaDevices?.enumerateDevices
-      ? await navigator.mediaDevices.enumerateDevices()
-      : [];
-    const byKind = {
-      audioinput: 0,
-      videoinput: 0,
-      audiooutput: 0,
-      other: 0,
-    };
-    let withId = 0;
-    for (const device of devices) {
-      if (device.deviceId) withId += 1;
-      if (device.kind === "audioinput") byKind.audioinput += 1;
-      else if (device.kind === "videoinput") byKind.videoinput += 1;
-      else if (device.kind === "audiooutput") byKind.audiooutput += 1;
-      else byKind.other += 1;
-    }
-
-    let cameraPermission: string | null = null;
-    let micPermission: string | null = null;
-    try {
-      const perms = navigator.permissions;
-      if (perms?.query) {
-        const cam = await perms.query({ name: "camera" as PermissionName });
-        const mic = await perms.query({ name: "microphone" as PermissionName });
-        cameraPermission = cam.state;
-        micPermission = mic.state;
-      }
-    } catch {
-      // Permissions API may reject camera name on some browsers.
-    }
-
-    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-      dbgCamera("I", "background-effects-prejoin.tsx:env", reason, {
-        isSecureContext: Boolean(window.isSecureContext),
-        hasMediaDevices: Boolean(navigator.mediaDevices),
-        hasGum: Boolean(navigator.mediaDevices?.getUserMedia),
-        deviceTotal: devices.length,
-        deviceWithId: withId,
-        byKind,
-        cameraPermission,
-        micPermission,
-        ua: navigator.userAgent.slice(0, 160),
-      });
-    });
-  } catch (error) {
-    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-      dbgCamera("I", "background-effects-prejoin.tsx:env", "env-log-failed", {
-        message: error instanceof Error ? error.message : String(error),
-      });
-    });
-  }
-  // #endregion
-}
-
 function mediaErrorMessage(error: unknown): string {
   const name = error instanceof Error ? error.name : "";
   const message = error instanceof Error ? error.message : String(error);
@@ -124,8 +66,6 @@ async function openPreviewCamera(
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("Browser tidak mendukung kamera.");
   }
-
-  await logMediaEnvironment("before-gum");
 
   const attempts: MediaStreamConstraints[] = [
     // Combined A/V first — some OS stacks expose devices only after joint grant.
@@ -168,37 +108,13 @@ async function openPreviewCamera(
         for (const track of stream.getTracks()) track.stop();
         return null;
       }
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("G", "background-effects-prejoin.tsx:openPreviewCamera", "gum-ok", {
-          attempt: index,
-          label: mediaTrack.label || null,
-          readyState: mediaTrack.readyState,
-          usedDeviceIdeal: Boolean(deviceConstraint),
-          constraintAudio: Boolean(constraints.audio),
-        });
-      });
-      // #endregion
-      await logMediaEnvironment("after-gum-ok");
       // userProvidedTrack=false so LocalVideoTrack.stop() releases the device.
       return new LocalVideoTrack(mediaTrack, mediaTrack.getConstraints(), false);
     } catch (error) {
       lastError = error;
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("G", "background-effects-prejoin.tsx:openPreviewCamera", "gum-attempt-fail", {
-          attempt: index,
-          name: error instanceof Error ? error.name : "unknown",
-          message: error instanceof Error ? error.message : String(error),
-          constraintAudio: Boolean(constraints.audio),
-          constraintVideo: Boolean(constraints.video),
-        });
-      });
-      // #endregion
     }
   }
 
-  await logMediaEnvironment("after-gum-fail");
   throw lastError instanceof Error
     ? lastError
     : new Error("Kamera tidak dapat dibuka.");
@@ -219,15 +135,6 @@ async function unlockMicrophoneLabels() {
   } catch {
     // User may deny mic; camera preview can still work.
     return false;
-  }
-}
-
-async function countVideoInputs(): Promise<number> {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices.filter((device) => device.kind === "videoinput").length;
-  } catch {
-    return 0;
   }
 }
 
@@ -333,44 +240,15 @@ export const BackgroundEffectsPrejoin = forwardRef<
     let localTrack: LocalVideoTrack | null = null;
     const mountToken = ++previewOpenToken;
 
-    // #region agent log
-    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-      dbgCamera("J", "background-effects-prejoin.tsx:effect", "preview-effect-mount", {
-        mountToken,
-        cameraDeviceId,
-        previewRetry,
-      });
-    });
-    // #endregion
-
     async function startPreview() {
       setPreviewError("");
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-start", {
-          cameraDeviceId,
-          cameraEnabled,
-          mountToken,
-        });
-      });
-      // #endregion
       try {
         // Unlock mic first so device lists fill even when camera open is slow.
         await unlockMicrophoneLabels();
         if (cancelled) return;
         setDevicesRevision((value) => value + 1);
 
-        const videoInputCount = await countVideoInputs();
-        // #region agent log
-        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-          dbgCamera("I", "background-effects-prejoin.tsx:startPreview", "video-input-count", {
-            videoInputCount,
-            mountToken,
-          });
-        });
-        // #endregion
-
-        // IMPORTANT: do NOT skip getUserMedia when count is 0.
+        // IMPORTANT: do NOT skip getUserMedia when enumerateDevices count is 0.
         // Firefox often lists zero videoinputs until GUM has been attempted.
 
         const cams = await listMediaDevices("videoinput");
@@ -389,15 +267,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
         if (cancelled || disposingRef.current || !localTrack) {
           localTrack?.stop();
-          // #region agent log
-          void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-            dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-aborted", {
-              cancelled,
-              disposing: disposingRef.current,
-              hadTrack: Boolean(localTrack),
-            });
-          });
-          // #endregion
           return;
         }
 
@@ -405,29 +274,12 @@ export const BackgroundEffectsPrejoin = forwardRef<
         setTrack(localTrack);
         attachPreview(localTrack);
 
-        // #region agent log
-        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-          dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-ok", {
-            mediaReadyState: localTrack?.mediaStreamTrack?.readyState ?? null,
-            hasVideoEl: Boolean(videoRef.current),
-            videoSrcObject: Boolean(videoRef.current?.srcObject),
-          });
-        });
-        // #endregion
 
         if (!cancelled) {
           setDevicesRevision((value) => value + 1);
         }
       } catch (error) {
         if (!cancelled) {
-          // #region agent log
-          void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-            dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-fail", {
-              name: error instanceof Error ? error.name : "unknown",
-              message: error instanceof Error ? error.message : String(error),
-            });
-          });
-          // #endregion
           setPreviewError(mediaErrorMessage(error));
           setTrack(null);
           trackRef.current = null;
@@ -443,13 +295,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
     return () => {
       cancelled = true;
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("J", "background-effects-prejoin.tsx:effect", "preview-effect-unmount", {
-          mountToken,
-        });
-      });
-      // #endregion
       if (previewOpenToken === mountToken) {
         previewOpenToken += 1;
       }
@@ -473,28 +318,9 @@ export const BackgroundEffectsPrejoin = forwardRef<
   useEffect(() => {
     if (!track || disposingRef.current) return;
     if (cameraEnabled) {
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("F", "background-effects-prejoin.tsx:camEffect", "prejoin-cam-on", {
-          hasTrack: Boolean(track),
-          mediaReadyState: track.mediaStreamTrack?.readyState ?? null,
-          mediaEnabled: track.mediaStreamTrack?.enabled ?? null,
-          hasVideoEl: Boolean(videoRef.current),
-          videoSrcObject: Boolean(videoRef.current?.srcObject),
-        });
-      });
-      // #endregion
       void track.unmute();
       attachPreview(track);
     } else {
-      // #region agent log
-      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-        dbgCamera("F", "background-effects-prejoin.tsx:camEffect", "prejoin-cam-off", {
-          hasTrack: Boolean(track),
-          mediaReadyState: track.mediaStreamTrack?.readyState ?? null,
-        });
-      });
-      // #endregion
       void track.mute();
     }
   }, [track, cameraEnabled, attachPreview]);
@@ -552,16 +378,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
             aria-pressed={cameraEnabled}
             aria-label={cameraEnabled ? "Matikan kamera" : "Nyalakan kamera"}
             onClick={() => {
-              // #region agent log
-              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                dbgCamera("F", "background-effects-prejoin.tsx:button", "prejoin-cam-click", {
-                  nextEnabled: !cameraEnabled,
-                  hasTrack: Boolean(trackRef.current),
-                  hasVideoEl: Boolean(videoRef.current),
-                  videoSrcObject: Boolean(videoRef.current?.srcObject),
-                });
-              });
-              // #endregion
               onCameraChange(!cameraEnabled);
             }}
           >

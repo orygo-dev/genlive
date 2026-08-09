@@ -1157,70 +1157,10 @@ export function MeetingToolsDock({
                     await localParticipant.setCameraEnabled(false);
                   } else {
                     const capture = await resolveLocalVideoCapture();
-                    // #region agent log
-                    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                      dbgCamera(
-                        "K",
-                        "meeting-tools-dock.tsx:SafeCameraToggle",
-                        "camera-enable-attempt",
-                        {
-                          hasDeviceId: Boolean(capture.deviceId),
-                          deviceId: (() => {
-                            const id = capture.deviceId;
-                            if (!id) return null;
-                            if (typeof id === "string") return id.slice(0, 8);
-                            if (typeof id === "object" && id && "exact" in id) {
-                              return String(id.exact ?? "").slice(0, 8);
-                            }
-                            if (typeof id === "object" && id && "ideal" in id) {
-                              return String(id.ideal ?? "").slice(0, 8);
-                            }
-                            return "obj";
-                          })(),
-                        },
-                      );
-                    });
-                    // #endregion
                     await localParticipant.setCameraEnabled(true, capture);
                   }
-                  // #region agent log
-                  void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                    const pub = localParticipant.getTrackPublication(
-                      Track.Source.Camera,
-                    );
-                    dbgCamera(
-                      "K",
-                      "meeting-tools-dock.tsx:SafeCameraToggle",
-                      "camera-toggle-done",
-                      {
-                        turningOn,
-                        isCameraEnabled: localParticipant.isCameraEnabled,
-                        hasPub: Boolean(pub),
-                        pubMuted: pub?.isMuted ?? null,
-                        mediaReadyState:
-                          pub?.track?.mediaStreamTrack?.readyState ?? null,
-                      },
-                    );
-                  });
-                  // #endregion
-                } catch (error) {
-                  // #region agent log
-                  void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                    dbgCamera(
-                      "K",
-                      "meeting-tools-dock.tsx:SafeCameraToggle",
-                      "camera-toggle-error",
-                      {
-                        turningOn,
-                        name: error instanceof Error ? error.name : "unknown",
-                        message:
-                          error instanceof Error
-                            ? error.message
-                            : String(error),
-                      },
-                    );
-                  });
-                  // #endregion
+                } catch {
+                  // Camera toggle failed; UI stays on previous state.
                 } finally {
                   setCameraBusy(false);
                 }

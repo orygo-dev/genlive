@@ -51,17 +51,6 @@ export function MediaDevicePickers({
       listMediaDevices("videoinput"),
       listMediaDevices("audiooutput"),
     ]);
-    // #region agent log
-    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-      dbgCamera("H", "media-device-pickers.tsx:refreshDevices", "devices-listed", {
-        micCount: nextMics.length,
-        camCount: nextCams.length,
-        speakerCount: nextSpeakers.length,
-        refreshRevision,
-        enumerateOnly,
-      });
-    });
-    // #endregion
     setMics(nextMics);
     setCameras(nextCams);
     setSpeakers(nextSpeakers);
@@ -81,7 +70,7 @@ export function MediaDevicePickers({
     if (nextMic) storeMediaDevice("audioinput", nextMic);
     if (nextCam) storeMediaDevice("videoinput", nextCam);
     if (nextSpeaker) storeMediaDevice("audiooutput", nextSpeaker);
-  }, [enumerateOnly, refreshRevision]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

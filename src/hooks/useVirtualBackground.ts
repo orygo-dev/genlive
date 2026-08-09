@@ -100,24 +100,6 @@ export function useVirtualBackground({
       try {
         if (operationId !== operationIdRef.current) return;
 
-        // #region agent log
-        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-          dbgCamera(
-            "C",
-            "useVirtualBackground.ts:sync",
-            "vb-sync-start",
-            {
-              wantsEffect,
-              effectId,
-              enabled,
-              hasTrack: Boolean(activeTrack),
-              trackSid: activeTrack?.sid ?? null,
-              mediaReadyState: activeTrack?.mediaStreamTrack?.readyState ?? null,
-              hadProcessor: Boolean(processorRef.current),
-            },
-          );
-        });
-        // #endregion
 
         if (!wantsEffect) {
           const hadProcessor = Boolean(processorRef.current);
@@ -176,36 +158,7 @@ export function useVirtualBackground({
           attachedTrackRef.current = activeTrack;
           try {
             await activeTrack!.setProcessor(processor);
-            // #region agent log
-            void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-              dbgCamera(
-                "C",
-                "useVirtualBackground.ts:setProcessor",
-                "vb-processor-attached",
-                {
-                  effectId,
-                  trackSid: activeTrack?.sid ?? null,
-                  mediaReadyState:
-                    activeTrack?.mediaStreamTrack?.readyState ?? null,
-                },
-              );
-            });
-            // #endregion
           } catch (error) {
-            // #region agent log
-            void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-              dbgCamera(
-                "C",
-                "useVirtualBackground.ts:setProcessor",
-                "vb-processor-attach-failed",
-                {
-                  effectId,
-                  message:
-                    error instanceof Error ? error.message : String(error),
-                },
-              );
-            });
-            // #endregion
             if (processorRef.current === processor) {
               processorRef.current = null;
               attachedTrackRef.current = null;
