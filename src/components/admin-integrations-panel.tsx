@@ -649,7 +649,23 @@ export function AdminIntegrationsPanel() {
                   : "API Secret server LiveKit"
               }
               autoComplete="new-password"
+              spellCheck={false}
             />
+            {form.livekitApiSecret?.trim() ? (
+              <small
+                className={
+                  (activeLivekitServer?.kind || "CLOUD") === "CLOUD" &&
+                  form.livekitApiSecret.trim().length < 40
+                    ? "form-error"
+                    : "admin-muted"
+                }
+              >
+                Panjang Secret di form: {form.livekitApiSecret.trim().length}
+                {(activeLivekitServer?.kind || "CLOUD") === "CLOUD"
+                  ? " (Cloud biasanya 43–44; di bawah 40 hampir pasti terpotong)"
+                  : ""}
+              </small>
+            ) : null}
           </label>
           <div className="admin-livekit-actions">
             <button

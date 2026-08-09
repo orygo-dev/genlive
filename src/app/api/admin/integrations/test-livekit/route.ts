@@ -40,14 +40,24 @@ function logTestEvent(
   else console.info(message, payload);
 }
 
-function safeCredentialMeta(apiKey: string, apiSecret: string) {
+function safeCredentialMeta(
+  apiKey: string,
+  apiSecret: string,
+  kind: "CLOUD" | "SELF_HOSTED",
+) {
+  // LiveKit Cloud secrets are typically 43–44 chars. Length 32 often means a
+  // truncated paste: local JWT round-trip still passes (same short secret signs
+  // and verifies), but Cloud rejects with "invalid token".
+  const cloudSecretTooShort = kind === "CLOUD" && apiSecret.length < 40;
   return {
     apiKeyLength: apiKey.length,
     apiKeyPrefix: apiKey.slice(0, 8),
     apiKeyLooksLikeLivekit: apiKey.startsWith("API"),
     apiSecretLength: apiSecret.length,
-    // LiveKit Cloud secrets are typically ~43–44 chars; much shorter usually means truncated paste.
-    apiSecretLooksTruncated: apiSecret.length > 0 && apiSecret.length < 32,
+    apiSecretLooksTruncated:
+      apiSecret.length > 0 &&
+      (apiSecret.length < 32 || cloudSecretTooShort),
+    cloudSecretTooShort,
   };
 }
 
@@ -148,10 +158,38 @@ export async function POST(request: Request) {
       credentialSource = "environment";
     }
 
-    const meta = safeCredentialMeta(apiKey, apiSecret);
+    const meta = safeCredentialMeta(apiKey, apiSecret, kind);
+    // #region agent log
+    fetch("http://127.0.0.1:7758/ingest/cf47dd30-7b6f-48f4-8e67-59c8a77569f7", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "a90ca2",
+      },
+      body: JSON.stringify({
+        sessionId: "a90ca2",
+        runId: "post-fix",
+        hypothesisId: "H3-truncated",
+        location: "test-livekit/route.ts:beforeProbe",
+        message: "Cloud credential length check",
+        data: {
+          kind,
+          credentialSource,
+          ...meta,
+          host,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (meta.cloudSecretTooShort) {
+      throw new Error(
+        `API Secret Cloud terlihat terpotong (panjang ${meta.apiSecretLength}, biasanya 43–44). Buat key baru di LiveKit Cloud → Settings → Keys, salin Secret dengan tombol Copy, tempel di Notepad dulu untuk cek panjangnya, lalu isi form GenMeet.`,
+      );
+    }
     if (meta.apiSecretLooksTruncated) {
       throw new Error(
-        `API Secret terlihat terpotong (panjang ${meta.apiSecretLength}). Di LiveKit Cloud → Settings → Keys, buat key baru dan salin Secret dengan tombol Copy (bukan seleksi manual).`,
+        `API Secret terlihat terpotong (panjang ${meta.apiSecretLength}). Salin ulang Secret dengan tombol Copy (bukan seleksi manual).`,
       );
     }
 
