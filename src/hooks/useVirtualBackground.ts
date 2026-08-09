@@ -13,6 +13,7 @@ import type {
   QualityMode,
   QualityTier,
 } from "@/features/video-effects/types";
+import { dbgJoin } from "@/lib/dbg-join";
 
 export type UseVirtualBackgroundOptions = {
   effectId: BackgroundEffectId;
@@ -102,6 +103,15 @@ export function useVirtualBackground({
         setLoading(wantsEffect);
         setError("");
 
+        // #region agent log
+        dbgJoin(
+          "useVirtualBackground.ts:sync",
+          wantsEffect ? "attaching effect" : "no effect / detach",
+          { effectId, enabled, hasTrack: Boolean(activeTrack), wantsEffect },
+          "C",
+        );
+        // #endregion
+
         if (!wantsEffect) {
           await detachProcessor();
           if (operationId !== operationIdRef.current) return;
@@ -115,9 +125,25 @@ export function useVirtualBackground({
         }
 
         // Lazy-load MediaPipe only when an effect is actually selected.
+        // #region agent log
+        dbgJoin(
+          "useVirtualBackground.ts:import:before",
+          "dynamic import VirtualBackgroundProcessor",
+          { effectId },
+          "C",
+        );
+        // #endregion
         const mod = await import(
           "@/features/video-effects/VirtualBackgroundProcessor"
         );
+        // #region agent log
+        dbgJoin(
+          "useVirtualBackground.ts:import:after",
+          "VirtualBackgroundProcessor loaded",
+          { effectId },
+          "C",
+        );
+        // #endregion
         if (operationId !== operationIdRef.current) return;
 
         if (attachedTrackRef.current && attachedTrackRef.current !== activeTrack) {

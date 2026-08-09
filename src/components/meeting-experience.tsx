@@ -48,6 +48,7 @@ import {
   buildMeetingConnectOptions,
   buildMeetingRoomOptions,
 } from "@/lib/livekit-room-options";
+import { dbgJoin } from "@/lib/dbg-join";
 
 type ConnectionDetails = {
   identity: string;
@@ -108,19 +109,59 @@ function RoomMediaBootstrap({
     let cancelled = false;
 
     async function enableMedia() {
+      // #region agent log
+      dbgJoin(
+        "meeting-experience.tsx:RoomMediaBootstrap:start",
+        "connected — enabling media",
+        { micEnabled, cameraEnabled },
+        "E",
+      );
+      // #endregion
       const openMic = async () => {
         if (!micEnabled || cancelled) return;
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:RoomMediaBootstrap:mic:before",
+          "setMicrophoneEnabled",
+          {},
+          "E",
+        );
+        // #endregion
         await room.localParticipant.setMicrophoneEnabled(
           true,
           buildLocalAudioCapture(true) || undefined,
         );
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:RoomMediaBootstrap:mic:after",
+          "mic enabled",
+          {},
+          "E",
+        );
+        // #endregion
       };
       const openCam = async () => {
         if (!cameraEnabled || cancelled) return;
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:RoomMediaBootstrap:cam:before",
+          "setCameraEnabled",
+          {},
+          "E",
+        );
+        // #endregion
         await room.localParticipant.setCameraEnabled(
           true,
           buildLocalVideoCapture(true) || undefined,
         );
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:RoomMediaBootstrap:cam:after",
+          "cam enabled",
+          {},
+          "E",
+        );
+        // #endregion
       };
 
       try {
@@ -147,6 +188,14 @@ function RoomMediaBootstrap({
         }
       } finally {
         if (!cancelled) {
+          // #region agent log
+          dbgJoin(
+            "meeting-experience.tsx:RoomMediaBootstrap:ready",
+            "onReady",
+            {},
+            "E",
+          );
+          // #endregion
           onReady();
         }
       }
@@ -387,6 +436,22 @@ function MeetingRoom({
     [onError],
   );
 
+  useEffect(() => {
+    // #region agent log
+    dbgJoin(
+      "meeting-experience.tsx:MeetingRoom:mount",
+      "MeetingRoom mounted",
+      {
+        role: connection.role,
+        micEnabled,
+        cameraEnabled,
+        effectId,
+      },
+      "D",
+    );
+    // #endregion
+  }, [cameraEnabled, connection.role, effectId, micEnabled]);
+
   return (
     <div className="live-room" data-lk-theme="default">
       <LiveKitRoom
@@ -575,7 +640,38 @@ function MeetingExperienceInner({
     setError("");
     setIsJoining(true);
 
+    // #region agent log
+    let storedEffect = "";
     try {
+      storedEffect = window.sessionStorage.getItem("genmeet_bg_effect") || "";
+    } catch {
+      storedEffect = "unreadable";
+    }
+    dbgJoin(
+      "meeting-experience.tsx:joinRoom:start",
+      "join clicked",
+      {
+        roomName,
+        micEnabled,
+        cameraEnabled,
+        contextEffectId: effectId,
+        storedEffect,
+        hasPreviewRef: Boolean(previewRef.current),
+      },
+      "C",
+    );
+    // #endregion
+
+    try {
+      // #region agent log
+      const tokenStarted = Date.now();
+      dbgJoin(
+        "meeting-experience.tsx:joinRoom:token:before",
+        "fetching livekit token",
+        {},
+        "B",
+      );
+      // #endregion
       const response = await fetch("/api/livekit/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -584,21 +680,104 @@ function MeetingExperienceInner({
       const payload = (await response.json()) as ConnectionDetails &
         AdmissionRequest & { error?: string; waiting?: boolean };
 
+      // #region agent log
+      dbgJoin(
+        "meeting-experience.tsx:joinRoom:token:after",
+        "token response",
+        {
+          ok: response.ok,
+          status: response.status,
+          waiting: Boolean(payload.waiting),
+          hasToken: Boolean(payload.token),
+          ms: Date.now() - tokenStarted,
+        },
+        "B",
+      );
+      // #endregion
+
       if (!response.ok) {
         throw new Error(payload.error ?? "Tidak dapat bergabung ke meeting.");
       }
 
       if (payload.waiting) {
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:dispose:before",
+          "dispose before waiting room",
+          {},
+          "A",
+        );
+        // #endregion
         await previewRef.current?.disposePreview().catch(() => undefined);
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:dispose:after",
+          "dispose done (waiting)",
+          {},
+          "A",
+        );
+        // #endregion
         setAdmission({
           requestId: payload.requestId,
           admissionToken: payload.admissionToken,
         });
       } else {
+        // #region agent log
+        const disposeStarted = Date.now();
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:dispose:before",
+          "dispose before setConnection",
+          {},
+          "A",
+        );
+        // #endregion
         await previewRef.current?.disposePreview().catch(() => undefined);
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:dispose:after",
+          "dispose done",
+          { ms: Date.now() - disposeStarted },
+          "A",
+        );
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:setConnection:before",
+          "about to mount MeetingRoom",
+          {
+            serverUrlHost: (() => {
+              try {
+                return new URL(payload.serverUrl).host;
+              } catch {
+                return "invalid";
+              }
+            })(),
+          },
+          "D",
+        );
+        // #endregion
         setConnection(payload);
+        // #region agent log
+        dbgJoin(
+          "meeting-experience.tsx:joinRoom:setConnection:after",
+          "setConnection called",
+          {},
+          "D",
+        );
+        // #endregion
       }
     } catch (requestError) {
+      // #region agent log
+      dbgJoin(
+        "meeting-experience.tsx:joinRoom:error",
+        "join failed",
+        {
+          error:
+            requestError instanceof Error
+              ? requestError.message
+              : String(requestError),
+        },
+        "B",
+      );
+      // #endregion
       setError(
         requestError instanceof Error
           ? requestError.message

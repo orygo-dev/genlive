@@ -25,6 +25,7 @@ import {
   readStoredMediaDevices,
   storeMediaDevice,
 } from "@/lib/media-devices";
+import { dbgJoin } from "@/lib/dbg-join";
 
 type BackgroundEffectsPrejoinProps = {
   effectId: BackgroundEffectId;
@@ -129,11 +130,30 @@ export const BackgroundEffectsPrejoin = forwardRef<
     if (disposingRef.current) return;
     disposingRef.current = true;
 
+    // #region agent log
+    const t0 = Date.now();
+    dbgJoin(
+      "background-effects-prejoin.tsx:disposePreview:start",
+      "disposePreview start",
+      { appliedEffectId, hasTrack: Boolean(trackRef.current) },
+      "A",
+    );
+    // #endregion
+
     try {
       await disposeRef.current();
     } catch {
       // ignore
     }
+
+    // #region agent log
+    dbgJoin(
+      "background-effects-prejoin.tsx:disposePreview:vbDone",
+      "VB dispose finished",
+      { ms: Date.now() - t0 },
+      "A",
+    );
+    // #endregion
 
     const current = trackRef.current;
     trackRef.current = null;
@@ -151,7 +171,15 @@ export const BackgroundEffectsPrejoin = forwardRef<
       }
     }
     await new Promise((resolve) => window.setTimeout(resolve, 120));
-  }, []);
+    // #region agent log
+    dbgJoin(
+      "background-effects-prejoin.tsx:disposePreview:end",
+      "disposePreview complete",
+      { ms: Date.now() - t0 },
+      "A",
+    );
+    // #endregion
+  }, [appliedEffectId]);
 
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
 
