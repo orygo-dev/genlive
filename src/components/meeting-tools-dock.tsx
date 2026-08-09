@@ -1137,6 +1137,45 @@ export function MeetingToolsDock({
             source={Track.Source.Camera}
             showIcon
             className="meeting-control-toggle"
+            onChange={(enabled, isUserInitiated) => {
+              // #region agent log
+              const pub = localParticipant.getTrackPublication(
+                Track.Source.Camera,
+              );
+              const media = pub?.track?.mediaStreamTrack;
+              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                dbgCamera(
+                  "A",
+                  "meeting-tools-dock.tsx:TrackToggle.Camera",
+                  "camera-toggle-change",
+                  {
+                    enabled,
+                    isUserInitiated,
+                    isCameraEnabled: localParticipant.isCameraEnabled,
+                    hasPub: Boolean(pub),
+                    pubMuted: pub?.isMuted ?? null,
+                    mediaReadyState: media?.readyState ?? null,
+                    mediaEnabled: media?.enabled ?? null,
+                  },
+                );
+              });
+              // #endregion
+            }}
+            onDeviceError={(error) => {
+              // #region agent log
+              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                dbgCamera(
+                  "A",
+                  "meeting-tools-dock.tsx:TrackToggle.Camera",
+                  "camera-device-error",
+                  {
+                    name: error?.name ?? "unknown",
+                    message: error?.message ?? String(error),
+                  },
+                );
+              });
+              // #endregion
+            }}
           >
             Video
           </TrackToggle>

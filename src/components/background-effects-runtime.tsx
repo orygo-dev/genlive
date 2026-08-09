@@ -44,6 +44,23 @@ export function BackgroundEffectsRuntime({
         Track.Source.Camera,
       );
       const next = (publication?.track as LocalVideoTrack | undefined) ?? null;
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera(
+          "C",
+          "background-effects-runtime.tsx:refreshTrack",
+          "camera-track-refresh",
+          {
+            hasTrack: Boolean(next),
+            trackSid: publication?.trackSid ?? null,
+            pubMuted: publication?.isMuted ?? null,
+            mediaReadyState: next?.mediaStreamTrack?.readyState ?? null,
+            effectId,
+            effectsReady,
+          },
+        );
+      });
+      // #endregion
       setTrack(next);
     }
 

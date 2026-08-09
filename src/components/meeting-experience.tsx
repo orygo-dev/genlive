@@ -13,6 +13,8 @@ import { LiveKitRoom, useConnectionState, useRoomContext } from "@livekit/compon
 import {
   ConnectionState,
   DisconnectReason,
+  RoomEvent,
+  Track,
   type RoomConnectOptions,
   type RoomOptions,
 } from "livekit-client";
@@ -161,6 +163,54 @@ function RoomMediaBootstrap({
   return null;
 }
 
+function CameraToggleProbe({ effectId }: { effectId: BackgroundEffectId }) {
+  const room = useRoomContext();
+  const connectionState = useConnectionState();
+
+  useEffect(() => {
+    const lp = room.localParticipant;
+    const snapshot = (reason: string) => {
+      const pub = lp.getTrackPublication(Track.Source.Camera);
+      const media = pub?.track?.mediaStreamTrack;
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("B", "meeting-experience.tsx:CameraToggleProbe", reason, {
+          connectionState,
+          isCameraEnabled: lp.isCameraEnabled,
+          hasPub: Boolean(pub),
+          pubMuted: pub?.isMuted ?? null,
+          pubSubscribed: pub?.isSubscribed ?? null,
+          trackSid: pub?.trackSid ?? null,
+          trackKind: pub?.track?.kind ?? null,
+          mediaReadyState: media?.readyState ?? null,
+          mediaEnabled: media?.enabled ?? null,
+          mediaMuted: media?.muted ?? null,
+          effectId,
+        });
+      });
+      // #endregion
+    };
+
+    snapshot("probe-mount");
+    const onPub = () => snapshot("localTrackPublished");
+    const onUnpub = () => snapshot("localTrackUnpublished");
+    const onMuted = () => snapshot("trackMuted");
+    const onUnmuted = () => snapshot("trackUnmuted");
+    room.on(RoomEvent.LocalTrackPublished, onPub);
+    room.on(RoomEvent.LocalTrackUnpublished, onUnpub);
+    room.on(RoomEvent.TrackMuted, onMuted);
+    room.on(RoomEvent.TrackUnmuted, onUnmuted);
+    return () => {
+      room.off(RoomEvent.LocalTrackPublished, onPub);
+      room.off(RoomEvent.LocalTrackUnpublished, onUnpub);
+      room.off(RoomEvent.TrackMuted, onMuted);
+      room.off(RoomEvent.TrackUnmuted, onUnmuted);
+    };
+  }, [connectionState, effectId, room]);
+
+  return null;
+}
+
 function RoomSessionBody({
   roomName,
   meetingTitle,
@@ -250,6 +300,7 @@ function RoomSessionBody({
               <RecordingControls roomName={roomName} />
             </>
           ) : null}
+          <CameraToggleProbe effectId={effectId} />
           <BackgroundEffectsRuntime
             effectId={effectId}
             onEffectChange={setEffectId}
