@@ -39,29 +39,61 @@ export type BackgroundEffectsPrejoinHandle = {
   disposePreview: () => Promise<void>;
 };
 
-/** Prevent overlapping getUserMedia from Strict Mode remounts. */
+/** Discard overlapping preview opens (Strict Mode / device switch). */
 let previewOpenToken = 0;
 
 async function openPreviewCamera(
   deviceConstraint: { ideal: string } | undefined,
-): Promise<LocalVideoTrack> {
+): Promise<LocalVideoTrack | null> {
   const token = ++previewOpenToken;
-  let track: LocalVideoTrack;
-  try {
-    track = await createLocalVideoTrack({
+  const attempts: Array<Record<string, unknown>> = [
+    {
       ...(deviceConstraint
         ? { deviceId: deviceConstraint }
         : { facingMode: "user" as const }),
       resolution: { width: 640, height: 360, frameRate: 15 },
+    },
+    deviceConstraint
+      ? { deviceId: deviceConstraint }
+      : { facingMode: "user" as const },
+    { facingMode: "user" as const },
+    {},
+  ];
+
+  let lastError: unknown;
+  for (const options of attempts) {
+    if (token !== previewOpenToken) return null;
+    try {
+      const track = await createLocalVideoTrack(options);
+      if (token !== previewOpenToken) {
+        track.stop();
+        return null;
+      }
+      return track;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Kamera tidak dapat dibuka.");
+}
+
+/** One-shot mic permission so enumerateDevices returns mic ids/labels. */
+async function unlockMicrophoneLabels() {
+  if (!navigator.mediaDevices?.getUserMedia) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: false,
     });
+    for (const mediaTrack of stream.getTracks()) {
+      mediaTrack.stop();
+    }
   } catch {
-    track = await createLocalVideoTrack({ facingMode: "user" });
+    // User may deny mic; camera preview can still work.
   }
-  if (token !== previewOpenToken) {
-    track.stop();
-    throw new Error("Preview kamera diganti sesi baru.");
-  }
-  return track;
 }
 
 export const BackgroundEffectsPrejoin = forwardRef<
@@ -84,6 +116,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
   const disposingRef = useRef(false);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
   const [previewError, setPreviewError] = useState("");
+  const [devicesRevision, setDevicesRevision] = useState(0);
   const [cameraDeviceId, setCameraDeviceId] = useState(
     () => readStoredMediaDevices().videoinput ?? "",
   );
@@ -128,6 +161,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
   const disposePreview = useCallback(async () => {
     if (disposingRef.current) return;
     disposingRef.current = true;
+    previewOpenToken += 1;
 
     try {
       await disposeRef.current();
@@ -150,7 +184,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
         // ignore
       }
     }
-    await new Promise((resolve) => window.setTimeout(resolve, 120));
   }, []);
 
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
@@ -162,6 +195,14 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
     async function startPreview() {
       setPreviewError("");
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-start", {
+          cameraDeviceId,
+          cameraEnabled,
+        });
+      });
+      // #endregion
       try {
         const cams = await listMediaDevices("videoinput");
         if (cancelled) return;
@@ -177,15 +218,49 @@ export const BackgroundEffectsPrejoin = forwardRef<
         const deviceConstraint = idealDeviceId(preferred || cameraDeviceId);
         localTrack = await openPreviewCamera(deviceConstraint);
 
-        if (cancelled || disposingRef.current) {
-          localTrack.stop();
+        if (cancelled || disposingRef.current || !localTrack) {
+          localTrack?.stop();
+          // #region agent log
+          void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+            dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-aborted", {
+              cancelled,
+              disposing: disposingRef.current,
+              hadTrack: Boolean(localTrack),
+            });
+          });
+          // #endregion
           return;
         }
+
         trackRef.current = localTrack;
         setTrack(localTrack);
         attachPreview(localTrack);
+
+        // #region agent log
+        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+          dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-ok", {
+            mediaReadyState: localTrack?.mediaStreamTrack?.readyState ?? null,
+            hasVideoEl: Boolean(videoRef.current),
+            videoSrcObject: Boolean(videoRef.current?.srcObject),
+          });
+        });
+        // #endregion
+
+        // Unlock mic device ids/labels without touching the live video track.
+        await unlockMicrophoneLabels();
+        if (!cancelled) {
+          setDevicesRevision((value) => value + 1);
+        }
       } catch (error) {
         if (!cancelled) {
+          // #region agent log
+          void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+            dbgCamera("G", "background-effects-prejoin.tsx:startPreview", "preview-fail", {
+              name: error instanceof Error ? error.name : "unknown",
+              message: error instanceof Error ? error.message : String(error),
+            });
+          });
+          // #endregion
           setPreviewError(
             error instanceof Error
               ? `Kamera belum dapat dibuka: ${error.message}`
@@ -201,6 +276,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
     return () => {
       cancelled = true;
+      previewOpenToken += 1;
       const current = localTrack ?? trackRef.current;
       trackRef.current = null;
       setTrack(null);
@@ -308,6 +384,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
         showSpeaker={false}
         requestVideoPermission={false}
         enumerateOnly
+        refreshRevision={devicesRevision}
         className="prejoin-device-pickers"
         onDeviceChange={(kind, deviceId) => {
           if (kind === "videoinput" && deviceId && deviceId !== cameraDeviceId) {

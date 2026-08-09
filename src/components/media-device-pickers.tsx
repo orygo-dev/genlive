@@ -22,6 +22,8 @@ type MediaDevicePickersProps = {
   requestVideoPermission?: boolean;
   /** When true, only enumerateDevices — no permission probe at all. */
   enumerateOnly?: boolean;
+  /** Bump after prejoin grants media permission to re-read device lists. */
+  refreshRevision?: number;
   onDeviceChange?: (kind: DeviceKind, deviceId: string) => void | Promise<void>;
 };
 
@@ -30,6 +32,7 @@ export function MediaDevicePickers({
   className,
   requestVideoPermission = true,
   enumerateOnly = false,
+  refreshRevision = 0,
   onDeviceChange,
 }: MediaDevicePickersProps) {
   const stored = readStoredMediaDevices();
@@ -48,6 +51,17 @@ export function MediaDevicePickers({
       listMediaDevices("videoinput"),
       listMediaDevices("audiooutput"),
     ]);
+    // #region agent log
+    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+      dbgCamera("H", "media-device-pickers.tsx:refreshDevices", "devices-listed", {
+        micCount: nextMics.length,
+        camCount: nextCams.length,
+        speakerCount: nextSpeakers.length,
+        refreshRevision,
+        enumerateOnly,
+      });
+    });
+    // #endregion
     setMics(nextMics);
     setCameras(nextCams);
     setSpeakers(nextSpeakers);
@@ -67,7 +81,7 @@ export function MediaDevicePickers({
     if (nextMic) storeMediaDevice("audioinput", nextMic);
     if (nextCam) storeMediaDevice("videoinput", nextCam);
     if (nextSpeaker) storeMediaDevice("audiooutput", nextSpeaker);
-  }, []);
+  }, [enumerateOnly, refreshRevision]);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,7 +132,7 @@ export function MediaDevicePickers({
       window.clearTimeout(debounceTimer);
       devices?.removeEventListener?.("devicechange", onChange);
     };
-  }, [enumerateOnly, refreshDevices, requestVideoPermission]);
+  }, [enumerateOnly, refreshDevices, refreshRevision, requestVideoPermission]);
 
   async function changeDevice(kind: DeviceKind, deviceId: string) {
     if (!deviceId) return;
