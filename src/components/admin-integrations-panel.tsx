@@ -362,6 +362,17 @@ export function AdminIntegrationsPanel() {
       if (!isValidLivekitUrl(url)) {
         throw new Error("LIVEKIT_URL belum valid (wss:// atau ws://).");
       }
+      const draftKey = (server?.apiKey || form.livekitApiKey || "").trim();
+      const draftSecret = (
+        server?.apiSecret ||
+        form.livekitApiSecret ||
+        ""
+      ).trim();
+      if (!draftKey || !draftSecret) {
+        throw new Error(
+          "Tempel ulang API Key dan API Secret di form sebelum Tes (jangan mengandalkan “(tersimpan)” saja). Jangan kirim Secret ke chat dukungan.",
+        );
+      }
       const response = await fetch("/api/admin/integrations/test-livekit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -369,8 +380,8 @@ export function AdminIntegrationsPanel() {
           serverId,
           url,
           apiUrl: kind === "CLOUD" ? undefined : apiUrl || undefined,
-          apiKey: server?.apiKey || form.livekitApiKey || undefined,
-          apiSecret: server?.apiSecret || form.livekitApiSecret || undefined,
+          apiKey: draftKey,
+          apiSecret: draftSecret,
           kind,
         }),
       });

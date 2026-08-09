@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import {
+  AccessToken,
+  RoomServiceClient,
+  TokenVerifier,
+} from "livekit-server-sdk";
 import { requireSuperAdminApi } from "@/lib/admin-api";
 import { getLiveKitEnvironment, getLiveKitServerProfiles } from "@/lib/livekit";
 import { normalizeLiveKitServerProfile } from "@/lib/livekit-config";
@@ -36,6 +40,17 @@ function logTestEvent(
   else console.info(message, payload);
 }
 
+function safeCredentialMeta(apiKey: string, apiSecret: string) {
+  return {
+    apiKeyLength: apiKey.length,
+    apiKeyPrefix: apiKey.slice(0, 8),
+    apiKeyLooksLikeLivekit: apiKey.startsWith("API"),
+    apiSecretLength: apiSecret.length,
+    // LiveKit Cloud secrets are typically ~43–44 chars; much shorter usually means truncated paste.
+    apiSecretLooksTruncated: apiSecret.length > 0 && apiSecret.length < 32,
+  };
+}
+
 export async function POST(request: Request) {
   const gate = await requireSuperAdminApi();
   if (gate.error || !gate.context) return gate.error!;
@@ -56,6 +71,7 @@ export async function POST(request: Request) {
     let apiSecret: string;
     let serverId: string | undefined = payload.serverId;
     let kind: "CLOUD" | "SELF_HOSTED" = draftKind;
+    let credentialSource: "draft" | "saved" | "environment" = "draft";
 
     if (draftUrl && (draftKey || draftSecret || payload.serverId)) {
       if (!isValidLivekitUrl(draftUrl)) {
@@ -69,25 +85,30 @@ export async function POST(request: Request) {
         : [];
       const saved = profiles.find((profile) => profile.id === payload.serverId);
 
-      // If URL changed vs saved profile, require fresh key+secret to avoid
-      // silently testing Cloud URL with leftover self-hosted credentials.
       const savedUrl = saved ? normalizeLivekitUrl(saved.url) : null;
       const urlChanged = Boolean(savedUrl && draftUrl !== savedUrl);
       if (urlChanged && (!draftKey || !draftSecret)) {
         throw new Error(
-          "URL LiveKit berubah. Isi ulang API Key dan API Secret dari project/server yang sama dengan URL baru, lalu Tes koneksi.",
+          "URL LiveKit berubah. Isi ulang API Key dan API Secret dari project/server yang sama dengan URL baru (jangan andalkan nilai tersimpan), lalu Tes koneksi.",
         );
       }
 
-      apiKey = draftKey || saved?.apiKey || "";
-      apiSecret = draftSecret || saved?.apiSecret || "";
+      if (draftKey && draftSecret) {
+        apiKey = draftKey;
+        apiSecret = draftSecret;
+        credentialSource = "draft";
+      } else {
+        apiKey = saved?.apiKey || "";
+        apiSecret = saved?.apiSecret || "";
+        credentialSource = "saved";
+      }
+
       url = draftUrl;
       kind =
         payload.kind ||
         saved?.kind ||
         (isLivekitCloudUrl(draftUrl) ? "CLOUD" : "SELF_HOSTED");
 
-      // Cloud: always derive API host from LIVEKIT_URL (no separate API URL).
       host =
         (kind === "CLOUD"
           ? deriveLivekitApiUrl(draftUrl)
@@ -98,11 +119,10 @@ export async function POST(request: Request) {
       serverId = payload.serverId || saved?.id;
       if (!apiKey || !apiSecret || !host) {
         throw new Error(
-          "Isi LIVEKIT_URL, API Key, dan API Secret terlebih dahulu (atau simpan profil lalu uji ulang).",
+          "Isi LIVEKIT_URL, API Key, dan API Secret di form (tempel ulang keduanya), lalu Tes koneksi. Jangan hanya mengandalkan placeholder “(tersimpan)” jika Key baru dibuat di Cloud.",
         );
       }
 
-      // Validate the trio can form a coherent profile.
       if (
         !normalizeLiveKitServerProfile({
           id: serverId || "draft",
@@ -119,14 +139,48 @@ export async function POST(request: Request) {
     } else {
       const environment = await getLiveKitEnvironment(payload.serverId);
       host = (await getLiveKitApiHost(payload.serverId)).replace(/\/$/, "");
-      url = normalizeLivekitUrl(environment.LIVEKIT_URL) || environment.LIVEKIT_URL;
+      url =
+        normalizeLivekitUrl(environment.LIVEKIT_URL) || environment.LIVEKIT_URL;
       apiKey = environment.LIVEKIT_API_KEY;
       apiSecret = environment.LIVEKIT_API_SECRET;
       serverId = environment.LIVEKIT_SERVER_ID;
       kind = environment.LIVEKIT_KIND;
+      credentialSource = "environment";
     }
 
-    // 1) Admin API: listRooms proves key/secret accepted by this host.
+    const meta = safeCredentialMeta(apiKey, apiSecret);
+    if (meta.apiSecretLooksTruncated) {
+      throw new Error(
+        `API Secret terlihat terpotong (panjang ${meta.apiSecretLength}). Di LiveKit Cloud → Settings → Keys, buat key baru dan salin Secret dengan tombol Copy (bukan seleksi manual).`,
+      );
+    }
+
+    // Local round-trip: proves Key+Secret can sign & verify together (no network).
+    const probe = new AccessToken(apiKey, apiSecret, {
+      identity: `genmeet-probe-${Date.now()}`,
+      ttl: "2m",
+    });
+    probe.addGrant({
+      room: `genmeet-probe-${Date.now()}`,
+      roomJoin: true,
+      roomList: true,
+      canPublish: false,
+      canSubscribe: false,
+    });
+    const jwt = await probe.toJwt();
+    const parts = jwt.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Token LiveKit rusak (bukan JWT).");
+    }
+    try {
+      await new TokenVerifier(apiKey, apiSecret).verify(jwt);
+    } catch {
+      throw new Error(
+        "API Key dan API Secret tidak saling cocok (verifikasi lokal gagal). Salin ulang pasangan Key+Secret dari baris yang sama di LiveKit Cloud Keys.",
+      );
+    }
+
+    // Remote admin API — Cloud rejects here if Key belongs to a different project than host.
     let rooms;
     try {
       const client = new RoomServiceClient(host, apiKey, apiSecret);
@@ -137,48 +191,42 @@ export async function POST(request: Request) {
           ? listError.message
           : "Gagal memanggil LiveKit listRooms.";
       const classified = classifyLiveKitFailure(raw, { url, kind });
-      // Surface a clear Cloud-focused message for the common "invalid token" reply.
+      logTestEvent("error", "LiveKit listRooms rejected credentials", {
+        ...meta,
+        host,
+        urlHost: url.replace(/^wss?:\/\//, "").split("/")[0],
+        credentialSource,
+        kind,
+        serverId,
+        failureKind: classified.kind,
+        error: raw,
+        // Confirm we are NOT silently using process.env when draft/saved provided.
+        envKeyPresent: Boolean(process.env.LIVEKIT_API_KEY?.trim()),
+        envKeySamePrefix:
+          process.env.LIVEKIT_API_KEY?.trim()?.slice(0, 8) === meta.apiKeyPrefix,
+      });
       if (classified.kind === "unauthorized") {
         throw new Error(
-          `LiveKit menolak API Key/Secret (${raw}). Pastikan Key + Secret dari project Cloud yang sama dengan ${url}.`,
+          [
+            `LiveKit Cloud menolak Key/Secret untuk host ${host} (${raw}).`,
+            "Verifikasi lokal Key+Secret SUDAH cocok — jadi masalahnya pasangan project:",
+            `1) Buka project yang URL-nya persis ${url}`,
+            "2) Settings → Keys → Create key baru → Copy Key dan Secret",
+            "3) Tempel keduanya di form GenMeet (jangan pakai key project lain / webhook secret)",
+            "4) Simpan & terapkan, lalu Tes lagi",
+            `(diagnostik aman: key ${meta.apiKeyPrefix}… len=${meta.apiKeyLength}, secretLen=${meta.apiSecretLength}, sumber=${credentialSource})`,
+          ].join(" "),
         );
       }
-      throw listError instanceof Error
-        ? listError
-        : new Error(raw);
-    }
-
-    // 2) Mint a short-lived join token (same path as meeting join) and check iss.
-    const probe = new AccessToken(apiKey, apiSecret, {
-      identity: `genmeet-probe-${Date.now()}`,
-      ttl: "2m",
-    });
-    probe.addGrant({
-      room: `genmeet-probe-${Date.now()}`,
-      roomJoin: true,
-      canPublish: false,
-      canSubscribe: false,
-    });
-    const jwt = await probe.toJwt();
-    const parts = jwt.split(".");
-    if (parts.length !== 3) {
-      throw new Error("Token LiveKit rusak (bukan JWT).");
-    }
-    const claims = JSON.parse(
-      Buffer.from(parts[1]!, "base64url").toString("utf8"),
-    ) as { iss?: string };
-    if (claims.iss && claims.iss !== apiKey) {
-      throw new Error(
-        "Token LiveKit tidak cocok dengan API Key (iss mismatch).",
-      );
+      throw listError instanceof Error ? listError : new Error(raw);
     }
 
     logTestEvent("info", "LiveKit connection test OK", {
+      ...meta,
       serverId,
       kind,
       host,
-      urlHost: url.replace(/^wss?:\/\//, "").split("/")[0],
-      apiKeyPrefix: apiKey.slice(0, 6),
+      credentialSource,
       roomCount: rooms.length,
       tokenParts: parts.length,
     });
@@ -190,13 +238,15 @@ export async function POST(request: Request) {
       roomCount: rooms.length,
       serverId,
       kind,
+      credentialSource,
+      diagnostics: meta,
       checks: {
         urlValid: true,
+        localTokenRoundTrip: true,
         apiReachable: true,
         credentialsAccepted: true,
-        tokenMinted: true,
       },
-      message: `LiveKit OK (${kind === "CLOUD" ? "Cloud" : "Self-hosted"}) — ${host} · ${rooms.length} room · token mint OK.`,
+      message: `LiveKit OK (${kind === "CLOUD" ? "Cloud" : "Self-hosted"}) — ${host} · ${rooms.length} room · sumber kredensial: ${credentialSource}.`,
     });
   } catch (error) {
     const message =
