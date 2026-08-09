@@ -489,17 +489,27 @@ export function MeetingToolsDock({
 
   useEffect(() => {
     window.localStorage.setItem(AUDIO_STORAGE_KEY, audioMode);
-    void applyAudioMode(
-      audioMode,
-      () => {
-        const publication = localParticipant.getTrackPublication(
-          Track.Source.Microphone,
-        );
-        return publication?.track as LocalAudioTrack | undefined;
-      },
-      (enabled, options) =>
-        localParticipant.setMicrophoneEnabled(enabled, options),
-    );
+    // Defer Krisp / mic processor until after join settles to avoid stacking
+    // heavy work with LiveKit connect + camera acquisition.
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      void applyAudioMode(
+        audioMode,
+        () => {
+          const publication = localParticipant.getTrackPublication(
+            Track.Source.Microphone,
+          );
+          return publication?.track as LocalAudioTrack | undefined;
+        },
+        (enabled, options) =>
+          localParticipant.setMicrophoneEnabled(enabled, options),
+      );
+    }, audioMode === "noise" ? 800 : 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [audioMode, localParticipant]);
 
   useEffect(() => {

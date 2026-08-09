@@ -55,6 +55,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
 ) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trackRef = useRef<LocalVideoTrack | null>(null);
+  const disposingRef = useRef(false);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
   const [previewError, setPreviewError] = useState("");
   const [cameraDeviceId, setCameraDeviceId] = useState(
@@ -76,6 +77,9 @@ export const BackgroundEffectsPrejoin = forwardRef<
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 
+  const disposeRef = useRef(vb.dispose);
+  disposeRef.current = vb.dispose;
+
   const attachPreview = useCallback((nextTrack: LocalVideoTrack | null) => {
     const el = videoRef.current;
     if (!el || !nextTrack) return;
@@ -92,6 +96,17 @@ export const BackgroundEffectsPrejoin = forwardRef<
   }, []);
 
   const disposePreview = useCallback(async () => {
+    if (disposingRef.current) return;
+    disposingRef.current = true;
+
+    // Tear down MediaPipe / processor BEFORE stopping the camera track so the
+    // browser does not fight device locks during LiveKitRoom getUserMedia.
+    try {
+      await disposeRef.current();
+    } catch {
+      // ignore
+    }
+
     const current = trackRef.current;
     trackRef.current = null;
     setTrack(null);
@@ -108,12 +123,13 @@ export const BackgroundEffectsPrejoin = forwardRef<
       }
     }
     // Give the browser a beat to release the capture device before room join.
-    await new Promise((resolve) => window.setTimeout(resolve, 180));
+    await new Promise((resolve) => window.setTimeout(resolve, 280));
   }, []);
 
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
 
   useEffect(() => {
+    if (disposingRef.current) return;
     let cancelled = false;
     let localTrack: LocalVideoTrack | null = null;
 
@@ -130,21 +146,27 @@ export const BackgroundEffectsPrejoin = forwardRef<
         }
 
         const deviceConstraint = idealDeviceId(preferred || cameraDeviceId);
+        // Lighter preview than in-room publish — less main-thread + device load.
+        const previewResolution = {
+          width: 640,
+          height: 360,
+          frameRate: 15,
+        };
         try {
           localTrack = await createLocalVideoTrack({
             ...(deviceConstraint
               ? { deviceId: deviceConstraint }
               : { facingMode: "user" }),
-            resolution: { width: 1280, height: 720, frameRate: 24 },
+            resolution: previewResolution,
           });
         } catch {
           localTrack = await createLocalVideoTrack({
             facingMode: "user",
-            resolution: { width: 1280, height: 720, frameRate: 24 },
+            resolution: previewResolution,
           });
         }
 
-        if (cancelled) {
+        if (cancelled || disposingRef.current) {
           localTrack.stop();
           return;
         }
@@ -178,14 +200,14 @@ export const BackgroundEffectsPrejoin = forwardRef<
   }, [attachPreview, cameraDeviceId]);
 
   useEffect(() => {
-    if (!track) return;
+    if (!track || disposingRef.current) return;
     if (cameraEnabled) {
       void track.unmute();
       attachPreview(track);
     } else {
       void track.mute();
     }
-  }, [track, cameraEnabled, effectId, vb.busy, attachPreview]);
+  }, [track, cameraEnabled, effectId, attachPreview]);
 
   return (
     <div className="bg-effects-prejoin prejoin-media">

@@ -32,6 +32,8 @@ export type UseVirtualBackgroundResult = {
   autoDowngraded: boolean;
   stats: ProcessorStats | null;
   busy: boolean;
+  /** Flush queued work and detach/destroy the processor. Safe to call before join. */
+  dispose: () => Promise<void>;
 };
 
 export function useVirtualBackground({
@@ -74,6 +76,15 @@ export function useVirtualBackground({
       await processor.destroy().catch(() => undefined);
     }
   }, []);
+
+  const dispose = useCallback(async () => {
+    operationIdRef.current += 1;
+    setLoading(false);
+    setBusy(false);
+    const next = operationQueueRef.current.then(detachProcessor, detachProcessor);
+    operationQueueRef.current = next;
+    await next;
+  }, [detachProcessor]);
 
   useEffect(() => {
     const operationId = ++operationIdRef.current;
@@ -200,5 +211,6 @@ export function useVirtualBackground({
     autoDowngraded,
     stats,
     busy,
+    dispose,
   };
 }

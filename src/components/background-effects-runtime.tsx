@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Track, type LocalVideoTrack } from "livekit-client";
-import { useLocalParticipant } from "@livekit/components-react";
+import {
+  ConnectionState,
+  Track,
+  type LocalVideoTrack,
+} from "livekit-client";
+import {
+  useConnectionState,
+  useLocalParticipant,
+} from "@livekit/components-react";
 import { ImageIcon, X } from "lucide-react";
 import { BackgroundEffectsPicker } from "@/components/background-effects-picker";
 import { useBackgroundEffects } from "@/components/background-effects-context";
@@ -18,9 +25,11 @@ export function BackgroundEffectsRuntime({
   effectId,
   onEffectChange,
 }: BackgroundEffectsRuntimeProps) {
+  const connectionState = useConnectionState();
   const { localParticipant } = useLocalParticipant();
   const [open, setOpen] = useState(false);
   const [track, setTrack] = useState<LocalVideoTrack | null>(null);
+  const [effectsReady, setEffectsReady] = useState(false);
   const {
     qualityMode,
     setQualityMode,
@@ -48,18 +57,30 @@ export function BackgroundEffectsRuntime({
     };
   }, [localParticipant]);
 
+  // Let LiveKit finish connect + camera publish before MediaPipe attaches,
+  // otherwise join freezes the main thread (WASM reload + device contention).
+  useEffect(() => {
+    if (!track || connectionState !== ConnectionState.Connected) {
+      setEffectsReady(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setEffectsReady(true), 400);
+    return () => window.clearTimeout(timer);
+  }, [track, connectionState]);
+
   const vb = useVirtualBackground({
     effectId,
     qualityMode,
-    track,
+    track: effectsReady ? track : null,
+    enabled: effectsReady,
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const room = document.querySelector(".live-room");
-    if (!(room instanceof HTMLElement)) return;
-    room.dataset.bgEffect =
+    const roomEl = document.querySelector(".live-room");
+    if (!(roomEl instanceof HTMLElement)) return;
+    roomEl.dataset.bgEffect =
       effectId === "none"
         ? "off"
         : effectId.startsWith("blur")
@@ -97,7 +118,7 @@ export function BackgroundEffectsRuntime({
             qualityMode={qualityMode}
             onQualityChange={setQualityMode}
             unsupported={!vb.supported}
-            loading={vb.loading}
+            loading={vb.loading || (Boolean(track) && !effectsReady)}
             error={vb.error}
             autoDowngraded={autoDowngradeWarning || vb.autoDowngraded}
             activeQuality={vb.activeQuality}

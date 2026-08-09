@@ -187,7 +187,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const isConfigurationError =
-      error instanceof Error && error.message.startsWith("Konfigurasi LiveKit");
+      error instanceof Error &&
+      (error.message.startsWith("Konfigurasi LiveKit") ||
+        error.message.startsWith("Server LiveKit"));
     const message = isConfigurationError
       ? error.message
       : "Tidak dapat membuat akses meeting.";

@@ -10,12 +10,33 @@ const MODEL_URL =
 const WASM_ROOT =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 
+/** Keep MediaPipe warm across prejoin → room so join does not reload WASM/model. */
+const IDLE_RELEASE_MS = 45_000;
+
 let segmenterPromise: Promise<ImageSegmenter> | null = null;
 let segmenterInstance: ImageSegmenter | null = null;
 let refCount = 0;
+let idleReleaseTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearIdleReleaseTimer() {
+  if (idleReleaseTimer != null) {
+    clearTimeout(idleReleaseTimer);
+    idleReleaseTimer = null;
+  }
+}
+
+async function closeSegmenterInstance() {
+  const instance = segmenterInstance;
+  segmenterInstance = null;
+  segmenterPromise = null;
+  if (instance) {
+    await instance.close();
+  }
+}
 
 export async function acquireImageSegmenter(): Promise<ImageSegmenter> {
   refCount += 1;
+  clearIdleReleaseTimer();
   if (segmenterInstance) {
     return segmenterInstance;
   }
@@ -37,12 +58,13 @@ export async function releaseImageSegmenter(): Promise<void> {
   if (refCount > 0) {
     return;
   }
-  const instance = segmenterInstance;
-  segmenterInstance = null;
-  segmenterPromise = null;
-  if (instance) {
-    await instance.close();
-  }
+  // Delay close so the in-room processor can reuse the warm segmenter.
+  clearIdleReleaseTimer();
+  idleReleaseTimer = setTimeout(() => {
+    idleReleaseTimer = null;
+    if (refCount > 0) return;
+    void closeSegmenterInstance();
+  }, IDLE_RELEASE_MS);
 }
 
 export function getImageSegmenterRefCount() {
@@ -52,12 +74,8 @@ export function getImageSegmenterRefCount() {
 /** Test helper — force reset singleton without waiting for refCount. */
 export async function resetImageSegmenterForTests() {
   refCount = 0;
-  const instance = segmenterInstance;
-  segmenterInstance = null;
-  segmenterPromise = null;
-  if (instance) {
-    await instance.close();
-  }
+  clearIdleReleaseTimer();
+  await closeSegmenterInstance();
 }
 
 async function createSegmenter() {

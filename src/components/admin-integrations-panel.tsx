@@ -347,10 +347,24 @@ export function AdminIntegrationsPanel() {
     setError("");
     setMessage("");
     try {
+      const server = livekitServers.find((item) => item.id === serverId);
+      const url = normalizeLivekitUrl(server?.url || form.livekitUrl) || "";
+      const apiUrl =
+        normalizeLivekitApiUrl(server?.apiUrl || form.livekitApiUrl, url) || "";
+      if (!isValidLivekitUrl(url)) {
+        throw new Error("LIVEKIT_URL belum valid (wss:// atau ws://).");
+      }
       const response = await fetch("/api/admin/integrations/test-livekit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serverId }),
+        body: JSON.stringify({
+          serverId,
+          url,
+          apiUrl,
+          apiKey: server?.apiKey || form.livekitApiKey || undefined,
+          apiSecret: server?.apiSecret || form.livekitApiSecret || undefined,
+          kind: server?.kind,
+        }),
       });
       const payload = await readApiJson<{
         ok?: boolean;
@@ -412,10 +426,13 @@ export function AdminIntegrationsPanel() {
             )}
           </div>
           <p className="admin-muted">
-            Gunakan <strong>WebSocket URL</strong>{" "}
-            (<code>wss://…</code>), <strong>API Key</strong>, dan{" "}
-            <strong>API Secret</strong>. URL <code>https://</code> akan
-            dikonversi otomatis ke <code>wss://</code>.
+            Dukung <strong>LiveKit Cloud</strong> dan{" "}
+            <strong>self-hosted</strong>. Isi WebSocket URL (
+            <code>wss://…</code>), API Key, dan API Secret dari server yang sama.
+            URL <code>https://</code> otomatis menjadi <code>wss://</code>.{" "}
+            <strong>Tes koneksi</strong> bisa memakai nilai form yang belum
+            disimpan; <strong>Simpan &amp; terapkan</strong> wajib agar meeting
+            memakai profil aktif.
           </p>
           <div className="admin-livekit-profile-picker">
             <label>
@@ -464,12 +481,18 @@ export function AdminIntegrationsPanel() {
               value={form.livekitUrl || ""}
               onChange={(e) => setField("livekitUrl", e.target.value)}
               onBlur={() => normalizeLivekitFields()}
-              placeholder="wss://your-project.livekit.cloud"
+              placeholder={
+                activeLivekitServer?.kind === "SELF_HOSTED"
+                  ? "wss://meet.domainanda.com"
+                  : "wss://your-project.livekit.cloud"
+              }
               autoComplete="off"
               spellCheck={false}
             />
             {!livekitStatus.urlOk && form.livekitUrl ? (
-              <small className="form-error">URL harus wss:// atau https://</small>
+              <small className="form-error">
+                URL harus wss:// / ws:// (atau https:// / http://)
+              </small>
             ) : null}
           </label>
           <label>
@@ -478,7 +501,11 @@ export function AdminIntegrationsPanel() {
               value={form.livekitApiUrl || ""}
               onChange={(e) => setField("livekitApiUrl", e.target.value)}
               onBlur={() => normalizeLivekitFields()}
-              placeholder="Kosongkan — otomatis dari LIVEKIT_URL"
+              placeholder={
+                activeLivekitServer?.kind === "SELF_HOSTED"
+                  ? "https://meet.domainanda.com — kosongkan jika sama dengan URL"
+                  : "Kosongkan — otomatis dari LIVEKIT_URL"
+              }
               autoComplete="off"
               spellCheck={false}
             />

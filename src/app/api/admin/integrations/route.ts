@@ -15,6 +15,7 @@ import {
 } from "@/lib/livekit-url";
 import {
   normalizeLiveKitServerProfile,
+  normalizeLiveKitServerProfiles,
 } from "@/lib/livekit-config";
 import { getLiveKitServerProfiles } from "@/lib/livekit";
 import { prisma } from "@/lib/db";
@@ -167,7 +168,10 @@ export async function GET() {
           apiSecretSet: Boolean(server.apiSecret),
         })),
         livekitStoredInDatabase: Boolean(
-          stored.livekitUrl || stored.livekitApiKey || stored.livekitApiSecret,
+          normalizeLiveKitServerProfiles(stored.livekitServers).length > 0 ||
+            stored.livekitUrl ||
+            stored.livekitApiKey ||
+            stored.livekitApiSecret,
         ),
         livekitEgressS3AccessKey: maskSecret(resolved.livekitEgressS3AccessKey),
         livekitEgressS3AccessKeySet: Boolean(resolved.livekitEgressS3AccessKey),

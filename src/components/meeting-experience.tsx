@@ -105,8 +105,7 @@ function MeetingRoom({
   const [elapsedLabel, setElapsedLabel] = useState("00:00");
   const leaveIntentRef = useRef(false);
   const suppressLeaveNavRef = useRef(false);
-  const isHost =
-    connection.role === "HOST" || connection.role === "MODERATOR";
+  const isHost = connection.role === "HOST" || connection.role === "MODERATOR";
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
   const roomOptions = useMemo<RoomOptions>(() => buildMeetingRoomOptions(), []);
@@ -184,7 +183,7 @@ function MeetingRoom({
       const lower = raw.toLowerCase();
       if (lower.includes("invalid token") || lower.includes("unauthorized")) {
         onError(
-          "Token LiveKit ditolak server. Di Super Admin → Integrasi, simpan ulang LIVEKIT_URL + API Key + API Secret dari project Cloud yang sama, lalu klik Uji koneksi.",
+          "Token LiveKit ditolak server. Di Super Admin → Integrasi, pastikan LIVEKIT_URL + API Key + API Secret berasal dari server aktif yang sama (Cloud atau self-hosted), lalu Simpan & terapkan dan Tes koneksi.",
         );
         return;
       }
@@ -283,6 +282,8 @@ function MeetingExperienceInner({
   const [connection, setConnection] = useState<ConnectionDetails | null>(null);
   const [admission, setAdmission] = useState<AdmissionRequest | null>(null);
   const [error, setError] = useState("");
+  const meetingClosed =
+    meetingConfig?.status === "ENDED" || meetingConfig?.status === "CANCELLED";
   const [isJoining, setIsJoining] = useState(false);
 
   const meetingTitle = meetingConfig?.title ?? roomName;
@@ -322,10 +323,14 @@ function MeetingExperienceInner({
         if (!response.ok) {
           if (response.status === 404 || response.status === 410) {
             setAdmission(null);
-            setError(payload.error ?? "Permintaan waiting room sudah berakhir.");
+            setError(
+              payload.error ?? "Permintaan waiting room sudah berakhir.",
+            );
             return;
           }
-          throw new Error(payload.error ?? "Status waiting room tidak tersedia.");
+          throw new Error(
+            payload.error ?? "Status waiting room tidak tersedia.",
+          );
         }
         retryCount = 0;
         if (payload.status === "REJECTED") {
@@ -390,6 +395,10 @@ function MeetingExperienceInner({
 
   async function joinRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (meetingClosed) {
+      setError("Meeting ini sudah tidak menerima peserta.");
+      return;
+    }
     const name = participantName.trim();
 
     if (name.length < 2) {
@@ -480,10 +489,13 @@ function MeetingExperienceInner({
           </p>
           <ul className="waiting-tips">
             <li>
-              Preferensi mic/kamera Anda: {micEnabled ? "mic nyala" : "mic mati"}
-              , {cameraEnabled ? "kamera nyala" : "kamera mati"}.
+              Preferensi mic/kamera Anda:{" "}
+              {micEnabled ? "mic nyala" : "mic mati"},{" "}
+              {cameraEnabled ? "kamera nyala" : "kamera mati"}.
             </li>
-            <li>Pastikan izin browser untuk kamera dan mikrofon sudah diberikan.</li>
+            <li>
+              Pastikan izin browser untuk kamera dan mikrofon sudah diberikan.
+            </li>
             <li>Siapkan nama tampilan yang mudah dikenali host.</li>
           </ul>
           <button
@@ -531,9 +543,11 @@ function MeetingExperienceInner({
           </p>
         ) : null}
         <p className="prejoin-description">
-          {meetingConfig?.waitingRoom
-            ? "Atur kamera, mikrofon, dan nama. Host akan menyetujui sebelum Anda masuk."
-            : "Atur kamera, mikrofon, dan nama yang akan dilihat peserta lain."}
+          {meetingClosed
+            ? "Meeting ini sudah selesai dan tidak lagi menerima peserta."
+            : meetingConfig?.waitingRoom
+              ? "Atur kamera, mikrofon, dan nama. Host akan menyetujui sebelum Anda masuk."
+              : "Atur kamera, mikrofon, dan nama yang akan dilihat peserta lain."}
         </p>
 
         <BackgroundEffectsPrejoin
@@ -595,9 +609,11 @@ function MeetingExperienceInner({
           <button
             className="button button-primary button-full"
             type="submit"
-            disabled={isJoining}
+            disabled={isJoining || meetingClosed}
           >
-            {isJoining ? (
+            {meetingClosed ? (
+              <>Meeting sudah selesai</>
+            ) : isJoining ? (
               <>
                 <LoaderCircle className="spinner" size={18} /> Menghubungkan...
               </>

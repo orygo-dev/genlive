@@ -19,8 +19,21 @@ export { sanitizeLivekitCredential } from "@/lib/livekit-url";
 const liveKitEnvironmentSchema = z.object({
   LIVEKIT_SERVER_ID: z.string().min(1),
   LIVEKIT_SERVER_NAME: z.string().min(1),
-  LIVEKIT_URL: z.string().url().startsWith("wss://"),
-  LIVEKIT_API_URL: z.string().url().startsWith("https://"),
+  // Cloud requires wss/https; self-hosted may use ws/http on private networks.
+  LIVEKIT_URL: z
+    .string()
+    .url()
+    .refine(
+      (value) => value.startsWith("wss://") || value.startsWith("ws://"),
+      "LIVEKIT_URL harus diawali wss:// atau ws://",
+    ),
+  LIVEKIT_API_URL: z
+    .string()
+    .url()
+    .refine(
+      (value) => value.startsWith("https://") || value.startsWith("http://"),
+      "LIVEKIT_API_URL harus diawali https:// atau http://",
+    ),
   LIVEKIT_API_KEY: z.string().min(1),
   LIVEKIT_API_SECRET: z.string().min(1),
 });
