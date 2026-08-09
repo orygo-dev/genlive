@@ -42,7 +42,8 @@ export type BackgroundEffectsPrejoinHandle = {
 async function openPreviewCamera(
   deviceConstraint: { ideal: string } | undefined,
 ): Promise<LocalVideoTrack> {
-  const resolution = { width: 1280, height: 720, frameRate: 24 };
+  // Keep prejoin light — 720p@24 + MediaPipe previously froze Firefox.
+  const resolution = { width: 640, height: 360, frameRate: 15 };
   const attempts: Array<() => Promise<LocalVideoTrack>> = [
     () =>
       createLocalVideoTrack({
@@ -106,8 +107,9 @@ export const BackgroundEffectsPrejoin = forwardRef<
   const vb = useVirtualBackground({
     effectId,
     qualityMode,
-    track: cameraEnabled ? track : null,
-    enabled: cameraEnabled,
+    // Never attach MediaPipe on prejoin unless user picked an effect.
+    track: cameraEnabled && effectId !== "none" ? track : null,
+    enabled: cameraEnabled && effectId !== "none",
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 
@@ -272,7 +274,9 @@ export const BackgroundEffectsPrejoin = forwardRef<
         requestVideoPermission={false}
         className="prejoin-device-pickers"
         onDeviceChange={(kind, deviceId) => {
-          if (kind === "videoinput") {
+          // Avoid restarting the preview track unless the user actually
+          // picks a different camera — auto-enumerate must not retrigger this.
+          if (kind === "videoinput" && deviceId && deviceId !== cameraDeviceId) {
             setCameraDeviceId(deviceId);
           }
         }}

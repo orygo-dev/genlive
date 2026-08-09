@@ -71,8 +71,8 @@ export function BackgroundEffectsRuntime({
   const vb = useVirtualBackground({
     effectId,
     qualityMode,
-    track: effectsReady ? track : null,
-    enabled: effectsReady,
+    track: effectsReady && effectId !== "none" ? track : null,
+    enabled: effectsReady && effectId !== "none",
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 

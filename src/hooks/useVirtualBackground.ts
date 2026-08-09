@@ -7,14 +7,12 @@ import {
   storeBackgroundEffect,
   type BackgroundEffectId,
 } from "@/lib/background-effects";
-import {
-  supportsVideoEffects,
-  VirtualBackgroundProcessor,
-  type ProcessorStats,
-  type QualityMode,
-  type QualityTier,
-} from "@/features/video-effects";
-import { effectIdToMode } from "@/features/video-effects/VirtualBackgroundProcessor";
+import { supportsVideoEffects } from "@/features/video-effects/deviceCapability";
+import type {
+  ProcessorStats,
+  QualityMode,
+  QualityTier,
+} from "@/features/video-effects/types";
 
 export type UseVirtualBackgroundOptions = {
   effectId: BackgroundEffectId;
@@ -36,6 +34,8 @@ export type UseVirtualBackgroundResult = {
   dispose: () => Promise<void>;
 };
 
+type ProcessorModule = typeof import("@/features/video-effects/VirtualBackgroundProcessor");
+
 export function useVirtualBackground({
   effectId,
   qualityMode,
@@ -43,7 +43,9 @@ export function useVirtualBackground({
   enabled = true,
   onAutoDowngrade,
 }: UseVirtualBackgroundOptions): UseVirtualBackgroundResult {
-  const processorRef = useRef<VirtualBackgroundProcessor | null>(null);
+  const processorRef = useRef<InstanceType<
+    ProcessorModule["VirtualBackgroundProcessor"]
+  > | null>(null);
   const attachedTrackRef = useRef<LocalVideoTrack | null>(null);
   const operationIdRef = useRef(0);
   const operationQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -89,34 +91,34 @@ export function useVirtualBackground({
   useEffect(() => {
     const operationId = ++operationIdRef.current;
     const activeTrack = track;
+    const wantsEffect = Boolean(
+      enabled && supported && activeTrack && effectId !== "none",
+    );
 
     async function sync() {
       try {
         if (operationId !== operationIdRef.current) return;
         setBusy(true);
-        setLoading(
-          Boolean(enabled && supported && activeTrack && effectId !== "none"),
-        );
+        setLoading(wantsEffect);
         setError("");
 
-        if (!enabled || !supported || !activeTrack) {
+        if (!wantsEffect) {
           await detachProcessor();
           if (operationId !== operationIdRef.current) return;
+          if (effectId === "none") {
+            storeBackgroundEffect("none");
+          }
           setAutoDowngraded(false);
           setActiveQuality(null);
           setStats(null);
           return;
         }
 
-        if (effectId === "none") {
-          await detachProcessor();
-          if (operationId !== operationIdRef.current) return;
-          storeBackgroundEffect("none");
-          setAutoDowngraded(false);
-          setActiveQuality(null);
-          setStats(null);
-          return;
-        }
+        // Lazy-load MediaPipe only when an effect is actually selected.
+        const mod = await import(
+          "@/features/video-effects/VirtualBackgroundProcessor"
+        );
+        if (operationId !== operationIdRef.current) return;
 
         if (attachedTrackRef.current && attachedTrackRef.current !== activeTrack) {
           await detachProcessor();
@@ -125,8 +127,13 @@ export function useVirtualBackground({
         if (operationId !== operationIdRef.current) return;
 
         if (!processorRef.current) {
-          const processor = new VirtualBackgroundProcessor({
+          let lastStatsAt = 0;
+          const processor = new mod.VirtualBackgroundProcessor({
             onStats: (next) => {
+              // Do not setState every frame — that freezes Firefox with MediaPipe.
+              const now = performance.now();
+              if (now - lastStatsAt < 2000 && !next.autoDowngraded) return;
+              lastStatsAt = now;
               setStats(next);
               setActiveQuality(next.activeQuality);
               if (next.autoDowngraded) {
@@ -138,7 +145,7 @@ export function useVirtualBackground({
           processorRef.current = processor;
           attachedTrackRef.current = activeTrack;
           try {
-            await activeTrack.setProcessor(processor);
+            await activeTrack!.setProcessor(processor);
           } catch (error) {
             if (processorRef.current === processor) {
               processorRef.current = null;
@@ -154,7 +161,7 @@ export function useVirtualBackground({
         const processor = processorRef.current;
         if (!processor) return;
 
-        const mapped = effectIdToMode(effectId);
+        const mapped = mod.effectIdToMode(effectId);
         const imagePath =
           mapped.mode === "image" ? getBackgroundImagePath(effectId) : null;
 
