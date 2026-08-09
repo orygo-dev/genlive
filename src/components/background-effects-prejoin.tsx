@@ -39,6 +39,40 @@ export type BackgroundEffectsPrejoinHandle = {
   disposePreview: () => Promise<void>;
 };
 
+async function openPreviewCamera(
+  deviceConstraint: { ideal: string } | undefined,
+): Promise<LocalVideoTrack> {
+  const resolution = { width: 1280, height: 720, frameRate: 24 };
+  const attempts: Array<() => Promise<LocalVideoTrack>> = [
+    () =>
+      createLocalVideoTrack({
+        ...(deviceConstraint
+          ? { deviceId: deviceConstraint }
+          : { facingMode: "user" as const }),
+        resolution,
+      }),
+    () =>
+      createLocalVideoTrack({
+        facingMode: "user",
+        resolution,
+      }),
+    () => createLocalVideoTrack({ facingMode: "user" }),
+    () => createLocalVideoTrack(),
+  ];
+
+  let lastError: unknown;
+  for (const attempt of attempts) {
+    try {
+      return await attempt();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Browser menolak akses kamera.");
+}
+
 export const BackgroundEffectsPrejoin = forwardRef<
   BackgroundEffectsPrejoinHandle,
   BackgroundEffectsPrejoinProps
@@ -99,8 +133,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
     if (disposingRef.current) return;
     disposingRef.current = true;
 
-    // Tear down MediaPipe / processor BEFORE stopping the camera track so the
-    // browser does not fight device locks during LiveKitRoom getUserMedia.
+    // Await VB teardown before releasing the camera device for LiveKitRoom.
     try {
       await disposeRef.current();
     } catch {
@@ -122,14 +155,13 @@ export const BackgroundEffectsPrejoin = forwardRef<
         // ignore
       }
     }
-    // Give the browser a beat to release the capture device before room join.
-    await new Promise((resolve) => window.setTimeout(resolve, 280));
+    await new Promise((resolve) => window.setTimeout(resolve, 180));
   }, []);
 
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
 
   useEffect(() => {
-    if (disposingRef.current) return;
+    disposingRef.current = false;
     let cancelled = false;
     let localTrack: LocalVideoTrack | null = null;
 
@@ -137,6 +169,8 @@ export const BackgroundEffectsPrejoin = forwardRef<
       setPreviewError("");
       try {
         const cams = await listMediaDevices("videoinput");
+        if (cancelled) return;
+
         const preferred = pickPreferredDeviceId(
           cams,
           cameraDeviceId || readStoredMediaDevices().videoinput,
@@ -146,25 +180,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
         }
 
         const deviceConstraint = idealDeviceId(preferred || cameraDeviceId);
-        // Lighter preview than in-room publish — less main-thread + device load.
-        const previewResolution = {
-          width: 640,
-          height: 360,
-          frameRate: 15,
-        };
-        try {
-          localTrack = await createLocalVideoTrack({
-            ...(deviceConstraint
-              ? { deviceId: deviceConstraint }
-              : { facingMode: "user" }),
-            resolution: previewResolution,
-          });
-        } catch {
-          localTrack = await createLocalVideoTrack({
-            facingMode: "user",
-            resolution: previewResolution,
-          });
-        }
+        localTrack = await openPreviewCamera(deviceConstraint);
 
         if (cancelled || disposingRef.current) {
           localTrack.stop();
@@ -190,11 +206,20 @@ export const BackgroundEffectsPrejoin = forwardRef<
 
     return () => {
       cancelled = true;
+      const current = localTrack ?? trackRef.current;
       trackRef.current = null;
       setTrack(null);
-      if (localTrack) {
-        localTrack.stop();
-        localTrack.detach();
+      if (current) {
+        try {
+          current.detach();
+        } catch {
+          // ignore
+        }
+        try {
+          current.stop();
+        } catch {
+          // ignore
+        }
       }
     };
   }, [attachPreview, cameraDeviceId]);

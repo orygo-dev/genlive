@@ -391,7 +391,7 @@ export function AdminIntegrationsPanel() {
         <div>
           <h2>Integrasi platform</h2>
           <p className="admin-muted">
-            LiveKit, email, WhatsApp, payment — tersimpan terenkripsi di database.
+            LiveKit, email, WhatsApp, payment - tersimpan terenkripsi di database.
           </p>
         </div>
         <PlugZap size={18} />
@@ -426,13 +426,9 @@ export function AdminIntegrationsPanel() {
             )}
           </div>
           <p className="admin-muted">
-            Dukung <strong>LiveKit Cloud</strong> dan{" "}
-            <strong>self-hosted</strong>. Isi WebSocket URL (
-            <code>wss://…</code>), API Key, dan API Secret dari server yang sama.
-            URL <code>https://</code> otomatis menjadi <code>wss://</code>.{" "}
-            <strong>Tes koneksi</strong> bisa memakai nilai form yang belum
-            disimpan; <strong>Simpan &amp; terapkan</strong> wajib agar meeting
-            memakai profil aktif.
+            Isi WebSocket URL (wss://...), API Key, dan API Secret dari server
+            yang sama (Cloud atau self-hosted). URL https:// otomatis jadi
+            wss://. Klik Tes koneksi, lalu Simpan & terapkan.
           </p>
           <div className="admin-livekit-profile-picker">
             <label>
@@ -491,7 +487,7 @@ export function AdminIntegrationsPanel() {
             />
             {!livekitStatus.urlOk && form.livekitUrl ? (
               <small className="form-error">
-                URL harus wss:// / ws:// (atau https:// / http://)
+                URL harus diawali wss://, ws://, https://, atau http://
               </small>
             ) : null}
           </label>
@@ -501,24 +497,23 @@ export function AdminIntegrationsPanel() {
               value={form.livekitApiUrl || ""}
               onChange={(e) => setField("livekitApiUrl", e.target.value)}
               onBlur={() => normalizeLivekitFields()}
-              placeholder={
-                activeLivekitServer?.kind === "SELF_HOSTED"
-                  ? "https://meet.domainanda.com — kosongkan jika sama dengan URL"
-                  : "Kosongkan — otomatis dari LIVEKIT_URL"
-              }
+              placeholder="Kosongkan jika sama dengan LIVEKIT_URL"
               autoComplete="off"
               spellCheck={false}
             />
           </label>
           <label>
-            API Key {activeLivekitServer?.apiKeySet ? "(tersimpan — isi ulang untuk ganti)" : ""}
+            API Key{" "}
+            {activeLivekitServer?.apiKeySet
+              ? "(tersimpan - isi ulang untuk ganti)"
+              : ""}
             <input
               value={form.livekitApiKey || ""}
               onChange={(e) => setField("livekitApiKey", e.target.value)}
               type="password"
               placeholder={
                 activeLivekitServer?.apiKeySet
-                  ? "•••••••• (tersimpan)"
+                  ? "(tersimpan)"
                   : "API Key server LiveKit"
               }
               autoComplete="new-password"
@@ -526,14 +521,16 @@ export function AdminIntegrationsPanel() {
           </label>
           <label>
             API Secret{" "}
-            {activeLivekitServer?.apiSecretSet ? "(tersimpan — isi ulang untuk ganti)" : ""}
+            {activeLivekitServer?.apiSecretSet
+              ? "(tersimpan - isi ulang untuk ganti)"
+              : ""}
             <input
               value={form.livekitApiSecret || ""}
               onChange={(e) => setField("livekitApiSecret", e.target.value)}
               type="password"
               placeholder={
                 activeLivekitServer?.apiSecretSet
-                  ? "•••••••• (tersimpan)"
+                  ? "(tersimpan)"
                   : "API Secret server LiveKit"
               }
               autoComplete="new-password"
