@@ -38,6 +38,8 @@ import {
   PhoneOff,
   Sparkles,
   Users,
+  Video,
+  VideoOff,
   Vote,
   Wand2,
   X,
@@ -48,6 +50,7 @@ import {
   encodeMeetingMessage,
   type MeetingRealtimeMessage,
 } from "@/lib/meeting-realtime";
+import { resolveLocalVideoCapture } from "@/lib/livekit-room-options";
 import type { MeetingLayoutMode } from "@/components/meeting-stage";
 
 type BeautyMode = "off" | "soft" | "strong";
@@ -224,6 +227,7 @@ export function MeetingToolsDock({
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
   const [ending, setEnding] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
   const reactionSeqRef = useRef(0);
 
   const [activePanel, setActivePanel] = useState<DockPanel>("none");
@@ -1133,52 +1137,103 @@ export function MeetingToolsDock({
           >
             Mic
           </TrackToggle>
-          <TrackToggle
-            source={Track.Source.Camera}
-            showIcon
-            className="meeting-control-toggle"
-            onChange={(enabled, isUserInitiated) => {
-              // #region agent log
-              const pub = localParticipant.getTrackPublication(
-                Track.Source.Camera,
-              );
-              const media = pub?.track?.mediaStreamTrack;
-              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                dbgCamera(
-                  "A",
-                  "meeting-tools-dock.tsx:TrackToggle.Camera",
-                  "camera-toggle-change",
-                  {
-                    enabled,
-                    isUserInitiated,
-                    isCameraEnabled: localParticipant.isCameraEnabled,
-                    hasPub: Boolean(pub),
-                    pubMuted: pub?.isMuted ?? null,
-                    mediaReadyState: media?.readyState ?? null,
-                    mediaEnabled: media?.enabled ?? null,
-                  },
-                );
-              });
-              // #endregion
-            }}
-            onDeviceError={(error) => {
-              // #region agent log
-              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
-                dbgCamera(
-                  "A",
-                  "meeting-tools-dock.tsx:TrackToggle.Camera",
-                  "camera-device-error",
-                  {
-                    name: error?.name ?? "unknown",
-                    message: error?.message ?? String(error),
-                  },
-                );
-              });
-              // #endregion
+          <button
+            type="button"
+            className={`meeting-control-toggle lk-button${
+              localParticipant.isCameraEnabled ? "" : " lk-button-disabled"
+            }`}
+            disabled={cameraBusy}
+            aria-pressed={localParticipant.isCameraEnabled}
+            title={
+              localParticipant.isCameraEnabled ? "Matikan kamera" : "Nyalakan kamera"
+            }
+            onClick={() => {
+              void (async () => {
+                if (cameraBusy) return;
+                setCameraBusy(true);
+                const turningOn = !localParticipant.isCameraEnabled;
+                try {
+                  if (!turningOn) {
+                    await localParticipant.setCameraEnabled(false);
+                  } else {
+                    const capture = await resolveLocalVideoCapture();
+                    // #region agent log
+                    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                      dbgCamera(
+                        "K",
+                        "meeting-tools-dock.tsx:SafeCameraToggle",
+                        "camera-enable-attempt",
+                        {
+                          hasDeviceId: Boolean(capture.deviceId),
+                          deviceId: (() => {
+                            const id = capture.deviceId;
+                            if (!id) return null;
+                            if (typeof id === "string") return id.slice(0, 8);
+                            if (typeof id === "object" && id && "exact" in id) {
+                              return String(id.exact ?? "").slice(0, 8);
+                            }
+                            if (typeof id === "object" && id && "ideal" in id) {
+                              return String(id.ideal ?? "").slice(0, 8);
+                            }
+                            return "obj";
+                          })(),
+                        },
+                      );
+                    });
+                    // #endregion
+                    await localParticipant.setCameraEnabled(true, capture);
+                  }
+                  // #region agent log
+                  void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                    const pub = localParticipant.getTrackPublication(
+                      Track.Source.Camera,
+                    );
+                    dbgCamera(
+                      "K",
+                      "meeting-tools-dock.tsx:SafeCameraToggle",
+                      "camera-toggle-done",
+                      {
+                        turningOn,
+                        isCameraEnabled: localParticipant.isCameraEnabled,
+                        hasPub: Boolean(pub),
+                        pubMuted: pub?.isMuted ?? null,
+                        mediaReadyState:
+                          pub?.track?.mediaStreamTrack?.readyState ?? null,
+                      },
+                    );
+                  });
+                  // #endregion
+                } catch (error) {
+                  // #region agent log
+                  void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                    dbgCamera(
+                      "K",
+                      "meeting-tools-dock.tsx:SafeCameraToggle",
+                      "camera-toggle-error",
+                      {
+                        turningOn,
+                        name: error instanceof Error ? error.name : "unknown",
+                        message:
+                          error instanceof Error
+                            ? error.message
+                            : String(error),
+                      },
+                    );
+                  });
+                  // #endregion
+                } finally {
+                  setCameraBusy(false);
+                }
+              })();
             }}
           >
+            {localParticipant.isCameraEnabled ? (
+              <Video size={18} />
+            ) : (
+              <VideoOff size={18} />
+            )}
             Video
-          </TrackToggle>
+          </button>
 
           <button
             type="button"

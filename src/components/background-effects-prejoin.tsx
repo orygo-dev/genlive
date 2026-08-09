@@ -355,14 +355,12 @@ export const BackgroundEffectsPrejoin = forwardRef<
       });
       // #endregion
       try {
-        // Unlock mic first so device lists fill even when no webcam exists.
+        // Unlock mic first so device lists fill even when camera open is slow.
         await unlockMicrophoneLabels();
         if (cancelled) return;
         setDevicesRevision((value) => value + 1);
 
         const videoInputCount = await countVideoInputs();
-        if (cancelled) return;
-
         // #region agent log
         void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
           dbgCamera("I", "background-effects-prejoin.tsx:startPreview", "video-input-count", {
@@ -372,15 +370,8 @@ export const BackgroundEffectsPrejoin = forwardRef<
         });
         // #endregion
 
-        if (videoInputCount === 0) {
-          setPreviewError(
-            "Tidak ada kamera pada perangkat ini (browser tidak mendeteksi videoinput). Anda tetap bisa join dengan mikrofon saja. Periksa webcam di Windows Settings → Privacy → Camera, atau coba browser Chrome.",
-          );
-          setTrack(null);
-          trackRef.current = null;
-          onCameraChangeRef.current(false);
-          return;
-        }
+        // IMPORTANT: do NOT skip getUserMedia when count is 0.
+        // Firefox often lists zero videoinputs until GUM has been attempted.
 
         const cams = await listMediaDevices("videoinput");
         if (cancelled) return;

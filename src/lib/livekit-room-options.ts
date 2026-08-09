@@ -10,7 +10,10 @@ import {
 } from "livekit-client";
 import {
   idealDeviceId,
+  listMediaDevices,
+  pickPreferredDeviceId,
   readStoredMediaDevices,
+  storeMediaDevice,
 } from "@/lib/media-devices";
 
 /** Longer reconnect window for unstable mobile / Wi‑Fi links. */
@@ -36,10 +39,9 @@ export function buildMeetingRoomOptions(): RoomOptions {
       ...(audioDevice ? { deviceId: audioDevice } : {}),
     },
     videoCaptureDefaults: {
-      // Never combine facingMode with deviceId — browsers often fail the constraint.
-      ...(videoDevice
-        ? { deviceId: videoDevice }
-        : { facingMode: "user" as const }),
+      // Prefer a real stored deviceId. Avoid facingMode on desktop — Firefox
+      // often throws NotFoundError when no device exposes facingMode.
+      ...(videoDevice ? { deviceId: videoDevice } : {}),
       resolution: VideoPresets.h720.resolution,
     },
     audioOutput: devices.audiooutput
@@ -85,6 +87,11 @@ export function buildLocalAudioCapture(
   };
 }
 
+/**
+ * Sync capture options for callers that cannot await.
+ * Prefer {@link resolveLocalVideoCapture} before setCameraEnabled — LiveKit
+ * injects deviceId:"default" when deviceId is omitted, which breaks Firefox.
+ */
 export function buildLocalVideoCapture(
   enabled: boolean,
 ): VideoCaptureOptions | false {
@@ -92,9 +99,41 @@ export function buildLocalVideoCapture(
   const devices = readStoredMediaDevices();
   const videoDevice = idealDeviceId(devices.videoinput);
   return {
-    // Always pass an object deviceId. LiveKit otherwise injects the string
-    // deviceId:"default", which raises NotFoundError on many desktops.
-    deviceId: videoDevice ?? { ideal: "default" },
+    ...(videoDevice ? { deviceId: videoDevice } : {}),
+    resolution: VideoPresets.h720.resolution,
+  };
+}
+
+/**
+ * Resolve a real camera deviceId before enabling the LiveKit camera.
+ * Never pass deviceId:"default" / facingMode:"user" alone — both cause
+ * NotFoundError on many desktop Firefox setups.
+ */
+export async function resolveLocalVideoCapture(): Promise<VideoCaptureOptions> {
+  const stored = readStoredMediaDevices().videoinput;
+  let cams = await listMediaDevices("videoinput");
+
+  // Firefox often lists zero cameras until getUserMedia has run once.
+  if (cams.length === 0 && navigator.mediaDevices?.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+      for (const track of stream.getTracks()) track.stop();
+      cams = await listMediaDevices("videoinput");
+    } catch {
+      // keep empty — caller handles NotFoundError
+    }
+  }
+
+  const preferred = pickPreferredDeviceId(cams, stored);
+  if (preferred) {
+    storeMediaDevice("videoinput", preferred);
+  }
+
+  return {
+    ...(preferred ? { deviceId: { exact: preferred } } : {}),
     resolution: VideoPresets.h720.resolution,
   };
 }

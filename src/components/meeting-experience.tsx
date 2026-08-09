@@ -46,9 +46,9 @@ import type { BackgroundEffectId } from "@/lib/background-effects";
 import { meetingStatusLabel } from "@/lib/meeting-access";
 import {
   buildLocalAudioCapture,
-  buildLocalVideoCapture,
   buildMeetingConnectOptions,
   buildMeetingRoomOptions,
+  resolveLocalVideoCapture,
 } from "@/lib/livekit-room-options";
 
 type ConnectionDetails = {
@@ -119,10 +119,21 @@ function RoomMediaBootstrap({
       };
       const openCam = async () => {
         if (!cameraEnabled || cancelled) return;
-        await room.localParticipant.setCameraEnabled(
-          true,
-          buildLocalVideoCapture(true) || undefined,
-        );
+        const capture = await resolveLocalVideoCapture();
+        // #region agent log
+        void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+          dbgCamera("K", "meeting-experience.tsx:RoomMediaBootstrap", "open-cam", {
+            hasDeviceId: Boolean(
+              capture.deviceId &&
+                (typeof capture.deviceId === "string" ||
+                  (typeof capture.deviceId === "object" &&
+                    ("exact" in capture.deviceId ||
+                      "ideal" in capture.deviceId))),
+            ),
+          });
+        });
+        // #endregion
+        await room.localParticipant.setCameraEnabled(true, capture);
       };
 
       try {
