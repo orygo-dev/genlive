@@ -13,7 +13,6 @@ import type {
   QualityMode,
   QualityTier,
 } from "@/features/video-effects/types";
-import { dbgJoin } from "@/lib/dbg-join";
 
 export type UseVirtualBackgroundOptions = {
   effectId: BackgroundEffectId;
@@ -52,7 +51,6 @@ export function useVirtualBackground({
   const operationQueueRef = useRef<Promise<void>>(Promise.resolve());
   const onAutoDowngradeRef = useRef(onAutoDowngrade);
   onAutoDowngradeRef.current = onAutoDowngrade;
-  const idleLoggedRef = useRef(false);
   const [supported] = useState(() => supportsVideoEffects());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -120,60 +118,17 @@ export function useVirtualBackground({
           setAutoDowngraded((value) => (value ? false : value));
           setActiveQuality((value) => (value != null ? null : value));
           setStats((value) => (value != null ? null : value));
-          // #region agent log
-          if (!idleLoggedRef.current) {
-            idleLoggedRef.current = true;
-            dbgJoin(
-              "useVirtualBackground.ts:sync",
-              "idle (no effect)",
-              {
-                effectId,
-                enabled,
-                hasTrack: Boolean(activeTrack),
-                hadProcessor,
-                runId: "post-fix",
-              },
-              "C",
-            );
-          }
-          // #endregion
           return;
         }
 
-        idleLoggedRef.current = false;
         setBusy(true);
         setLoading(true);
         setError("");
 
-        // #region agent log
-        dbgJoin(
-          "useVirtualBackground.ts:sync",
-          "attaching effect",
-          { effectId, enabled, hasTrack: Boolean(activeTrack), wantsEffect },
-          "C",
-        );
-        // #endregion
-
         // Lazy-load MediaPipe only when an effect is actually selected.
-        // #region agent log
-        dbgJoin(
-          "useVirtualBackground.ts:import:before",
-          "dynamic import VirtualBackgroundProcessor",
-          { effectId },
-          "C",
-        );
-        // #endregion
         const mod = await import(
           "@/features/video-effects/VirtualBackgroundProcessor"
         );
-        // #region agent log
-        dbgJoin(
-          "useVirtualBackground.ts:import:after",
-          "VirtualBackgroundProcessor loaded",
-          { effectId },
-          "C",
-        );
-        // #endregion
         if (operationId !== operationIdRef.current) return;
 
         if (attachedTrackRef.current && attachedTrackRef.current !== activeTrack) {
