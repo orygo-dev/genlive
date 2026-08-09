@@ -191,8 +191,14 @@ async function applyAudioMode(
 
   await track.stopProcessor().catch(() => undefined);
 
-  const wasEnabled = !track.isMuted;
+  // "standard" uses browser defaults from the first mic enable — never restart
+  // the mic here or join freezes (stop/start getUserMedia right after connect).
+  if (mode === "standard") {
+    return;
+  }
+
   if (mode === "original") {
+    const wasEnabled = !track.isMuted;
     if (wasEnabled) {
       await setMicEnabled(false);
       await setMicEnabled(true, {
@@ -200,12 +206,6 @@ async function applyAudioMode(
         echoCancellation: false,
       });
     }
-    return;
-  }
-
-  if (wasEnabled) {
-    await setMicEnabled(false);
-    await setMicEnabled(true);
   }
 }
 
@@ -489,8 +489,10 @@ export function MeetingToolsDock({
 
   useEffect(() => {
     window.localStorage.setItem(AUDIO_STORAGE_KEY, audioMode);
-    // Defer Krisp / mic processor until after join settles to avoid stacking
-    // heavy work with LiveKit connect + camera acquisition.
+    // Skip default "standard" on mount — mic is already correct after connect.
+    if (audioMode === "standard") {
+      return;
+    }
     let cancelled = false;
     const timer = window.setTimeout(() => {
       if (cancelled) return;
@@ -505,7 +507,7 @@ export function MeetingToolsDock({
         (enabled, options) =>
           localParticipant.setMicrophoneEnabled(enabled, options),
       );
-    }, audioMode === "noise" ? 800 : 200);
+    }, audioMode === "noise" ? 900 : 400);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);

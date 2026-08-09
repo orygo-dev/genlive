@@ -5370,6 +5370,23 @@ footer p {
   background: rgba(127, 29, 29, 0.95);
 }
 
+.meeting-join-pending {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 40vh;
+  color: #d7e0ea;
+  text-align: center;
+}
+
+.meeting-join-pending p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .admin-plan-editor {
   display: grid;
   gap: 16px;

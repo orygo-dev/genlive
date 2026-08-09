@@ -9,8 +9,9 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { LiveKitRoom } from "@livekit/components-react";
+import { LiveKitRoom, useConnectionState, useRoomContext } from "@livekit/components-react";
 import {
+  ConnectionState,
   DisconnectReason,
   type RoomConnectOptions,
   type RoomOptions,
@@ -39,6 +40,7 @@ import {
   type MeetingLayoutMode,
 } from "@/components/meeting-stage";
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
+import type { BackgroundEffectId } from "@/lib/background-effects";
 import { meetingStatusLabel } from "@/lib/meeting-access";
 import {
   buildLocalAudioCapture,
@@ -79,6 +81,196 @@ const PERMANENT_DISCONNECT = new Set<DisconnectReason>([
   DisconnectReason.SERVER_SHUTDOWN,
 ]);
 
+/**
+ * Connect signaling first, then open mic/camera after Connected.
+ * Opening A/V during Room.connect (old behavior) freezes many browsers.
+ */
+function RoomMediaBootstrap({
+  micEnabled,
+  cameraEnabled,
+  onMediaError,
+  onReady,
+}: {
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+  onMediaError: (message: string) => void;
+  onReady: () => void;
+}) {
+  const room = useRoomContext();
+  const connectionState = useConnectionState();
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (connectionState !== ConnectionState.Connected || startedRef.current) {
+      return;
+    }
+    startedRef.current = true;
+    let cancelled = false;
+
+    async function enableMedia() {
+      const openMic = async () => {
+        if (!micEnabled || cancelled) return;
+        await room.localParticipant.setMicrophoneEnabled(
+          true,
+          buildLocalAudioCapture(true) || undefined,
+        );
+      };
+      const openCam = async () => {
+        if (!cameraEnabled || cancelled) return;
+        await room.localParticipant.setCameraEnabled(
+          true,
+          buildLocalVideoCapture(true) || undefined,
+        );
+      };
+
+      try {
+        await Promise.race([
+          (async () => {
+            await openMic();
+            await new Promise((resolve) => window.setTimeout(resolve, 120));
+            await openCam();
+          })(),
+          new Promise<never>((_, reject) => {
+            window.setTimeout(
+              () => reject(new Error("Timeout membuka kamera/mikrofon")),
+              10_000,
+            );
+          }),
+        ]);
+      } catch (error) {
+        if (!cancelled) {
+          onMediaError(
+            error instanceof Error
+              ? `Perangkat media gagal: ${error.message}`
+              : "Perangkat media gagal dibuka.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          onReady();
+        }
+      }
+    }
+
+    void enableMedia();
+    return () => {
+      cancelled = true;
+    };
+  }, [cameraEnabled, connectionState, micEnabled, onMediaError, onReady, room]);
+
+  return null;
+}
+
+function RoomSessionBody({
+  roomName,
+  meetingTitle,
+  meetingId,
+  isHost,
+  mainRoomName,
+  layoutMode,
+  setLayoutMode,
+  effectId,
+  setEffectId,
+  elapsedLabel,
+  micEnabled,
+  cameraEnabled,
+  onLeaveIntent,
+  onMediaError,
+}: {
+  roomName: string;
+  meetingTitle: string;
+  meetingId: string | null;
+  isHost: boolean;
+  mainRoomName: string;
+  layoutMode: MeetingLayoutMode;
+  setLayoutMode: (mode: MeetingLayoutMode) => void;
+  effectId: BackgroundEffectId;
+  setEffectId: (value: BackgroundEffectId) => void;
+  elapsedLabel: string;
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+  onLeaveIntent: () => void;
+  onMediaError: (message: string) => void;
+}) {
+  const connectionState = useConnectionState();
+  const connected = connectionState === ConnectionState.Connected;
+  const [sessionReady, setSessionReady] = useState(false);
+  const handleReady = useCallback(() => setSessionReady(true), []);
+
+  useEffect(() => {
+    if (!connected) {
+      setSessionReady(false);
+    }
+  }, [connected]);
+
+  // If connect succeeds but user disabled both mic and cam, still enter room.
+  useEffect(() => {
+    if (!connected || micEnabled || cameraEnabled) return;
+    setSessionReady(true);
+  }, [cameraEnabled, connected, micEnabled]);
+
+  return (
+    <>
+      <MeetingConnectionBanner />
+      {connected ? (
+        <RoomMediaBootstrap
+          micEnabled={micEnabled}
+          cameraEnabled={cameraEnabled}
+          onMediaError={onMediaError}
+          onReady={handleReady}
+        />
+      ) : null}
+      <div className="room-chrome">
+        <div className="room-brand">
+          <Video size={16} />
+          <div>
+            <strong>{meetingTitle}</strong>
+            <small>{roomName}</small>
+          </div>
+        </div>
+        <div className="room-elapsed" aria-live="polite">
+          {elapsedLabel}
+        </div>
+      </div>
+
+      {!sessionReady ? (
+        <div className="meeting-join-pending" role="status">
+          <LoaderCircle className="spin" size={28} />
+          <p>
+            {connected
+              ? "Menyiapkan kamera dan mikrofon..."
+              : "Menghubungkan ke meeting..."}
+          </p>
+        </div>
+      ) : (
+        <>
+          {isHost ? (
+            <>
+              <HostWaitingRoom roomName={roomName} />
+              <RecordingControls roomName={roomName} />
+            </>
+          ) : null}
+          <BackgroundEffectsRuntime
+            effectId={effectId}
+            onEffectChange={setEffectId}
+          />
+          <MeetingStage layoutMode={layoutMode} />
+          <MeetingToolsDock
+            roomName={roomName}
+            mainRoomName={mainRoomName}
+            meetingId={meetingId}
+            meetingTitle={meetingTitle}
+            isHost={isHost}
+            layoutMode={layoutMode}
+            onLayoutChange={setLayoutMode}
+            onLeaveIntent={onLeaveIntent}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
 function MeetingRoom({
   connection,
   roomName,
@@ -112,14 +304,6 @@ function MeetingRoom({
   const connectOptions = useMemo<RoomConnectOptions>(
     () => buildMeetingConnectOptions(),
     [],
-  );
-  const videoCapture = useMemo(
-    () => buildLocalVideoCapture(cameraEnabled),
-    [cameraEnabled],
-  );
-  const audioCapture = useMemo(
-    () => buildLocalAudioCapture(micEnabled),
-    [micEnabled],
   );
 
   useEffect(() => {
@@ -209,47 +393,29 @@ function MeetingRoom({
         token={connection.token}
         serverUrl={connection.serverUrl}
         connect
-        video={videoCapture}
-        audio={audioCapture}
+        video={false}
+        audio={false}
         options={roomOptions}
         connectOptions={connectOptions}
         onDisconnected={handleDisconnected}
         onError={handleRoomError}
         onMediaDeviceFailure={handleMediaFailure}
       >
-        <MeetingConnectionBanner />
-        <div className="room-chrome">
-          <div className="room-brand">
-            <Video size={16} />
-            <div>
-              <strong>{meetingTitle}</strong>
-              <small>{roomName}</small>
-            </div>
-          </div>
-          <div className="room-elapsed" aria-live="polite">
-            {elapsedLabel}
-          </div>
-        </div>
-        {isHost && (
-          <>
-            <HostWaitingRoom roomName={roomName} />
-            <RecordingControls roomName={roomName} />
-          </>
-        )}
-        <BackgroundEffectsRuntime
-          effectId={effectId}
-          onEffectChange={setEffectId}
-        />
-        <MeetingStage layoutMode={layoutMode} />
-        <MeetingToolsDock
+        <RoomSessionBody
           roomName={roomName}
-          mainRoomName={mainRoomName}
-          meetingId={meetingId}
           meetingTitle={meetingTitle}
+          meetingId={meetingId}
           isHost={isHost}
+          mainRoomName={mainRoomName}
           layoutMode={layoutMode}
-          onLayoutChange={setLayoutMode}
+          setLayoutMode={setLayoutMode}
+          effectId={effectId}
+          setEffectId={setEffectId}
+          elapsedLabel={elapsedLabel}
+          micEnabled={micEnabled}
+          cameraEnabled={cameraEnabled}
           onLeaveIntent={markLeaveIntent}
+          onMediaError={onError}
         />
       </LiveKitRoom>
     </div>
@@ -423,13 +589,13 @@ function MeetingExperienceInner({
       }
 
       if (payload.waiting) {
-        await previewRef.current?.disposePreview();
+        await previewRef.current?.disposePreview().catch(() => undefined);
         setAdmission({
           requestId: payload.requestId,
           admissionToken: payload.admissionToken,
         });
       } else {
-        await previewRef.current?.disposePreview();
+        await previewRef.current?.disposePreview().catch(() => undefined);
         setConnection(payload);
       }
     } catch (requestError) {

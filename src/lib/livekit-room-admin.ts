@@ -22,12 +22,18 @@ export async function getRoomServiceClient(serverId?: string | null) {
 }
 
 export async function getRoomLockState(roomName: string): Promise<boolean> {
-  const client = await getRoomServiceClient();
   try {
-    const rooms = await client.listRooms([roomName]);
+    const client = await getRoomServiceClient();
+    const rooms = await Promise.race([
+      client.listRooms([roomName]),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("LiveKit listRooms timeout")), 2500);
+      }),
+    ]);
     const room = rooms[0];
     return parseRoomMetadata(room?.metadata).locked === true;
   } catch {
+    // Timeout / unreachable SFU must not block join.
     return false;
   }
 }
