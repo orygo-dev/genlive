@@ -41,7 +41,7 @@ export async function GET() {
   const body = {
     status: healthy ? "ok" : "degraded",
     service: "genmeet",
-    buildId: "cam-toggle-2026-08-09c-debug",
+    buildId: "cam-toggle-2026-08-09d-debug",
     timestamp: new Date().toISOString(),
     uptimeMs: Math.round(process.uptime() * 1000),
     latencyMs: Date.now() - startedAt,

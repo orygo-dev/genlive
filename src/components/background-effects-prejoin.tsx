@@ -8,10 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  createLocalVideoTrack,
-  type LocalVideoTrack,
-} from "livekit-client";
+import { LocalVideoTrack } from "livekit-client";
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import { BackgroundEffectsPicker } from "@/components/background-effects-picker";
 import { useBackgroundEffects } from "@/components/background-effects-context";
@@ -42,36 +39,76 @@ export type BackgroundEffectsPrejoinHandle = {
 /** Discard overlapping preview opens (Strict Mode / device switch). */
 let previewOpenToken = 0;
 
+/**
+ * Open preview via raw getUserMedia.
+ * Do NOT use createLocalVideoTrack here — LiveKit injects deviceId:"default"
+ * which raises NotFoundError on many desktop browsers when no device has that id.
+ */
 async function openPreviewCamera(
   deviceConstraint: { ideal: string } | undefined,
 ): Promise<LocalVideoTrack | null> {
   const token = ++previewOpenToken;
-  const attempts: Array<Record<string, unknown>> = [
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("Browser tidak mendukung kamera.");
+  }
+
+  const attempts: MediaStreamConstraints[] = [
     {
-      ...(deviceConstraint
-        ? { deviceId: deviceConstraint }
-        : { facingMode: "user" as const }),
-      resolution: { width: 640, height: 360, frameRate: 15 },
+      audio: false,
+      video: deviceConstraint
+        ? {
+            deviceId: deviceConstraint,
+            width: { ideal: 640 },
+            height: { ideal: 360 },
+            frameRate: { ideal: 15 },
+          }
+        : {
+            width: { ideal: 640 },
+            height: { ideal: 360 },
+            frameRate: { ideal: 15 },
+          },
     },
-    deviceConstraint
-      ? { deviceId: deviceConstraint }
-      : { facingMode: "user" as const },
-    { facingMode: "user" as const },
-    {},
+    { audio: false, video: true },
   ];
 
   let lastError: unknown;
-  for (const options of attempts) {
+  for (let index = 0; index < attempts.length; index += 1) {
     if (token !== previewOpenToken) return null;
+    const constraints = attempts[index]!;
     try {
-      const track = await createLocalVideoTrack(options);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const mediaTrack = stream.getVideoTracks()[0];
+      if (!mediaTrack) {
+        for (const track of stream.getTracks()) track.stop();
+        throw new Error("Tidak ada video track.");
+      }
       if (token !== previewOpenToken) {
-        track.stop();
+        for (const track of stream.getTracks()) track.stop();
         return null;
       }
-      return track;
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("G", "background-effects-prejoin.tsx:openPreviewCamera", "gum-ok", {
+          attempt: index,
+          label: mediaTrack.label || null,
+          readyState: mediaTrack.readyState,
+          usedDeviceIdeal: Boolean(deviceConstraint),
+        });
+      });
+      // #endregion
+      // userProvidedTrack=false so LocalVideoTrack.stop() releases the device.
+      return new LocalVideoTrack(mediaTrack, mediaTrack.getConstraints(), false);
     } catch (error) {
       lastError = error;
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("G", "background-effects-prejoin.tsx:openPreviewCamera", "gum-attempt-fail", {
+          attempt: index,
+          name: error instanceof Error ? error.name : "unknown",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+      // #endregion
     }
   }
 

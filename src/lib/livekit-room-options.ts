@@ -92,9 +92,9 @@ export function buildLocalVideoCapture(
   const devices = readStoredMediaDevices();
   const videoDevice = idealDeviceId(devices.videoinput);
   return {
-    ...(videoDevice
-      ? { deviceId: videoDevice }
-      : { facingMode: "user" as const }),
+    // Always pass an object deviceId. LiveKit otherwise injects the string
+    // deviceId:"default", which raises NotFoundError on many desktops.
+    deviceId: videoDevice ?? { ideal: "default" },
     resolution: VideoPresets.h720.resolution,
   };
 }
