@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ensureMediaPermission,
   listMediaDevices,
   pickPreferredDeviceId,
   readStoredMediaDevices,
@@ -16,10 +15,13 @@ type MediaDevicePickersProps = {
   showSpeaker?: boolean;
   className?: string;
   /**
-   * Prejoin already opens the camera for preview — requesting video again
-   * races getUserMedia and often leaves the preview black on Windows.
+   * Prejoin already owns the camera via createLocalVideoTrack.
+   * Never probe getUserMedia here — GUM+stop fires devicechange and can
+   * freeze Firefox in a loop with the live preview track.
    */
   requestVideoPermission?: boolean;
+  /** When true, only enumerateDevices — no permission probe at all. */
+  enumerateOnly?: boolean;
   onDeviceChange?: (kind: DeviceKind, deviceId: string) => void | Promise<void>;
 };
 
@@ -27,6 +29,7 @@ export function MediaDevicePickers({
   showSpeaker = true,
   className,
   requestVideoPermission = true,
+  enumerateOnly = false,
   onDeviceChange,
 }: MediaDevicePickersProps) {
   const stored = readStoredMediaDevices();
@@ -36,11 +39,10 @@ export function MediaDevicePickers({
   const [micId, setMicId] = useState(stored.audioinput ?? "");
   const [camId, setCamId] = useState(stored.videoinput ?? "");
   const [speakerId, setSpeakerId] = useState(stored.audiooutput ?? "");
-  const permissionAskedRef = useRef(false);
   const onDeviceChangeRef = useRef(onDeviceChange);
   onDeviceChangeRef.current = onDeviceChange;
 
-  const enumerateOnly = useCallback(async () => {
+  const refreshDevices = useCallback(async () => {
     const [nextMics, nextCams, nextSpeakers] = await Promise.all([
       listMediaDevices("audioinput"),
       listMediaDevices("videoinput"),
@@ -58,9 +60,9 @@ export function MediaDevicePickers({
       preferred.audiooutput,
     );
 
-    setMicId(nextMic);
-    setCamId(nextCam);
-    setSpeakerId(nextSpeaker);
+    setMicId((current) => nextMic || current);
+    setCamId((current) => nextCam || current);
+    setSpeakerId((current) => nextSpeaker || current);
 
     if (nextMic) storeMediaDevice("audioinput", nextMic);
     if (nextCam) storeMediaDevice("videoinput", nextCam);
@@ -71,44 +73,52 @@ export function MediaDevicePickers({
     let cancelled = false;
     let debounceTimer: number | undefined;
 
-    async function initialLoad() {
-      // Ask permission at most once. Never call getUserMedia from devicechange —
-      // stopping those tracks fires devicechange again and freezes Firefox.
-      if (!permissionAskedRef.current) {
-        permissionAskedRef.current = true;
-        await ensureMediaPermission({
-          audio: true,
-          video: requestVideoPermission,
-        });
+    async function boot() {
+      // Intentionally never call getUserMedia+stop while a LiveKit preview
+      // may be live. Enumeration is enough after the preview grants access.
+      if (!enumerateOnly && requestVideoPermission) {
+        // In-room / settings only: soft permission via Permissions API if available.
+        try {
+          const perms = navigator.permissions;
+          if (perms?.query) {
+            await Promise.allSettled([
+              perms.query({ name: "microphone" as PermissionName }),
+              perms.query({ name: "camera" as PermissionName }),
+            ]);
+          }
+        } catch {
+          // ignore
+        }
       }
       if (cancelled) return;
-      await enumerateOnly();
+      await refreshDevices();
     }
 
-    void initialLoad();
+    void boot();
 
-    // Prejoin opens the camera separately; labels/deviceIds often appear a
-    // moment later. Re-enumerate without getUserMedia.
-    const retryTimer = window.setTimeout(() => {
-      if (!cancelled) void enumerateOnly();
-    }, 900);
+    // Labels often appear after the prejoin camera track is live.
+    const retries = [400, 1200, 2500].map((ms) =>
+      window.setTimeout(() => {
+        if (!cancelled) void refreshDevices();
+      }, ms),
+    );
 
     const devices = navigator.mediaDevices;
     const onChange = () => {
       window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
-        if (!cancelled) void enumerateOnly();
-      }, 400);
+        if (!cancelled) void refreshDevices();
+      }, 500);
     };
     devices?.addEventListener?.("devicechange", onChange);
 
     return () => {
       cancelled = true;
-      window.clearTimeout(retryTimer);
+      for (const timer of retries) window.clearTimeout(timer);
       window.clearTimeout(debounceTimer);
       devices?.removeEventListener?.("devicechange", onChange);
     };
-  }, [enumerateOnly, requestVideoPermission]);
+  }, [enumerateOnly, refreshDevices, requestVideoPermission]);
 
   async function changeDevice(kind: DeviceKind, deviceId: string) {
     if (!deviceId) return;

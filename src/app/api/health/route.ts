@@ -41,6 +41,7 @@ export async function GET() {
   const body = {
     status: healthy ? "ok" : "degraded",
     service: "genmeet",
+    buildId: "prejoin-freeze-2026-08-09c",
     timestamp: new Date().toISOString(),
     uptimeMs: Math.round(process.uptime() * 1000),
     latencyMs: Date.now() - startedAt,

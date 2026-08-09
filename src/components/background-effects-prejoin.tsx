@@ -39,39 +39,29 @@ export type BackgroundEffectsPrejoinHandle = {
   disposePreview: () => Promise<void>;
 };
 
+/** Prevent overlapping getUserMedia from Strict Mode remounts. */
+let previewOpenToken = 0;
+
 async function openPreviewCamera(
   deviceConstraint: { ideal: string } | undefined,
 ): Promise<LocalVideoTrack> {
-  // Keep prejoin light — 720p@24 + MediaPipe previously froze Firefox.
-  const resolution = { width: 640, height: 360, frameRate: 15 };
-  const attempts: Array<() => Promise<LocalVideoTrack>> = [
-    () =>
-      createLocalVideoTrack({
-        ...(deviceConstraint
-          ? { deviceId: deviceConstraint }
-          : { facingMode: "user" as const }),
-        resolution,
-      }),
-    () =>
-      createLocalVideoTrack({
-        facingMode: "user",
-        resolution,
-      }),
-    () => createLocalVideoTrack({ facingMode: "user" }),
-    () => createLocalVideoTrack(),
-  ];
-
-  let lastError: unknown;
-  for (const attempt of attempts) {
-    try {
-      return await attempt();
-    } catch (error) {
-      lastError = error;
-    }
+  const token = ++previewOpenToken;
+  let track: LocalVideoTrack;
+  try {
+    track = await createLocalVideoTrack({
+      ...(deviceConstraint
+        ? { deviceId: deviceConstraint }
+        : { facingMode: "user" as const }),
+      resolution: { width: 640, height: 360, frameRate: 15 },
+    });
+  } catch {
+    track = await createLocalVideoTrack({ facingMode: "user" });
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Browser menolak akses kamera.");
+  if (token !== previewOpenToken) {
+    track.stop();
+    throw new Error("Preview kamera diganti sesi baru.");
+  }
+  return track;
 }
 
 export const BackgroundEffectsPrejoin = forwardRef<
@@ -79,7 +69,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
   BackgroundEffectsPrejoinProps
 >(function BackgroundEffectsPrejoin(
   {
-    effectId,
+    effectId: _storedEffectId,
     onEffectChange,
     micEnabled,
     cameraEnabled,
@@ -88,6 +78,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
   },
   ref,
 ) {
+  void _storedEffectId;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trackRef = useRef<LocalVideoTrack | null>(null);
   const disposingRef = useRef(false);
@@ -96,6 +87,10 @@ export const BackgroundEffectsPrejoin = forwardRef<
   const [cameraDeviceId, setCameraDeviceId] = useState(
     () => readStoredMediaDevices().videoinput ?? "",
   );
+  // Never auto-attach MediaPipe from a previous session on the lobby —
+  // that freezes Firefox before the user even clicks Join.
+  const [appliedEffectId, setAppliedEffectId] =
+    useState<BackgroundEffectId>("none");
   const {
     qualityMode,
     setQualityMode,
@@ -105,11 +100,10 @@ export const BackgroundEffectsPrejoin = forwardRef<
   } = useBackgroundEffects();
 
   const vb = useVirtualBackground({
-    effectId,
+    effectId: appliedEffectId,
     qualityMode,
-    // Never attach MediaPipe on prejoin unless user picked an effect.
-    track: cameraEnabled && effectId !== "none" ? track : null,
-    enabled: cameraEnabled && effectId !== "none",
+    track: cameraEnabled && appliedEffectId !== "none" ? track : null,
+    enabled: cameraEnabled && appliedEffectId !== "none",
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
 
@@ -135,7 +129,6 @@ export const BackgroundEffectsPrejoin = forwardRef<
     if (disposingRef.current) return;
     disposingRef.current = true;
 
-    // Await VB teardown before releasing the camera device for LiveKitRoom.
     try {
       await disposeRef.current();
     } catch {
@@ -157,7 +150,7 @@ export const BackgroundEffectsPrejoin = forwardRef<
         // ignore
       }
     }
-    await new Promise((resolve) => window.setTimeout(resolve, 180));
+    await new Promise((resolve) => window.setTimeout(resolve, 120));
   }, []);
 
   useImperativeHandle(ref, () => ({ disposePreview }), [disposePreview]);
@@ -234,7 +227,12 @@ export const BackgroundEffectsPrejoin = forwardRef<
     } else {
       void track.mute();
     }
-  }, [track, cameraEnabled, effectId, attachPreview]);
+  }, [track, cameraEnabled, attachPreview]);
+
+  function handleEffectChange(next: BackgroundEffectId) {
+    setAppliedEffectId(next);
+    onEffectChange(next);
+  }
 
   return (
     <div className="bg-effects-prejoin prejoin-media">
@@ -272,18 +270,17 @@ export const BackgroundEffectsPrejoin = forwardRef<
       <MediaDevicePickers
         showSpeaker={false}
         requestVideoPermission={false}
+        enumerateOnly
         className="prejoin-device-pickers"
         onDeviceChange={(kind, deviceId) => {
-          // Avoid restarting the preview track unless the user actually
-          // picks a different camera — auto-enumerate must not retrigger this.
           if (kind === "videoinput" && deviceId && deviceId !== cameraDeviceId) {
             setCameraDeviceId(deviceId);
           }
         }}
       />
       <BackgroundEffectsPicker
-        value={effectId}
-        onChange={onEffectChange}
+        value={appliedEffectId}
+        onChange={handleEffectChange}
         qualityMode={qualityMode}
         onQualityChange={setQualityMode}
         disabled={vb.busy || !cameraEnabled}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "genmeet-shell-v1";
+const CACHE_NAME = "genmeet-shell-v2";
 const SHELL = ["/", "/icons/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
