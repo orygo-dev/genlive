@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appendFile } from "node:fs/promises";
+import { appendFile, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const runtime = "nodejs";
@@ -15,37 +15,48 @@ type DebugEvent = {
   timestamp?: number;
 };
 
-const MAX_EVENTS = 300;
-const globalStore = globalThis as typeof globalThis & {
-  __genmeetCamDebug?: DebugEvent[];
-};
+const MAX_EVENTS = 400;
 
-function store() {
-  if (!globalStore.__genmeetCamDebug) {
-    globalStore.__genmeetCamDebug = [];
-  }
-  return globalStore.__genmeetCamDebug;
+function logPath() {
+  return path.join(process.cwd(), "debug-a90ca2.log");
 }
 
-async function appendLocal(event: DebugEvent) {
+async function readAllEvents(): Promise<DebugEvent[]> {
   try {
-    const filePath = path.join(process.cwd(), "debug-a90ca2.log");
-    await appendFile(filePath, `${JSON.stringify(event)}\n`, "utf8");
+    const raw = await readFile(logPath(), "utf8");
+    return raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        try {
+          return JSON.parse(line) as DebugEvent;
+        } catch {
+          return null;
+        }
+      })
+      .filter((event): event is DebugEvent => Boolean(event))
+      .slice(-MAX_EVENTS);
   } catch {
-    // ignore — production may be read-only
+    return [];
   }
 }
 
 export async function GET() {
+  const events = await readAllEvents();
   return NextResponse.json({
     ok: true,
-    count: store().length,
-    events: store(),
+    count: events.length,
+    events,
   });
 }
 
 export async function DELETE() {
-  globalStore.__genmeetCamDebug = [];
+  try {
+    await writeFile(logPath(), "", "utf8");
+  } catch {
+    // ignore
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -67,12 +78,11 @@ export async function POST(request: Request) {
     timestamp: body.timestamp ?? Date.now(),
   };
 
-  const events = store();
-  events.push(event);
-  if (events.length > MAX_EVENTS) {
-    events.splice(0, events.length - MAX_EVENTS);
+  try {
+    await appendFile(logPath(), `${JSON.stringify(event)}\n`, "utf8");
+  } catch {
+    // ignore read-only fs
   }
-  await appendLocal(event);
 
   return NextResponse.json({ ok: true });
 }

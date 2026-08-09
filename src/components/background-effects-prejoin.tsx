@@ -222,9 +222,28 @@ export const BackgroundEffectsPrejoin = forwardRef<
   useEffect(() => {
     if (!track || disposingRef.current) return;
     if (cameraEnabled) {
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("F", "background-effects-prejoin.tsx:camEffect", "prejoin-cam-on", {
+          hasTrack: Boolean(track),
+          mediaReadyState: track.mediaStreamTrack?.readyState ?? null,
+          mediaEnabled: track.mediaStreamTrack?.enabled ?? null,
+          hasVideoEl: Boolean(videoRef.current),
+          videoSrcObject: Boolean(videoRef.current?.srcObject),
+        });
+      });
+      // #endregion
       void track.unmute();
       attachPreview(track);
     } else {
+      // #region agent log
+      void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+        dbgCamera("F", "background-effects-prejoin.tsx:camEffect", "prejoin-cam-off", {
+          hasTrack: Boolean(track),
+          mediaReadyState: track.mediaStreamTrack?.readyState ?? null,
+        });
+      });
+      // #endregion
       void track.mute();
     }
   }, [track, cameraEnabled, attachPreview]);
@@ -237,14 +256,20 @@ export const BackgroundEffectsPrejoin = forwardRef<
   return (
     <div className="bg-effects-prejoin prejoin-media">
       <div className={`bg-effects-preview${cameraEnabled ? "" : " is-cam-off"}`}>
-        {cameraEnabled ? (
-          <video ref={setVideoNode} autoPlay playsInline muted />
-        ) : (
+        {/* Keep <video> mounted so off→on does not lose the MediaStream attach. */}
+        <video
+          ref={setVideoNode}
+          autoPlay
+          playsInline
+          muted
+          style={cameraEnabled ? undefined : { display: "none" }}
+        />
+        {!cameraEnabled ? (
           <div className="prejoin-cam-off" aria-hidden="true">
             <VideoOff size={40} />
             <span>Kamera mati</span>
           </div>
-        )}
+        ) : null}
         {previewError ? <p>{previewError}</p> : null}
         <div className="prejoin-av-toggles">
           <button
@@ -261,7 +286,19 @@ export const BackgroundEffectsPrejoin = forwardRef<
             className={cameraEnabled ? undefined : "is-off"}
             aria-pressed={cameraEnabled}
             aria-label={cameraEnabled ? "Matikan kamera" : "Nyalakan kamera"}
-            onClick={() => onCameraChange(!cameraEnabled)}
+            onClick={() => {
+              // #region agent log
+              void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+                dbgCamera("F", "background-effects-prejoin.tsx:button", "prejoin-cam-click", {
+                  nextEnabled: !cameraEnabled,
+                  hasTrack: Boolean(trackRef.current),
+                  hasVideoEl: Boolean(videoRef.current),
+                  videoSrcObject: Boolean(videoRef.current?.srcObject),
+                });
+              });
+              // #endregion
+              onCameraChange(!cameraEnabled);
+            }}
           >
             {cameraEnabled ? <Video size={20} /> : <VideoOff size={20} />}
           </button>

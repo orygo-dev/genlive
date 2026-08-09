@@ -259,6 +259,20 @@ function RoomSessionBody({
     setSessionReady(true);
   }, [cameraEnabled, connected, micEnabled]);
 
+  useEffect(() => {
+    // #region agent log
+    void import("@/lib/dbg-camera").then(({ dbgCamera }) => {
+      dbgCamera("E", "meeting-experience.tsx:RoomSessionBody", "session-state", {
+        connected,
+        sessionReady,
+        cameraEnabled,
+        micEnabled,
+        effectId,
+      });
+    });
+    // #endregion
+  }, [cameraEnabled, connected, effectId, micEnabled, sessionReady]);
+
   return (
     <>
       <MeetingConnectionBanner />
