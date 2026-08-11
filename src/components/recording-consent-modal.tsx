@@ -54,7 +54,7 @@ export function RecordingConsentModal({
           </button>
           <button
             type="button"
-            className="btn primary"
+            className="button button-primary"
             onClick={onConfirm}
             disabled={busy}
           >
