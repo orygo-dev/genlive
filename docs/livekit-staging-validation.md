@@ -58,9 +58,9 @@ Disconnect reasons are LiveKit `DisconnectReason` enum names via reverse mapping
 
 | Check | RESULT | NOTES |
 |-------|--------|-------|
-| Typecheck | NOT TESTED | |
-| Vitest | NOT TESTED | |
-| Build | NOT TESTED | |
+| Typecheck | PASS | `npx tsc --noEmit` on baseline `14820aa` |
+| Vitest | PASS | 110 tests |
+| Build | PASS | `npm run build` (Prisma warn during SSG OK) |
 
 ## Failure report template
 
