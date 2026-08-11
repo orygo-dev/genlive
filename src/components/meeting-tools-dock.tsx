@@ -1478,17 +1478,19 @@ export function MeetingToolsDock({
           </section>
         ) : null}
 
-        {activePanel === "chat" ? (
-          <section className="meeting-tools-panel meeting-tools-panel-wide meeting-chat-panel">
-            <header>
-              <strong>Chat</strong>
-              <button type="button" onClick={() => setActivePanel("none")}>
-                <X size={16} />
-              </button>
-            </header>
-            <Chat />
-          </section>
-        ) : null}
+        <section
+          className="meeting-tools-panel meeting-tools-panel-wide meeting-chat-panel"
+          hidden={activePanel !== "chat"}
+          aria-hidden={activePanel !== "chat"}
+        >
+          <header>
+            <strong>Chat</strong>
+            <button type="button" onClick={() => setActivePanel("none")}>
+              <X size={16} />
+            </button>
+          </header>
+          <Chat />
+        </section>
 
         {activePanel === "more" ? (
           <section className="meeting-tools-panel meeting-more-menu">

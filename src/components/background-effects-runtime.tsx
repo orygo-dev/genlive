@@ -15,6 +15,7 @@ import { BackgroundEffectsPicker } from "@/components/background-effects-picker"
 import { useBackgroundEffects } from "@/components/background-effects-context";
 import { useVirtualBackground } from "@/hooks/useVirtualBackground";
 import type { BackgroundEffectId } from "@/lib/background-effects";
+import { meetingLogger, setMeetingDebugUi } from "@/lib/meeting-logger";
 
 type BackgroundEffectsRuntimeProps = {
   effectId: BackgroundEffectId;
@@ -60,8 +61,13 @@ export function BackgroundEffectsRuntime({
   // Let LiveKit finish connect + camera publish before MediaPipe attaches,
   // otherwise join freezes the main thread (WASM reload + device contention).
   useEffect(() => {
-    if (!track || connectionState !== ConnectionState.Connected) {
+    // Only pause VB attach while fully disconnected or track missing.
+    // Reconnecting must NOT detach the processor (was resetting VB every blip).
+    if (!track || connectionState === ConnectionState.Disconnected) {
       setEffectsReady(false);
+      return;
+    }
+    if (connectionState !== ConnectionState.Connected) {
       return;
     }
     const timer = window.setTimeout(() => setEffectsReady(true), 400);
@@ -75,6 +81,29 @@ export function BackgroundEffectsRuntime({
     enabled: effectsReady && effectId !== "none",
     onAutoDowngrade: () => noteAutoDowngrade(),
   });
+
+  // Processor failure must never leave a blank background-only publish.
+  useEffect(() => {
+    if (!vb.error || effectId === "none") return;
+    meetingLogger("BACKGROUND_PROCESSOR_ERROR", {
+      message: vb.error.slice(0, 120),
+      effectId,
+    });
+    setMeetingDebugUi({ backgroundStatus: "FAILED", backgroundError: vb.error.slice(0, 120) });
+    onEffectChange("none");
+  }, [vb.error, effectId, onEffectChange]);
+
+  useEffect(() => {
+    if (effectId === "none") {
+      setMeetingDebugUi({ backgroundStatus: "OFF", backgroundError: undefined });
+      meetingLogger("BACKGROUND_PROCESSOR_STOP");
+    } else if (vb.loading || (Boolean(track) && !effectsReady)) {
+      setMeetingDebugUi({ backgroundStatus: "STARTING" });
+    } else if (effectsReady && track) {
+      setMeetingDebugUi({ backgroundStatus: "ACTIVE" });
+      meetingLogger("BACKGROUND_PROCESSOR_START", { effectId });
+    }
+  }, [effectId, effectsReady, track, vb.loading]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;

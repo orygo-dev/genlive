@@ -47,6 +47,8 @@ import type { ImageSegmenter } from "@mediapipe/tasks-vision";
 export type VirtualBackgroundProcessorOptions = {
   onStats?: (stats: ProcessorStats) => void;
   onAutoDowngrade?: (quality: QualityTier) => void;
+  /** Fired when segmentation produces no usable person for too long. */
+  onFatalError?: (message: string) => void;
 };
 
 export class VirtualBackgroundProcessor
@@ -109,6 +111,8 @@ export class VirtualBackgroundProcessor
   private lastMaskHeight = 0;
   private rawMaskBuffer: Float32Array | null = null;
   private maskImageData: ImageData | null = null;
+  private emptyPersonFrames = 0;
+  private fatalReported = false;
 
   private readonly hooks: VirtualBackgroundProcessorOptions;
 
@@ -454,6 +458,53 @@ export class VirtualBackgroundProcessor
     this.processedFrames += 1;
     this.tickFps(now);
     this.emitStats(now);
+    this.watchEmptyPerson();
+  }
+
+  private watchEmptyPerson() {
+    if (this.mode === "none" || this.fatalReported) {
+      return;
+    }
+
+    // DEV-ONLY: localStorage.setItem("genmeet_vb_force_fail", "1")
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.localStorage.getItem("genmeet_vb_force_fail") === "1"
+      ) {
+        this.emptyPersonFrames = 40;
+      }
+    } catch {
+      // ignore storage access errors
+    }
+
+    if (!this.lastAlpha && this.emptyPersonFrames < 40) {
+      return;
+    }
+    if (this.lastAlpha) {
+      let sum = 0;
+      const sample = this.lastAlpha;
+      const step = Math.max(1, Math.floor(sample.length / 400));
+      let count = 0;
+      for (let i = 0; i < sample.length; i += step) {
+        sum += sample[i];
+        count += 1;
+      }
+      const mean = count ? sum / count : 0;
+      if (mean < 8) {
+        this.emptyPersonFrames += 1;
+      } else {
+        this.emptyPersonFrames = 0;
+      }
+    }
+    // ~2s of empty person at ~20fps processing → fail safe to raw camera.
+    if (this.emptyPersonFrames >= 40) {
+      this.fatalReported = true;
+      this.mode = "none";
+      this.hooks.onFatalError?.(
+        "Virtual background tidak didukung pada perangkat ini.",
+      );
+    }
   }
 
   private composite(

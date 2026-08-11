@@ -35,6 +35,8 @@ import {
 } from "@/components/background-effects-prejoin";
 import { BackgroundEffectsRuntime } from "@/components/background-effects-runtime";
 import { MeetingConnectionBanner } from "@/components/meeting-connection-banner";
+import { MeetingDebugOverlay } from "@/components/meeting-debug-overlay";
+import { MeetingRoomObservers } from "@/components/meeting-room-observers";
 import {
   MeetingStage,
   type MeetingLayoutMode,
@@ -42,6 +44,12 @@ import {
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
 import type { BackgroundEffectId } from "@/lib/background-effects";
 import { meetingStatusLabel } from "@/lib/meeting-access";
+import {
+  ensureMeetingDebugSessionId,
+  formatDisconnectReason,
+  meetingLogger,
+  setMeetingDebugUi,
+} from "@/lib/meeting-logger";
 import {
   buildLocalAudioCapture,
   buildMeetingConnectOptions,
@@ -101,33 +109,56 @@ function RoomMediaBootstrap({
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (connectionState !== ConnectionState.Connected || startedRef.current) {
+    if (connectionState !== ConnectionState.Connected) {
       return;
     }
-    startedRef.current = true;
+
+    // After a successful bootstrap (or reconnect), tracks usually survive —
+    // only re-signal UI ready. Do not set startedRef until success so React
+    // Strict Mode remount can retry a cancelled first attempt.
+    if (startedRef.current) {
+      onReady();
+      return;
+    }
+
     let cancelled = false;
 
     async function enableMedia() {
+      const errors: string[] = [];
+
       const openMic = async () => {
         if (!micEnabled || cancelled) return;
-        await room.localParticipant.setMicrophoneEnabled(
-          true,
-          buildLocalAudioCapture(true) || undefined,
-        );
+        try {
+          await room.localParticipant.setMicrophoneEnabled(
+            true,
+            buildLocalAudioCapture(true) || undefined,
+          );
+        } catch (error) {
+          errors.push(
+            error instanceof Error
+              ? `Mikrofon: ${error.message}`
+              : "Mikrofon gagal dibuka.",
+          );
+        }
       };
       const openCam = async () => {
         if (!cameraEnabled || cancelled) return;
-        const capture = await resolveLocalVideoCapture();
-        await room.localParticipant.setCameraEnabled(true, capture);
+        try {
+          const capture = await resolveLocalVideoCapture();
+          await room.localParticipant.setCameraEnabled(true, capture);
+        } catch (error) {
+          errors.push(
+            error instanceof Error
+              ? `Kamera: ${error.message}`
+              : "Kamera gagal dibuka.",
+          );
+        }
       };
 
       try {
+        // Independent — mic failure must not block camera (and vice versa).
         await Promise.race([
-          (async () => {
-            await openMic();
-            await new Promise((resolve) => window.setTimeout(resolve, 120));
-            await openCam();
-          })(),
+          Promise.all([openMic(), openCam()]),
           new Promise<never>((_, reject) => {
             window.setTimeout(
               () => reject(new Error("Timeout membuka kamera/mikrofon")),
@@ -135,16 +166,22 @@ function RoomMediaBootstrap({
             );
           }),
         ]);
+        if (!cancelled && errors.length > 0) {
+          onMediaError(errors.join(" · "));
+        }
       } catch (error) {
         if (!cancelled) {
           onMediaError(
-            error instanceof Error
-              ? `Perangkat media gagal: ${error.message}`
-              : "Perangkat media gagal dibuka.",
+            errors.length > 0
+              ? errors.join(" · ")
+              : error instanceof Error
+                ? `Perangkat media gagal: ${error.message}`
+                : "Perangkat media gagal dibuka.",
           );
         }
       } finally {
         if (!cancelled) {
+          startedRef.current = true;
           onReady();
         }
       }
@@ -192,25 +229,51 @@ function RoomSessionBody({
 }) {
   const connectionState = useConnectionState();
   const connected = connectionState === ConnectionState.Connected;
+  const reconnecting = connectionState === ConnectionState.Reconnecting;
   const [sessionReady, setSessionReady] = useState(false);
-  const handleReady = useCallback(() => setSessionReady(true), []);
+  const everReadyRef = useRef(false);
+  const handleReady = useCallback(() => {
+    everReadyRef.current = true;
+    setSessionReady(true);
+    setMeetingDebugUi({ sessionReady: true });
+    meetingLogger("SESSION_READY");
+  }, []);
 
   useEffect(() => {
-    if (!connected) {
+    // CRITICAL: never clear sessionReady on Reconnecting — that unmounted
+    // Stage/Dock/RoomAudioRenderer/VB and left users stuck on the spinner
+    // because RoomMediaBootstrap is one-shot via startedRef.
+    if (connectionState === ConnectionState.Disconnected) {
       setSessionReady(false);
+      setMeetingDebugUi({ sessionReady: false });
+      return;
     }
-  }, [connected]);
+    if (
+      connected &&
+      everReadyRef.current &&
+      !sessionReady
+    ) {
+      setSessionReady(true);
+      setMeetingDebugUi({ sessionReady: true });
+      meetingLogger("SESSION_UI_RESTORED");
+    }
+  }, [connected, connectionState, sessionReady]);
 
   // If connect succeeds but user disabled both mic and cam, still enter room.
   useEffect(() => {
     if (!connected || micEnabled || cameraEnabled) return;
-    setSessionReady(true);
-  }, [cameraEnabled, connected, micEnabled]);
+    handleReady();
+  }, [cameraEnabled, connected, handleReady, micEnabled]);
+
+  // Keep meeting chrome mounted during reconnect so audio/VB/chat survive.
+  const showMeetingUi = sessionReady || (reconnecting && everReadyRef.current);
 
   return (
     <>
+      <MeetingRoomObservers />
+      <MeetingDebugOverlay sessionReady={sessionReady} />
       <MeetingConnectionBanner />
-      {connected ? (
+      {connected || reconnecting || sessionReady ? (
         <RoomMediaBootstrap
           micEnabled={micEnabled}
           cameraEnabled={cameraEnabled}
@@ -231,13 +294,15 @@ function RoomSessionBody({
         </div>
       </div>
 
-      {!sessionReady ? (
+      {!showMeetingUi ? (
         <div className="meeting-join-pending" role="status">
           <LoaderCircle className="spin" size={28} />
           <p>
             {connected
               ? "Menyiapkan kamera dan mikrofon..."
-              : "Menghubungkan ke meeting..."}
+              : reconnecting
+                ? "Koneksi tidak stabil. Menghubungkan kembali..."
+                : "Menghubungkan ke meeting..."}
           </p>
         </div>
       ) : (
@@ -348,12 +413,18 @@ function MeetingRoom({
         return;
       }
 
-      // Prevent the LiveKitRoom unmount disconnect from navigating to left screen.
+      // Soft disconnect after reconnect budget — return to prejoin with message.
+      // Do NOT navigate away during Reconnecting (handled by banner + sessionReady).
       suppressLeaveNavRef.current = true;
       const message =
         reason === DisconnectReason.JOIN_FAILURE
           ? "Gagal bergabung ke meeting. Periksa kamera/mikrofon lalu coba lagi."
-          : "Koneksi terputus. Silakan gabung ulang.";
+          : "Koneksi terputus setelah beberapa percobaan. Silakan gabung ulang.";
+      meetingLogger("ROOM_DISCONNECTED", {
+        reason: formatDisconnectReason(reason),
+        reasonCode: reason != null ? Number(reason) : undefined,
+        handledAs: "unexpected_prejoin",
+      });
       onUnexpectedDisconnect(message);
     },
     [goToLeftScreen, onUnexpectedDisconnect],
@@ -799,6 +870,10 @@ function MeetingExperienceInner({
 }
 
 export function MeetingExperience(props: MeetingExperienceProps) {
+  useEffect(() => {
+    ensureMeetingDebugSessionId();
+  }, []);
+
   return (
     <BackgroundEffectsProvider>
       <MeetingExperienceInner {...props} />

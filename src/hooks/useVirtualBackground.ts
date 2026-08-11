@@ -153,6 +153,9 @@ export function useVirtualBackground({
               }
             },
             onAutoDowngrade: handleAutoDowngrade,
+            onFatalError: (message) => {
+              setError(message);
+            },
           });
           processorRef.current = processor;
           attachedTrackRef.current = activeTrack;

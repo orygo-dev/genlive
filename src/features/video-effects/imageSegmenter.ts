@@ -95,6 +95,10 @@ async function createSegmenter() {
 /**
  * Fill `out` with person occupancy in [0, 1].
  * Prefers confidence masks; falls back to inverted category mask.
+ *
+ * NOTE: Do not auto-invert via center/border heuristics here — that false-fires
+ * when the person is off-center, wears dark clothing, or fills most of the frame.
+ * Empty-person fail-safe lives in VirtualBackgroundProcessor (multi-frame).
  */
 export function fillPersonOccupancy(
   result: ImageSegmenterResult,
@@ -102,8 +106,7 @@ export function fillPersonOccupancy(
 ): boolean {
   const confMasks = result.confidenceMasks;
   if (confMasks && confMasks.length > 0) {
-    // selfie_segmenter exposes [background, person]. Prefer the person mask.
-    // Inferring polarity from the frame centre breaks for off-centre people.
+    // selfie_segmenter typically exposes [background, person]. Prefer person.
     const personMask = confMasks[confMasks.length > 1 ? confMasks.length - 1 : 0];
     const data = personMask.getAsFloat32Array();
     if (data.length === out.length) {
@@ -126,6 +129,53 @@ export function fillPersonOccupancy(
     out[i] = data[i] < 0.5 ? 1 : 0;
   }
   return true;
+}
+
+/**
+ * Diagnostic helper for tests — not used in the live processor path.
+ * Kept exported so polarity experiments stay unit-testable without shipping
+ * aggressive auto-invert in production.
+ */
+export function maybeInvertOccupancy(out: Float32Array): void {
+  const n = out.length;
+  if (n < 64) return;
+
+  const width = Math.max(1, Math.round(Math.sqrt(n)));
+  const height = Math.max(1, Math.floor(n / width));
+  if (width * height > n) return;
+
+  let centerSum = 0;
+  let centerCount = 0;
+  let borderSum = 0;
+  let borderCount = 0;
+  const x0 = Math.floor(width * 0.3);
+  const x1 = Math.ceil(width * 0.7);
+  const y0 = Math.floor(height * 0.25);
+  const y1 = Math.ceil(height * 0.85);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const v = out[y * width + x];
+      const inCenter = x >= x0 && x < x1 && y >= y0 && y < y1;
+      if (inCenter) {
+        centerSum += v;
+        centerCount += 1;
+      } else {
+        borderSum += v;
+        borderCount += 1;
+      }
+    }
+  }
+
+  if (!centerCount || !borderCount) return;
+  const centerMean = centerSum / centerCount;
+  const borderMean = borderSum / borderCount;
+
+  if (borderMean > 0.55 && centerMean < 0.35 && borderMean - centerMean > 0.2) {
+    for (let i = 0; i < n; i += 1) {
+      out[i] = 1 - out[i];
+    }
+  }
 }
 
 export function segmentVideoFrame(

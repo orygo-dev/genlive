@@ -8,6 +8,7 @@ import {
   GridLayout,
   ParticipantTile,
   RoomAudioRenderer,
+  StartAudio,
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
@@ -69,6 +70,16 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
     layoutMode === "gallery" && hasScreenShare ? "focus" : layoutMode;
   const stageClass = `meeting-stage meeting-stage-${effectiveMode}`;
 
+  const audioLayer = (
+    <>
+      <RoomAudioRenderer />
+      <StartAudio
+        label="Klik untuk mengaktifkan audio"
+        className="meeting-start-audio"
+      />
+    </>
+  );
+
   if (effectiveMode === "gallery") {
     return (
       <div className={stageClass}>
@@ -77,7 +88,7 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
             <ParticipantTile />
           </GridLayout>
         </div>
-        <RoomAudioRenderer />
+        {audioLayer}
       </div>
     );
   }
@@ -102,7 +113,7 @@ export function MeetingStage({ layoutMode }: MeetingStageProps) {
           )}
         </FocusLayoutContainer>
       </div>
-      <RoomAudioRenderer />
+      {audioLayer}
     </div>
   );
 }
