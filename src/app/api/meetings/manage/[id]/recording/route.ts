@@ -9,6 +9,7 @@ import {
 } from "@/lib/recording";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 type RecordingRouteProps = {
   params: Promise<{ id: string }>;

@@ -241,22 +241,36 @@ export async function stopMeetingRecording(input: {
     return { recording };
   }
 
-  try {
-    await stopRoomRecording(open.egressId);
-  } catch (error) {
-    const message = sanitizeEgressError(error);
-    console.error("Stop egress failed", error);
-    return {
-      error: `Recording belum dapat dihentikan: ${message}`,
-      status: 502 as const,
-    };
-  }
-
+  // Mark ENDING before LiveKit round-trip so proxy timeouts still leave a
+  // consistent UI state (poll → Mengakhiri → webhook COMPLETE).
   const recording = await prisma.recording.update({
     where: { id: open.id },
     data: { status: "ENDING" },
     select: recordingSelect,
   });
+
+  try {
+    await stopRoomRecording(open.egressId);
+  } catch (error) {
+    const message = sanitizeEgressError(error);
+    const alreadyGone =
+      /not found|does not exist|already|egress.*ended|completed|aborted/i.test(
+        message,
+      );
+    if (!alreadyGone) {
+      console.error("Stop egress failed", error);
+      await prisma.recording
+        .update({
+          where: { id: open.id },
+          data: { status: "ACTIVE", errorMessage: null },
+        })
+        .catch(() => undefined);
+      return {
+        error: `Recording belum dapat dihentikan: ${message}`,
+        status: 502 as const,
+      };
+    }
+  }
 
   await writeAuditLog({
     organizationId: input.meeting.organizationId,

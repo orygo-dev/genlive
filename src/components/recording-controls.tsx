@@ -19,21 +19,64 @@ type RecordingUiState =
   | "STOPPING"
   | "FAILED";
 
+type RecordingApiPayload = {
+  error?: string;
+  recording?: ActiveRecording;
+  activeRecording?: ActiveRecording | null;
+  canManage?: boolean;
+  egressConfigured?: boolean;
+  reused?: boolean;
+};
+
 const START_TIMEOUT_MS = 55_000;
-const STOP_TIMEOUT_MS = 30_000;
+const STOP_TIMEOUT_MS = 45_000;
+
+async function readRecordingJson(
+  response: Response,
+  actionLabel: string,
+): Promise<RecordingApiPayload> {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text) as RecordingApiPayload;
+    } catch {
+      throw new Error(
+        `${actionLabel}: respons JSON tidak valid (status ${response.status}).`,
+      );
+    }
+  }
+
+  if (response.status === 502 || response.status === 503 || response.status === 504) {
+    throw new Error(
+      `${actionLabel}: server/proxy timeout (${response.status}). Coba lagi; jika berulang, naikkan timeout reverse proxy untuk /api/meetings/*/recording.`,
+    );
+  }
+
+  if (response.status === 404) {
+    throw new Error(
+      `${actionLabel}: endpoint tidak ditemukan (404). Deploy ulang dengan bash scripts/aapanel-pm2.sh --build.`,
+    );
+  }
+
+  const snippet = text.replace(/\s+/g, " ").trim().slice(0, 120);
+  throw new Error(
+    `${actionLabel}: server mengembalikan non-JSON (status ${response.status})${
+      snippet ? `: ${snippet}` : "."
+    }`,
+  );
+}
 
 function toUiState(
   active: ActiveRecording | null,
   busyAction: "start" | "stop" | null,
 ): RecordingUiState {
-  // Only the in-flight request locks the UI to STARTING/STOPPING.
-  // LiveKit often returns EGRESS_STARTING; that must still be stoppable.
   if (busyAction === "start") return "STARTING";
   if (busyAction === "stop") return "STOPPING";
   if (!active) return "IDLE";
   if (active.status === "ENDING") return "STOPPING";
   if (active.status === "FAILED" || active.status === "ABORTED") return "FAILED";
-  // STARTING with a real egress id (or any open row after API success) = recording.
   if (active.status === "STARTING" || active.status === "ACTIVE") {
     return active.egressId || active.status === "ACTIVE" ? "RECORDING" : "STARTING";
   }
@@ -63,18 +106,18 @@ export function RecordingControls({ roomName }: { roomName: string }) {
       `/api/meetings/${encodeURIComponent(roomName)}/recording`,
       { cache: "no-store" },
     );
-    if (!response.ok) {
-      return;
-    }
-    const payload = (await response.json()) as {
-      activeRecording: ActiveRecording | null;
-      canManage: boolean;
-      egressConfigured?: boolean;
-    };
-    setActive(payload.activeRecording);
-    setCanManage(payload.canManage);
-    if (typeof payload.egressConfigured === "boolean") {
-      setEgressConfigured(payload.egressConfigured);
+    try {
+      const payload = await readRecordingJson(response, "Status recording");
+      if (!response.ok) {
+        return;
+      }
+      setActive(payload.activeRecording ?? null);
+      setCanManage(Boolean(payload.canManage));
+      if (typeof payload.egressConfigured === "boolean") {
+        setEgressConfigured(payload.egressConfigured);
+      }
+    } catch {
+      // Poll quietly; action errors surface via runRecordingAction.
     }
   }, [roomName]);
 
@@ -114,6 +157,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     const controller = new AbortController();
     const timeoutMs = action === "start" ? START_TIMEOUT_MS : STOP_TIMEOUT_MS;
     const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    const actionLabel = action === "start" ? "Start recording" : "Stop recording";
 
     try {
       const response = await fetch(
@@ -131,11 +175,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
           signal: controller.signal,
         },
       );
-      const payload = (await response.json()) as {
-        error?: string;
-        recording?: ActiveRecording;
-        reused?: boolean;
-      };
+      const payload = await readRecordingJson(response, actionLabel);
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Recording belum dapat diproses.");
@@ -212,7 +252,6 @@ export function RecordingControls({ roomName }: { roomName: string }) {
   }
 
   const ui = toUiState(active, busyAction);
-  // Only disable while the HTTP request is in flight — never lock on STARTING forever.
   const isRequestBusy = busyAction !== null;
   const canStop =
     !isRequestBusy &&
