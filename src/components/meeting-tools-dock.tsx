@@ -1478,20 +1478,6 @@ export function MeetingToolsDock({
           </section>
         ) : null}
 
-        <section
-          className="meeting-tools-panel meeting-tools-panel-wide meeting-chat-panel"
-          hidden={activePanel !== "chat"}
-          aria-hidden={activePanel !== "chat"}
-        >
-          <header>
-            <strong>Chat</strong>
-            <button type="button" onClick={() => setActivePanel("none")}>
-              <X size={16} />
-            </button>
-          </header>
-          <Chat />
-        </section>
-
         {activePanel === "more" ? (
           <section className="meeting-tools-panel meeting-more-menu">
             <header>
@@ -1918,6 +1904,42 @@ export function MeetingToolsDock({
           </section>
         ) : null}
       </nav>
+
+      {/*
+        Chat lives outside .meeting-tools-dock on purpose: the dock uses
+        transform (centering), which makes position:fixed children relative to
+        the dock — on phones the sheet ends up off-screen and the close control
+        is unreachable. Keep <Chat /> mounted (hidden) so message state survives.
+      */}
+      <button
+        type="button"
+        className="meeting-chat-backdrop"
+        hidden={activePanel !== "chat"}
+        aria-label="Tutup chat"
+        onClick={() => setActivePanel("none")}
+      />
+      <section
+        className="meeting-chat-sheet meeting-chat-panel"
+        hidden={activePanel !== "chat"}
+        aria-hidden={activePanel !== "chat"}
+        role="dialog"
+        aria-label="Chat meeting"
+      >
+        <header className="meeting-chat-sheet-header">
+          <strong>Chat</strong>
+          <button
+            type="button"
+            className="meeting-chat-close"
+            aria-label="Tutup chat"
+            onClick={() => setActivePanel("none")}
+          >
+            <X size={18} />
+          </button>
+        </header>
+        <div className="meeting-chat-sheet-body">
+          <Chat />
+        </div>
+      </section>
     </>
   );
 }

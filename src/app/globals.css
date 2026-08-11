@@ -6520,8 +6520,121 @@ footer p {
   height: min(360px, 50vh);
 }
 
-.meeting-tools-panel[hidden] {
+.meeting-tools-panel[hidden],
+.meeting-chat-sheet[hidden],
+.meeting-chat-backdrop[hidden] {
   display: none !important;
+  pointer-events: none !important;
+}
+
+/* Chat sheet: outside transformed dock so fixed = viewport */
+.meeting-chat-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(2, 6, 23, 0.45);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.meeting-chat-sheet {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(58vh, 520px);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  color: #eef3f9;
+  background: rgba(20, 27, 36, 0.98);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.meeting-chat-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.meeting-chat-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  color: #e2e8f0;
+  background: #1e293b;
+  cursor: pointer;
+}
+
+.meeting-chat-sheet-body {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.meeting-chat-sheet .lk-chat {
+  height: min(360px, 50vh);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 720px) {
+  .meeting-chat-backdrop:not([hidden]) {
+    display: block;
+  }
+
+  .meeting-chat-sheet:not([hidden]) {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    height: min(78dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
+    max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top, 0px) - 8px));
+    margin: 0;
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom, 0px));
+    border-radius: 16px 16px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .meeting-chat-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .meeting-chat-sheet .lk-chat {
+    flex: 1;
+    height: auto !important;
+    min-height: 0;
+  }
+
+  /* Keep composer usable above the soft keyboard when possible */
+  .meeting-chat-sheet .lk-chat-form,
+  .meeting-chat-sheet form {
+    flex-shrink: 0;
+  }
 }
 
 .meeting-start-audio {
