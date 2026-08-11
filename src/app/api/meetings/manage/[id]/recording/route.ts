@@ -131,7 +131,11 @@ export async function POST(request: Request, { params }: RecordingRouteProps) {
         { status: result.status ?? 400 },
       );
     }
-    return NextResponse.json({ recording: result.recording }, { status: 201 });
+    const reused = "reused" in result && result.reused === true;
+    return NextResponse.json(
+      { recording: result.recording, reused },
+      { status: reused ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Recording action failed", error);
     return NextResponse.json(

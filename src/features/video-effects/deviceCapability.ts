@@ -1,3 +1,4 @@
+import { supportsBackgroundProcessors } from "@livekit/track-processors";
 import type { QualityTier } from "./types";
 import { SEGMENTATION_FPS } from "./types";
 
@@ -69,11 +70,15 @@ export function downgradeQuality(current: QualityTier): QualityTier | null {
 
 export function supportsVideoEffects(): boolean {
   if (typeof window === "undefined") return false;
-  const hints = detectDeviceCapabilityHints();
-  return Boolean(
-    hints.hasWebGl2 &&
-      typeof HTMLCanvasElement !== "undefined" &&
-      typeof createImageBitmap !== "undefined" &&
-      "captureStream" in HTMLCanvasElement.prototype,
-  );
+  try {
+    return supportsBackgroundProcessors();
+  } catch {
+    const hints = detectDeviceCapabilityHints();
+    return Boolean(
+      hints.hasWebGl2 &&
+        typeof HTMLCanvasElement !== "undefined" &&
+        typeof createImageBitmap !== "undefined" &&
+        "captureStream" in HTMLCanvasElement.prototype,
+    );
+  }
 }

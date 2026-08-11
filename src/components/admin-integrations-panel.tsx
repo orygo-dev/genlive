@@ -133,6 +133,21 @@ export function AdminIntegrationsPanel() {
         cronSecret: "",
         googleClientId: String(payload.integrations.googleClientId || ""),
         googleClientSecret: "",
+        livekitEgressS3AccessKey: "",
+        livekitEgressS3Secret: "",
+        livekitEgressS3Bucket: String(
+          payload.integrations.livekitEgressS3Bucket || "",
+        ),
+        livekitEgressS3Region: String(
+          payload.integrations.livekitEgressS3Region || "",
+        ),
+        livekitEgressS3Endpoint: String(
+          payload.integrations.livekitEgressS3Endpoint || "",
+        ),
+        livekitEgressS3ForcePathStyle: payload.integrations
+          .livekitEgressS3ForcePathStyle
+          ? "true"
+          : "false",
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat.");
@@ -286,6 +301,17 @@ export function AdminIntegrationsPanel() {
       if (form.googleClientSecret.trim()) {
         body.googleClientSecret = form.googleClientSecret.trim();
       }
+      if (form.livekitEgressS3AccessKey.trim()) {
+        body.livekitEgressS3AccessKey = form.livekitEgressS3AccessKey.trim();
+      }
+      if (form.livekitEgressS3Secret.trim()) {
+        body.livekitEgressS3Secret = form.livekitEgressS3Secret.trim();
+      }
+      body.livekitEgressS3Bucket = form.livekitEgressS3Bucket || null;
+      body.livekitEgressS3Region = form.livekitEgressS3Region || null;
+      body.livekitEgressS3Endpoint = form.livekitEgressS3Endpoint || null;
+      body.livekitEgressS3ForcePathStyle =
+        form.livekitEgressS3ForcePathStyle === "true";
 
       await saveIntegrations(body);
       setMessage("Konfigurasi tersimpan.");
@@ -657,6 +683,74 @@ export function AdminIntegrationsPanel() {
               placeholder="Kosongkan jika tidak diubah"
               type="password"
             />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>LiveKit Egress (recording S3)</legend>
+          <p className="admin-muted">
+            Wajib untuk recording LiveKit Cloud. Tanpa bucket S3/compatible,
+            tombol Rekam tidak dapat membuat MP4.
+          </p>
+          <label>
+            S3 Access Key{" "}
+            {data?.livekitEgressS3AccessKeySet ? "(tersimpan)" : ""}
+            <input
+              value={form.livekitEgressS3AccessKey || ""}
+              onChange={(e) => setField("livekitEgressS3AccessKey", e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Kosongkan jika tidak diubah"
+            />
+          </label>
+          <label>
+            S3 Secret{" "}
+            {data?.livekitEgressS3SecretSet ? "(tersimpan)" : ""}
+            <input
+              value={form.livekitEgressS3Secret || ""}
+              onChange={(e) => setField("livekitEgressS3Secret", e.target.value)}
+              type="password"
+              autoComplete="off"
+              placeholder="Kosongkan jika tidak diubah"
+            />
+          </label>
+          <label>
+            S3 Bucket
+            <input
+              value={form.livekitEgressS3Bucket || ""}
+              onChange={(e) => setField("livekitEgressS3Bucket", e.target.value)}
+              placeholder="genmeet-recordings"
+            />
+          </label>
+          <label>
+            S3 Region
+            <input
+              value={form.livekitEgressS3Region || ""}
+              onChange={(e) => setField("livekitEgressS3Region", e.target.value)}
+              placeholder="ap-southeast-1"
+            />
+          </label>
+          <label>
+            S3 Endpoint (opsional, untuk MinIO/R2)
+            <input
+              value={form.livekitEgressS3Endpoint || ""}
+              onChange={(e) =>
+                setField("livekitEgressS3Endpoint", e.target.value)
+              }
+              placeholder="https://..."
+            />
+          </label>
+          <label>
+            Force path style
+            <select
+              value={form.livekitEgressS3ForcePathStyle || "false"}
+              onChange={(e) =>
+                setField("livekitEgressS3ForcePathStyle", e.target.value)
+              }
+            >
+              <option value="false">false</option>
+              <option value="true">true</option>
+            </select>
           </label>
         </fieldset>
 

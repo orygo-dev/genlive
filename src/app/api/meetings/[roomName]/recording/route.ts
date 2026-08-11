@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
+import { isEgressS3Configured } from "@/lib/livekit-egress";
 import {
   getOpenRecording,
   startMeetingRecording,
@@ -44,6 +45,11 @@ export async function GET(_: Request, { params }: RoomRecordingRouteProps) {
   }
 
   const active = await getOpenRecording(meeting.id);
+  const egressConfigured = await isEgressS3Configured();
+  const egressId =
+    active?.egressId && !active.egressId.startsWith("pending-")
+      ? active.egressId
+      : undefined;
   return NextResponse.json(
     {
       meetingId: meeting.id,
@@ -52,9 +58,11 @@ export async function GET(_: Request, { params }: RoomRecordingRouteProps) {
             id: active.id,
             status: active.status,
             startedAt: active.startedAt,
+            egressId,
           }
         : null,
       canManage: canManageMeeting(context.user, meeting),
+      egressConfigured,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
@@ -112,7 +120,11 @@ export async function POST(request: Request, { params }: RoomRecordingRouteProps
         { status: result.status ?? 400 },
       );
     }
-    return NextResponse.json({ recording: result.recording }, { status: 201 });
+    const reused = "reused" in result && result.reused === true;
+    return NextResponse.json(
+      { recording: result.recording, reused },
+      { status: reused ? 200 : 201 },
+    );
   } catch (error) {
     console.error("Room recording action failed", error);
     return NextResponse.json(

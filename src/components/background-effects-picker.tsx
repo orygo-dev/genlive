@@ -58,8 +58,8 @@ export function BackgroundEffectsPicker({
   if (unsupported) {
     return (
       <p className="bg-effects-unsupported">
-        Browser ini belum mendukung efek background. Gunakan Chrome atau Edge
-        terbaru.
+        Virtual background tidak didukung pada browser/perangkat ini. Gunakan
+        Chrome atau Edge terbaru dengan WebGL2.
       </p>
     );
   }

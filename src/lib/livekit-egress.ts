@@ -42,27 +42,25 @@ export async function isEgressS3Configured() {
 
 export async function buildEncodedFileOutput(filepath: string) {
   const config = await getPlatformConfig();
-  if (await isEgressS3Configured()) {
-    return new EncodedFileOutput({
-      fileType: EncodedFileType.MP4,
-      filepath,
-      output: {
-        case: "s3",
-        value: new S3Upload({
-          accessKey: config.livekitEgressS3AccessKey!,
-          secret: config.livekitEgressS3Secret!,
-          bucket: config.livekitEgressS3Bucket!,
-          region: config.livekitEgressS3Region!,
-          endpoint: config.livekitEgressS3Endpoint || undefined,
-          forcePathStyle: config.livekitEgressS3ForcePathStyle,
-        }),
-      },
-    });
+  if (!(await isEgressS3Configured())) {
+    throw new Error(
+      "LIVEKIT_EGRESS_S3 belum lengkap (access key, secret, bucket, region).",
+    );
   }
-
   return new EncodedFileOutput({
     fileType: EncodedFileType.MP4,
     filepath,
+    output: {
+      case: "s3",
+      value: new S3Upload({
+        accessKey: config.livekitEgressS3AccessKey!,
+        secret: config.livekitEgressS3Secret!,
+        bucket: config.livekitEgressS3Bucket!,
+        region: config.livekitEgressS3Region!,
+        endpoint: config.livekitEgressS3Endpoint || undefined,
+        forcePathStyle: config.livekitEgressS3ForcePathStyle,
+      }),
+    },
   });
 }
 

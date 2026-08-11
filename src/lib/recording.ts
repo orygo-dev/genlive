@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import {
   buildRecordingFilepath,
   extractEgressFile,
+  isEgressS3Configured,
   mapEgressStatus,
   startRoomRecording,
   stopRoomRecording,
@@ -13,6 +14,16 @@ import { assertCanStartRecording } from "@/lib/billing";
 import { writeAuditLog } from "@/lib/organization";
 
 const OPEN_RECORDING_STATUSES = ["STARTING", "ACTIVE", "ENDING"] as const;
+
+function sanitizeEgressError(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Egress LiveKit gagal.";
+  return raw.replace(/\s+/g, " ").trim().slice(0, 400);
+}
 
 export async function getOpenRecording(meetingId: string) {
   return prisma.recording.findFirst({
@@ -23,6 +34,18 @@ export async function getOpenRecording(meetingId: string) {
     orderBy: { startedAt: "desc" },
   });
 }
+
+const recordingSelect = {
+  id: true,
+  status: true,
+  egressId: true,
+  filepath: true,
+  downloadUrl: true,
+  durationSeconds: true,
+  startedAt: true,
+  endedAt: true,
+  errorMessage: true,
+} as const;
 
 export async function startMeetingRecording(input: {
   meeting: {
@@ -43,6 +66,15 @@ export async function startMeetingRecording(input: {
     };
   }
 
+  // Host may join a SCHEDULED meeting without an explicit "Start" click.
+  if (input.meeting.status === "SCHEDULED") {
+    await prisma.meeting.update({
+      where: { id: input.meeting.id },
+      data: { status: "ACTIVE" },
+    });
+    input.meeting.status = "ACTIVE";
+  }
+
   if (input.meeting.status !== "ACTIVE") {
     return {
       error: "Recording hanya dapat dimulai saat meeting aktif.",
@@ -52,11 +84,8 @@ export async function startMeetingRecording(input: {
 
   const open = await getOpenRecording(input.meeting.id);
   if (open) {
-    return {
-      error: "Meeting ini sudah memiliki recording yang berjalan.",
-      status: 409 as const,
-      recording: open,
-    };
+    // Idempotent: do not start a second egress for the same room.
+    return { recording: open, reused: true as const };
   }
 
   const recordingQuota = await assertCanStartRecording(
@@ -69,12 +98,49 @@ export async function startMeetingRecording(input: {
     };
   }
 
+  if (!(await isEgressS3Configured())) {
+    return {
+      error:
+        "Storage Egress belum dikonfigurasi. Isi LIVEKIT_EGRESS_S3_* (Access Key, Secret, Bucket, Region) di Super Admin → Integrasi atau environment server. LiveKit Cloud membutuhkan S3/compatible storage untuk menyimpan MP4.",
+      status: 503 as const,
+    };
+  }
+
   const recordingId = crypto.randomUUID();
+  const pendingEgressId = `pending-${recordingId}`;
   const filepath = buildRecordingFilepath({
     organizationId: input.meeting.organizationId,
     meetingId: input.meeting.id,
     recordingId,
   });
+
+  // Reserve an open row before calling LiveKit so concurrent starts collide here.
+  let reserved;
+  try {
+    reserved = await prisma.recording.create({
+      data: {
+        id: recordingId,
+        meetingId: input.meeting.id,
+        organizationId: input.meeting.organizationId,
+        startedById: input.actorId,
+        consentAcknowledgedAt: new Date(),
+        consentByUserId: input.actorId,
+        egressId: pendingEgressId,
+        status: "STARTING",
+        filepath,
+      },
+      select: recordingSelect,
+    });
+  } catch {
+    const raced = await getOpenRecording(input.meeting.id);
+    if (raced) {
+      return { recording: raced, reused: true as const };
+    }
+    return {
+      error: "Recording belum dapat dipesan di database.",
+      status: 500 as const,
+    };
+  }
 
   let egress: EgressInfo;
   try {
@@ -83,45 +149,44 @@ export async function startMeetingRecording(input: {
       filepath,
     });
   } catch (error) {
+    const message = sanitizeEgressError(error);
     console.error("Start egress failed", error);
+    await prisma.recording.update({
+      where: { id: reserved.id },
+      data: {
+        status: "FAILED",
+        errorMessage: message.slice(0, 500),
+        endedAt: new Date(),
+      },
+    });
     return {
-      error:
-        "Recording belum dapat dimulai. Pastikan Egress LiveKit aktif untuk project Anda.",
+      error: `Recording gagal dimulai di LiveKit: ${message}`,
       status: 502 as const,
     };
   }
 
   if (!egress.egressId) {
+    await prisma.recording.update({
+      where: { id: reserved.id },
+      data: {
+        status: "FAILED",
+        errorMessage: "LiveKit tidak mengembalikan egress ID.",
+        endedAt: new Date(),
+      },
+    });
     return {
       error: "LiveKit tidak mengembalikan egress ID.",
       status: 502 as const,
     };
   }
 
-  const now = new Date();
-  const recording = await prisma.recording.create({
+  const recording = await prisma.recording.update({
+    where: { id: reserved.id },
     data: {
-      id: recordingId,
-      meetingId: input.meeting.id,
-      organizationId: input.meeting.organizationId,
-      startedById: input.actorId,
-      consentAcknowledgedAt: now,
-      consentByUserId: input.actorId,
       egressId: egress.egressId,
       status: mapEgressStatus(egress.status),
-      filepath,
     },
-    select: {
-      id: true,
-      status: true,
-      egressId: true,
-      filepath: true,
-      downloadUrl: true,
-      durationSeconds: true,
-      startedAt: true,
-      endedAt: true,
-      errorMessage: true,
-    },
+    select: recordingSelect,
   });
 
   await writeAuditLog({
@@ -137,7 +202,7 @@ export async function startMeetingRecording(input: {
     },
   });
 
-  return { recording };
+  return { recording, reused: false as const };
 }
 
 export async function stopMeetingRecording(input: {
@@ -157,12 +222,28 @@ export async function stopMeetingRecording(input: {
     };
   }
 
+  if (open.egressId.startsWith("pending-")) {
+    await prisma.recording.update({
+      where: { id: open.id },
+      data: {
+        status: "ABORTED",
+        errorMessage: "Recording dibatalkan sebelum egress LiveKit siap.",
+        endedAt: new Date(),
+      },
+    });
+    return {
+      error: "Recording masih menyiapkan egress. Coba stop lagi sebentar.",
+      status: 409 as const,
+    };
+  }
+
   try {
     await stopRoomRecording(open.egressId);
   } catch (error) {
+    const message = sanitizeEgressError(error);
     console.error("Stop egress failed", error);
     return {
-      error: "Recording belum dapat dihentikan.",
+      error: `Recording belum dapat dihentikan: ${message}`,
       status: 502 as const,
     };
   }
@@ -170,17 +251,7 @@ export async function stopMeetingRecording(input: {
   const recording = await prisma.recording.update({
     where: { id: open.id },
     data: { status: "ENDING" },
-    select: {
-      id: true,
-      status: true,
-      egressId: true,
-      filepath: true,
-      downloadUrl: true,
-      durationSeconds: true,
-      startedAt: true,
-      endedAt: true,
-      errorMessage: true,
-    },
+    select: recordingSelect,
   });
 
   await writeAuditLog({

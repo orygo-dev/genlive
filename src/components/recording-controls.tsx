@@ -9,12 +9,35 @@ type ActiveRecording = {
   id: string;
   status: "STARTING" | "ACTIVE" | "ENDING" | "COMPLETE" | "FAILED" | "ABORTED";
   startedAt: string;
+  egressId?: string;
 };
+
+type RecordingUiState =
+  | "IDLE"
+  | "STARTING"
+  | "RECORDING"
+  | "STOPPING"
+  | "FAILED";
+
+function toUiState(
+  active: ActiveRecording | null,
+  busyAction: "start" | "stop" | null,
+): RecordingUiState {
+  if (busyAction === "start") return "STARTING";
+  if (busyAction === "stop") return "STOPPING";
+  if (!active) return "IDLE";
+  if (active.status === "STARTING") return "STARTING";
+  if (active.status === "ACTIVE") return "RECORDING";
+  if (active.status === "ENDING") return "STOPPING";
+  if (active.status === "FAILED" || active.status === "ABORTED") return "FAILED";
+  return "IDLE";
+}
 
 export function RecordingControls({ roomName }: { roomName: string }) {
   const [active, setActive] = useState<ActiveRecording | null>(null);
   const [canManage, setCanManage] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [egressConfigured, setEgressConfigured] = useState(true);
+  const [busyAction, setBusyAction] = useState<"start" | "stop" | null>(null);
   const [error, setError] = useState("");
   const [consentOpen, setConsentOpen] = useState(false);
 
@@ -29,9 +52,13 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     const payload = (await response.json()) as {
       activeRecording: ActiveRecording | null;
       canManage: boolean;
+      egressConfigured?: boolean;
     };
     setActive(payload.activeRecording);
     setCanManage(payload.canManage);
+    if (typeof payload.egressConfigured === "boolean") {
+      setEgressConfigured(payload.egressConfigured);
+    }
   }, [roomName]);
 
   useEffect(() => {
@@ -56,7 +83,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
 
   async function runRecordingAction(action: "start" | "stop") {
     setError("");
-    setBusy(true);
+    setBusyAction(action);
 
     try {
       const response = await fetch(
@@ -76,10 +103,19 @@ export function RecordingControls({ roomName }: { roomName: string }) {
       const payload = (await response.json()) as {
         error?: string;
         recording?: ActiveRecording;
+        reused?: boolean;
       };
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Recording belum dapat diproses.");
+      }
+
+      if (action === "start") {
+        if (!payload.recording?.id) {
+          throw new Error("Backend tidak mengembalikan recording yang valid.");
+        }
+        // Only treat as success when we have a DB recording row back.
+        setActive(payload.recording);
       }
 
       setConsentOpen(false);
@@ -91,17 +127,24 @@ export function RecordingControls({ roomName }: { roomName: string }) {
           : "Recording belum dapat diproses.",
       );
     } finally {
-      setBusy(false);
+      setBusyAction(null);
     }
   }
 
   function toggleRecording() {
-    if (!canManage || busy) {
+    if (!canManage || busyAction) {
       return;
     }
 
-    if (active) {
+    if (active && (active.status === "STARTING" || active.status === "ACTIVE" || active.status === "ENDING")) {
       void runRecordingAction("stop");
+      return;
+    }
+
+    if (!egressConfigured) {
+      setError(
+        "Storage Egress S3 belum dikonfigurasi. Super Admin → Integrasi → isi LIVEKIT_EGRESS_S3_*.",
+      );
       return;
     }
 
@@ -112,39 +155,49 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     return null;
   }
 
-  const isRecording =
-    active?.status === "STARTING" ||
-    active?.status === "ACTIVE" ||
-    active?.status === "ENDING";
+  const ui = toUiState(active, busyAction);
+  const isBusy = ui === "STARTING" || ui === "STOPPING";
+
+  let label = "Rekam";
+  if (ui === "STARTING") label = "Starting...";
+  else if (ui === "STOPPING") label = "Mengakhiri...";
+  else if (ui === "RECORDING") label = recordingStatusLabel("ACTIVE");
+  else if (ui === "FAILED") label = "Gagal — coba lagi";
 
   return (
     <>
       <div className="recording-controls">
         <button
           type="button"
-          className={isRecording ? "recording-active" : undefined}
-          disabled={busy || active?.status === "ENDING"}
+          className={ui === "RECORDING" || ui === "STARTING" ? "recording-active" : undefined}
+          disabled={isBusy}
           onClick={() => toggleRecording()}
+          title={
+            !egressConfigured
+              ? "Konfigurasi S3 Egress terlebih dahulu"
+              : undefined
+          }
         >
-          {busy ? (
+          {isBusy ? (
             <LoaderCircle className="spin" size={16} />
-          ) : isRecording ? (
+          ) : ui === "RECORDING" ? (
             <Square size={14} />
           ) : (
             <Circle size={14} />
           )}
-          {isRecording
-            ? active
-              ? recordingStatusLabel(active.status)
-              : "Merekam"
-            : "Rekam"}
+          {label}
         </button>
         {error ? <p className="recording-error">{error}</p> : null}
+        {!egressConfigured && !error ? (
+          <p className="recording-error">
+            Egress S3 belum siap — recording tidak bisa dimulai.
+          </p>
+        ) : null}
       </div>
 
       <RecordingConsentModal
         open={consentOpen}
-        busy={busy}
+        busy={busyAction === "start"}
         onCancel={() => setConsentOpen(false)}
         onConfirm={() => void runRecordingAction("start")}
       />
