@@ -180,11 +180,17 @@ export async function startMeetingRecording(input: {
     };
   }
 
+  // LiveKit often returns EGRESS_STARTING (0) immediately after accept.
+  // Treat accepted egress as ACTIVE so the host UI is stoppable and not stuck.
+  const mapped = mapEgressStatus(egress.status);
+  const nextStatus =
+    mapped === "STARTING" || mapped === "ACTIVE" ? "ACTIVE" : mapped;
+
   const recording = await prisma.recording.update({
     where: { id: reserved.id },
     data: {
       egressId: egress.egressId,
-      status: mapEgressStatus(egress.status),
+      status: nextStatus,
     },
     select: recordingSelect,
   });
@@ -223,18 +229,16 @@ export async function stopMeetingRecording(input: {
   }
 
   if (open.egressId.startsWith("pending-")) {
-    await prisma.recording.update({
+    const recording = await prisma.recording.update({
       where: { id: open.id },
       data: {
         status: "ABORTED",
         errorMessage: "Recording dibatalkan sebelum egress LiveKit siap.",
         endedAt: new Date(),
       },
+      select: recordingSelect,
     });
-    return {
-      error: "Recording masih menyiapkan egress. Coba stop lagi sebentar.",
-      status: 409 as const,
-    };
+    return { recording };
   }
 
   try {

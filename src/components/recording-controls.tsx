@@ -19,18 +19,34 @@ type RecordingUiState =
   | "STOPPING"
   | "FAILED";
 
+const START_TIMEOUT_MS = 55_000;
+const STOP_TIMEOUT_MS = 30_000;
+
 function toUiState(
   active: ActiveRecording | null,
   busyAction: "start" | "stop" | null,
 ): RecordingUiState {
+  // Only the in-flight request locks the UI to STARTING/STOPPING.
+  // LiveKit often returns EGRESS_STARTING; that must still be stoppable.
   if (busyAction === "start") return "STARTING";
   if (busyAction === "stop") return "STOPPING";
   if (!active) return "IDLE";
-  if (active.status === "STARTING") return "STARTING";
-  if (active.status === "ACTIVE") return "RECORDING";
   if (active.status === "ENDING") return "STOPPING";
   if (active.status === "FAILED" || active.status === "ABORTED") return "FAILED";
+  // STARTING with a real egress id (or any open row after API success) = recording.
+  if (active.status === "STARTING" || active.status === "ACTIVE") {
+    return active.egressId || active.status === "ACTIVE" ? "RECORDING" : "STARTING";
+  }
   return "IDLE";
+}
+
+function elapsedLabel(startedAt: string) {
+  const started = Date.parse(startedAt);
+  if (!Number.isFinite(started)) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
 }
 
 export function RecordingControls({ roomName }: { roomName: string }) {
@@ -40,6 +56,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
   const [busyAction, setBusyAction] = useState<"start" | "stop" | null>(null);
   const [error, setError] = useState("");
   const [consentOpen, setConsentOpen] = useState(false);
+  const [, setTick] = useState(0);
 
   const refresh = useCallback(async () => {
     const response = await fetch(
@@ -63,6 +80,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
 
   useEffect(() => {
     let alive = true;
+    let timer: number | undefined;
 
     async function poll() {
       if (!alive) return;
@@ -71,19 +89,31 @@ export function RecordingControls({ roomName }: { roomName: string }) {
       } catch {
         // Keep polling through transient failures.
       } finally {
-        if (alive) window.setTimeout(poll, 4000);
+        if (alive) timer = window.setTimeout(poll, 2000);
       }
     }
 
     void poll();
     return () => {
       alive = false;
+      if (timer) window.clearTimeout(timer);
     };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!active || (active.status !== "ACTIVE" && active.status !== "STARTING")) {
+      return;
+    }
+    const id = window.setInterval(() => setTick((value) => value + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [active]);
 
   async function runRecordingAction(action: "start" | "stop") {
     setError("");
     setBusyAction(action);
+    const controller = new AbortController();
+    const timeoutMs = action === "start" ? START_TIMEOUT_MS : STOP_TIMEOUT_MS;
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(
@@ -98,6 +128,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
             action === "start"
               ? JSON.stringify({ consentAcknowledged: true })
               : undefined,
+          signal: controller.signal,
         },
       );
       const payload = (await response.json()) as {
@@ -114,19 +145,39 @@ export function RecordingControls({ roomName }: { roomName: string }) {
         if (!payload.recording?.id) {
           throw new Error("Backend tidak mengembalikan recording yang valid.");
         }
-        // Only treat as success when we have a DB recording row back.
         setActive(payload.recording);
+      } else if (payload.recording) {
+        if (
+          payload.recording.status === "COMPLETE" ||
+          payload.recording.status === "FAILED" ||
+          payload.recording.status === "ABORTED" ||
+          payload.recording.status === "ENDING"
+        ) {
+          setActive(
+            payload.recording.status === "ENDING" ? payload.recording : null,
+          );
+        } else {
+          setActive(payload.recording);
+        }
       }
 
       setConsentOpen(false);
       await refresh();
     } catch (requestError) {
+      const aborted =
+        requestError instanceof DOMException && requestError.name === "AbortError";
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Recording belum dapat diproses.",
+        aborted
+          ? action === "start"
+            ? "Timeout memulai recording. Cek LiveKit/S3 atau coba Stop lalu Start lagi."
+            : "Timeout menghentikan recording. Coba lagi."
+          : requestError instanceof Error
+            ? requestError.message
+            : "Recording belum dapat diproses.",
       );
+      await refresh().catch(() => undefined);
     } finally {
+      window.clearTimeout(timeoutId);
       setBusyAction(null);
     }
   }
@@ -136,7 +187,12 @@ export function RecordingControls({ roomName }: { roomName: string }) {
       return;
     }
 
-    if (active && (active.status === "STARTING" || active.status === "ACTIVE" || active.status === "ENDING")) {
+    if (
+      active &&
+      (active.status === "STARTING" ||
+        active.status === "ACTIVE" ||
+        active.status === "ENDING")
+    ) {
       void runRecordingAction("stop");
       return;
     }
@@ -156,31 +212,51 @@ export function RecordingControls({ roomName }: { roomName: string }) {
   }
 
   const ui = toUiState(active, busyAction);
-  const isBusy = ui === "STARTING" || ui === "STOPPING";
+  // Only disable while the HTTP request is in flight — never lock on STARTING forever.
+  const isRequestBusy = busyAction !== null;
+  const canStop =
+    !isRequestBusy &&
+    active &&
+    (active.status === "STARTING" ||
+      active.status === "ACTIVE" ||
+      active.status === "ENDING");
 
   let label = "Rekam";
-  if (ui === "STARTING") label = "Starting...";
-  else if (ui === "STOPPING") label = "Mengakhiri...";
-  else if (ui === "RECORDING") label = recordingStatusLabel("ACTIVE");
-  else if (ui === "FAILED") label = "Gagal — coba lagi";
+  if (busyAction === "start") label = "Starting...";
+  else if (busyAction === "stop" || ui === "STOPPING") label = "Mengakhiri...";
+  else if (ui === "RECORDING" || (active && active.status === "STARTING")) {
+    const timer = active ? elapsedLabel(active.startedAt) : "";
+    const statusLabel = recordingStatusLabel(
+      active?.status === "ACTIVE" ? "ACTIVE" : "STARTING",
+    );
+    label = timer ? `${statusLabel} ${timer}` : statusLabel;
+  } else if (ui === "FAILED") label = "Gagal — coba lagi";
 
   return (
     <>
       <div className="recording-controls">
         <button
           type="button"
-          className={ui === "RECORDING" || ui === "STARTING" ? "recording-active" : undefined}
-          disabled={isBusy}
+          className={
+            ui === "RECORDING" ||
+            active?.status === "STARTING" ||
+            busyAction === "start"
+              ? "recording-active"
+              : undefined
+          }
+          disabled={isRequestBusy}
           onClick={() => toggleRecording()}
           title={
             !egressConfigured
               ? "Konfigurasi S3 Egress terlebih dahulu"
-              : undefined
+              : canStop
+                ? "Klik untuk stop recording"
+                : undefined
           }
         >
-          {isBusy ? (
+          {isRequestBusy ? (
             <LoaderCircle className="spin" size={16} />
-          ) : ui === "RECORDING" ? (
+          ) : canStop ? (
             <Square size={14} />
           ) : (
             <Circle size={14} />
