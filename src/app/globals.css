@@ -6098,6 +6098,43 @@ footer p {
   background: #0a0e14;
 }
 
+.meeting-participants-list li.is-pinned {
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.meeting-pin-badge {
+  margin-left: 6px;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.meeting-participant-actions button.is-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meeting-participant-actions button.is-pin.active {
+  border-color: #38bdf8;
+  background: rgba(14, 165, 233, 0.22);
+  color: #e0f2fe;
+}
+
+/* Make LiveKit FocusToggle (pin on tile) easier to find */
+.meeting-stage-main .lk-participant-tile .lk-focus-toggle {
+  opacity: 0.85;
+  background: rgba(15, 20, 28, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.meeting-stage-main .lk-participant-tile:hover .lk-focus-toggle,
+.meeting-stage-main .lk-participant-tile:focus-within .lk-focus-toggle,
+.meeting-stage-main .lk-participant-tile .lk-focus-toggle[data-lk-in-focus="true"],
+.meeting-stage-main .lk-participant-tile .lk-focus-toggle[aria-pressed="true"] {
+  opacity: 1;
+}
+
 .meeting-stage-gallery .meeting-stage-main,
 .meeting-stage-focus .meeting-stage-main {
   background: #0f141c;

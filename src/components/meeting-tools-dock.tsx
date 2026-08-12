@@ -14,8 +14,11 @@ import {
   Chat,
   TrackToggle,
   useLocalParticipant,
+  useLayoutContext,
   useParticipants,
+  usePinnedTracks,
   useRoomContext,
+  useTracks,
 } from "@livekit/components-react";
 import {
   DataPacket_Kind,
@@ -36,6 +39,8 @@ import {
   Palette,
   PanelRight,
   PhoneOff,
+  Pin,
+  PinOff,
   Sparkles,
   Users,
   Video,
@@ -226,6 +231,15 @@ export function MeetingToolsDock({
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
+  const { pin } = useLayoutContext();
+  const pinnedTrack = usePinnedTracks()[0];
+  const stageTracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+    ],
+    { onlySubscribed: false },
+  );
   const [ending, setEnding] = useState(false);
   const [cameraBusy, setCameraBusy] = useState(false);
   const reactionSeqRef = useRef(0);
@@ -321,6 +335,46 @@ export function MeetingToolsDock({
       ),
     [participants],
   );
+
+  const pinnedIdentity = pinnedTrack?.participant.identity ?? null;
+
+  const changeLayoutMode = useCallback(
+    (mode: MeetingLayoutMode) => {
+      if (mode === "gallery") {
+        pin.dispatch?.({ msg: "clear_pin" });
+      }
+      onLayoutChange(mode);
+    },
+    [onLayoutChange, pin.dispatch],
+  );
+
+  const pinParticipant = useCallback(
+    (identity: string) => {
+      const screenShare = stageTracks.find(
+        (track) =>
+          track.participant.identity === identity &&
+          track.source === Track.Source.ScreenShare &&
+          track.publication &&
+          !track.publication.isMuted,
+      );
+      const camera = stageTracks.find(
+        (track) =>
+          track.participant.identity === identity &&
+          track.source === Track.Source.Camera,
+      );
+      const target = screenShare ?? camera;
+      if (!target) return;
+      pin.dispatch?.({ msg: "set_pin", trackReference: target });
+      if (layoutMode === "gallery") {
+        onLayoutChange("focus");
+      }
+    },
+    [layoutMode, onLayoutChange, pin.dispatch, stageTracks],
+  );
+
+  const unpinParticipant = useCallback(() => {
+    pin.dispatch?.({ msg: "clear_pin" });
+  }, [pin.dispatch]);
 
   const publishMessage = useCallback(
     async (message: MeetingRealtimeMessage) => {
@@ -1384,20 +1438,54 @@ export function MeetingToolsDock({
             {hostCapable ? (
               <p className="meeting-invite-hint">
                 Mute mic / Mute cam / Kick ada di baris tiap peserta lain (bukan
-                pada nama Anda).
+                pada nama Anda). Pin membuat layar peserta lebih dominan.
               </p>
-            ) : null}
+            ) : (
+              <p className="meeting-invite-hint">
+                Pin peserta untuk menampilkan layarnya lebih besar. Tombol pin
+                juga ada di pojok tile video.
+              </p>
+            )}
             {hostError ? (
               <p className="meeting-display-name-status is-error" role="alert">
                 {hostError}
               </p>
             ) : null}
             <ul className="meeting-participants-list">
-              {participants.map((participant) => (
-                <li key={participant.identity}>
-                  <span>{participant.name || participant.identity}</span>
+              {participants.map((participant) => {
+                const isPinned = pinnedIdentity === participant.identity;
+                return (
+                <li
+                  key={participant.identity}
+                  className={isPinned ? "is-pinned" : undefined}
+                >
+                  <span>
+                    {participant.name || participant.identity}
+                    {isPinned ? (
+                      <small className="meeting-pin-badge"> Pin</small>
+                    ) : null}
+                  </span>
                   <div className="meeting-participant-actions">
                     {participant.isLocal ? <small>Anda</small> : null}
+                    {isPinned ? (
+                      <button
+                        type="button"
+                        className="is-pin active"
+                        onClick={() => unpinParticipant()}
+                        title="Lepas pin"
+                      >
+                        <PinOff size={14} /> Lepas pin
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="is-pin"
+                        onClick={() => pinParticipant(participant.identity)}
+                        title="Pin sebagai layar utama"
+                      >
+                        <Pin size={14} /> Pin
+                      </button>
+                    )}
                     {hostCapable && !participant.isLocal ? (
                       <>
                         <button
@@ -1482,7 +1570,8 @@ export function MeetingToolsDock({
                     ) : null}
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
             <button
               type="button"
@@ -1517,21 +1606,21 @@ export function MeetingToolsDock({
               <button
                 type="button"
                 className={layoutMode === "gallery" ? "active" : ""}
-                onClick={() => onLayoutChange("gallery")}
+                onClick={() => changeLayoutMode("gallery")}
               >
                 <LayoutGrid size={18} /> Galeri
               </button>
               <button
                 type="button"
                 className={layoutMode === "focus" ? "active" : ""}
-                onClick={() => onLayoutChange("focus")}
+                onClick={() => changeLayoutMode("focus")}
               >
                 <PanelRight size={18} /> Fokus
               </button>
               <button
                 type="button"
                 className={layoutMode === "immersive" ? "active" : ""}
-                onClick={() => onLayoutChange("immersive")}
+                onClick={() => changeLayoutMode("immersive")}
               >
                 <Maximize2 size={18} /> Imersif
               </button>

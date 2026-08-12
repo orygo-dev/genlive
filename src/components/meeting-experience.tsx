@@ -38,7 +38,7 @@ import { MeetingConnectionBanner } from "@/components/meeting-connection-banner"
 import { MeetingDebugOverlay } from "@/components/meeting-debug-overlay";
 import { MeetingRoomObservers } from "@/components/meeting-room-observers";
 import {
-  MeetingStage,
+  MeetingLayoutShell,
   type MeetingLayoutMode,
 } from "@/components/meeting-stage";
 import { MeetingToolsDock } from "@/components/meeting-tools-dock";
@@ -266,6 +266,10 @@ function RoomSessionBody({
     handleReady();
   }, [cameraEnabled, connected, handleReady, micEnabled]);
 
+  const ensureFocusLayoutForPin = useCallback(() => {
+    if (layoutMode === "gallery") setLayoutMode("focus");
+  }, [layoutMode, setLayoutMode]);
+
   // Keep meeting chrome mounted during reconnect so audio/VB/chat survive.
   const showMeetingUi = sessionReady || (reconnecting && everReadyRef.current);
 
@@ -318,17 +322,21 @@ function RoomSessionBody({
             effectId={effectId}
             onEffectChange={setEffectId}
           />
-          <MeetingStage layoutMode={layoutMode} />
-          <MeetingToolsDock
-            roomName={roomName}
-            mainRoomName={mainRoomName}
-            meetingId={meetingId}
-            meetingTitle={meetingTitle}
-            isHost={isHost}
+          <MeetingLayoutShell
             layoutMode={layoutMode}
-            onLayoutChange={setLayoutMode}
-            onLeaveIntent={onLeaveIntent}
-          />
+            onPinned={ensureFocusLayoutForPin}
+          >
+            <MeetingToolsDock
+              roomName={roomName}
+              mainRoomName={mainRoomName}
+              meetingId={meetingId}
+              meetingTitle={meetingTitle}
+              isHost={isHost}
+              layoutMode={layoutMode}
+              onLayoutChange={setLayoutMode}
+              onLeaveIntent={onLeaveIntent}
+            />
+          </MeetingLayoutShell>
         </>
       )}
     </>
