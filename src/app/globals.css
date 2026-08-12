@@ -1956,6 +1956,27 @@ footer p {
   text-align: right;
 }
 
+.recording-info {
+  margin: 0;
+  max-width: 280px;
+  color: #d8ffe8;
+  font-size: 11px;
+  text-align: right;
+}
+
+.recording-info a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.recording-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 
 .bg-effects-prejoin {
   margin: 18px 0 8px;

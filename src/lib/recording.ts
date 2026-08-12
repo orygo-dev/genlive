@@ -13,6 +13,8 @@ import {
 } from "@/lib/livekit-egress";
 import { assertCanStartRecording } from "@/lib/billing";
 import { writeAuditLog } from "@/lib/organization";
+import { getPlatformConfig } from "@/lib/platform-config";
+import { resolveRecordingDownloadUrl } from "@/lib/recording-helpers";
 
 const OPEN_RECORDING_STATUSES = ["STARTING", "ACTIVE", "ENDING"] as const;
 
@@ -354,7 +356,7 @@ export async function syncRecordingFromEgress(info: EgressInfo) {
 
   const existing = await prisma.recording.findUnique({
     where: { egressId: info.egressId },
-    select: { id: true },
+    select: { id: true, filepath: true },
   });
   if (!existing) {
     return null;
@@ -366,13 +368,21 @@ export async function syncRecordingFromEgress(info: EgressInfo) {
     mapped === "COMPLETE" ||
     mapped === "FAILED" ||
     mapped === "ABORTED";
+  const config = await getPlatformConfig();
+  const filepath = file.filepath || existing.filepath;
+  const downloadUrl =
+    resolveRecordingDownloadUrl({
+      downloadUrl: file.downloadUrl,
+      filepath,
+      publicBaseUrl: config.livekitEgressS3PublicBaseUrl,
+    }) || file.downloadUrl;
 
   return prisma.recording.update({
     where: { id: existing.id },
     data: {
       status: mapped,
-      filepath: file.filepath ?? undefined,
-      downloadUrl: file.downloadUrl ?? undefined,
+      filepath: filepath ?? undefined,
+      downloadUrl: downloadUrl ?? undefined,
       durationSeconds: file.durationSeconds ?? undefined,
       errorMessage: info.error?.slice(0, 500) || null,
       endedAt: ended ? new Date() : undefined,

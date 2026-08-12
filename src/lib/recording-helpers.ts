@@ -116,3 +116,25 @@ export function resolveEgressForcePathStyle(
   }
   return Boolean(configured);
 }
+
+/** Prefer public R2/CDN URL for browser downloads (API endpoint is not public). */
+export function resolveRecordingDownloadUrl(input: {
+  downloadUrl?: string | null;
+  filepath?: string | null;
+  publicBaseUrl?: string | null;
+}) {
+  const base = input.publicBaseUrl?.trim().replace(/\/$/, "");
+  const path = input.filepath?.trim().replace(/^\//, "");
+  if (base && path) {
+    return `${base}/${path}`;
+  }
+
+  const url = input.downloadUrl?.trim();
+  if (!url) {
+    return null;
+  }
+  if (url.includes("r2.cloudflarestorage.com")) {
+    return null;
+  }
+  return url;
+}

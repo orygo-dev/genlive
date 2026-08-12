@@ -34,6 +34,7 @@ export type PlatformIntegrations = {
   livekitEgressS3Region?: string | null;
   livekitEgressS3Endpoint?: string | null;
   livekitEgressS3ForcePathStyle?: boolean | null;
+  livekitEgressS3PublicBaseUrl?: string | null;
   resendApiKey?: string | null;
   emailFrom?: string | null;
   fonnteToken?: string | null;
@@ -67,6 +68,7 @@ export type ResolvedPlatformConfig = {
   livekitEgressS3Region: string | null;
   livekitEgressS3Endpoint: string | null;
   livekitEgressS3ForcePathStyle: boolean;
+  livekitEgressS3PublicBaseUrl: string | null;
   resendApiKey: string | null;
   emailFrom: string | null;
   fonnteToken: string | null;
@@ -216,6 +218,10 @@ async function loadPlatformConfig(): Promise<ResolvedPlatformConfig> {
     livekitEgressS3ForcePathStyle: pickBool(
       integrations.livekitEgressS3ForcePathStyle,
       process.env.LIVEKIT_EGRESS_S3_FORCE_PATH_STYLE,
+    ),
+    livekitEgressS3PublicBaseUrl: pick(
+      integrations.livekitEgressS3PublicBaseUrl,
+      process.env.LIVEKIT_EGRESS_S3_PUBLIC_BASE_URL,
     ),
     resendApiKey: pick(integrations.resendApiKey, process.env.RESEND_API_KEY),
     emailFrom: pick(integrations.emailFrom, process.env.EMAIL_FROM),

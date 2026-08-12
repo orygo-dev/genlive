@@ -146,7 +146,9 @@ export function MeetingRecordingsPanel({
           }}
         >
           <button
-            className={active ? "button button-ghost meeting-cancel" : "btn primary"}
+            className={
+              active ? "button button-ghost meeting-cancel" : "button button-primary"
+            }
             type="submit"
             disabled={Boolean(busy) || active?.status === "ENDING"}
           >
@@ -208,6 +210,10 @@ export function MeetingRecordingsPanel({
                 >
                   <Download size={15} /> Unduh
                 </a>
+              ) : recording.status === "COMPLETE" ? (
+                <span className="meeting-invite-hint">
+                  Selesai — atur Public URL R2 di Integrasi untuk unduh
+                </span>
               ) : (
                 <span className={`role-chip status-${recording.status.toLowerCase()}`}>
                   {recordingStatusLabel(recording.status)}

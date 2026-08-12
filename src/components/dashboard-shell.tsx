@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   CreditCard,
+  HardDriveDownload,
   Settings,
   Shield,
   Users,
@@ -25,7 +26,14 @@ type DashboardShellProps = {
   };
   memberships: Membership[];
   activeOrganizationId: string;
-  activeNav: "meeting" | "members" | "billing" | "calendar" | "settings" | "analytics";
+  activeNav:
+    | "meeting"
+    | "recordings"
+    | "members"
+    | "billing"
+    | "calendar"
+    | "settings"
+    | "analytics";
   branding: PlatformBranding;
   children: ReactNode;
 };
@@ -66,6 +74,12 @@ export function DashboardShell({
             href="/dashboard"
           >
             <Video size={18} /> Meeting
+          </Link>
+          <Link
+            className={activeNav === "recordings" ? "active" : undefined}
+            href="/dashboard/recordings"
+          >
+            <HardDriveDownload size={18} /> Recording
           </Link>
           <Link
             className={activeNav === "calendar" ? "active" : undefined}

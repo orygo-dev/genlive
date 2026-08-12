@@ -150,6 +150,9 @@ export function AdminIntegrationsPanel() {
           : payload.integrations.livekitEgressS3Endpoint
             ? "true"
             : "false",
+        livekitEgressS3PublicBaseUrl: String(
+          payload.integrations.livekitEgressS3PublicBaseUrl || "",
+        ),
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat.");
@@ -314,6 +317,8 @@ export function AdminIntegrationsPanel() {
       body.livekitEgressS3Endpoint = form.livekitEgressS3Endpoint || null;
       body.livekitEgressS3ForcePathStyle =
         form.livekitEgressS3ForcePathStyle === "true";
+      body.livekitEgressS3PublicBaseUrl =
+        form.livekitEgressS3PublicBaseUrl || null;
 
       await saveIntegrations(body);
       setMessage("Konfigurasi tersimpan.");
@@ -762,6 +767,21 @@ export function AdminIntegrationsPanel() {
             <small className="admin-muted">
               Cloudflare R2 / MinIO: selalu <code>true</code>. LiveKit docs
               mewajibkan force_path_style untuk storage non-AWS.
+            </small>
+          </label>
+          <label>
+            Public base URL (untuk unduh di dashboard)
+            <input
+              value={form.livekitEgressS3PublicBaseUrl || ""}
+              onChange={(e) =>
+                setField("livekitEgressS3PublicBaseUrl", e.target.value)
+              }
+              placeholder="https://pub-xxxx.r2.dev atau https://recordings.domain.com"
+            />
+            <small className="admin-muted">
+              Ambil dari Cloudflare R2 → bucket → Settings → Public Development
+              URL (atau custom domain). Tanpa ini, tombol Unduh di dashboard
+              tidak bisa memakai URL API R2.
             </small>
           </label>
         </fieldset>

@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { getCurrentSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
+import { getPlatformConfig } from "@/lib/platform-config";
 import {
-  getOpenRecording,
+  reconcileOpenRecording,
   startMeetingRecording,
   stopMeetingRecording,
 } from "@/lib/recording";
+import { resolveRecordingDownloadUrl } from "@/lib/recording-helpers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -44,6 +46,7 @@ export async function GET(_: Request, { params }: RecordingRouteProps) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
+  const config = await getPlatformConfig();
   const [recordings, active] = await Promise.all([
     prisma.recording.findMany({
       where: { meetingId: meeting.id },
@@ -61,12 +64,20 @@ export async function GET(_: Request, { params }: RecordingRouteProps) {
         startedBy: { select: { name: true } },
       },
     }),
-    getOpenRecording(meeting.id),
+    reconcileOpenRecording(meeting.id),
   ]);
 
   return NextResponse.json(
     {
-      recordings,
+      recordings: recordings.map((recording) => ({
+        ...recording,
+        downloadUrl: resolveRecordingDownloadUrl({
+          downloadUrl: recording.downloadUrl,
+          filepath: recording.filepath,
+          publicBaseUrl: config.livekitEgressS3PublicBaseUrl,
+        }),
+      })),
+      publicBaseConfigured: Boolean(config.livekitEgressS3PublicBaseUrl),
       activeRecording: active
         ? {
             id: active.id,

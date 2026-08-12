@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Circle, LoaderCircle, Square } from "lucide-react";
 import { RecordingConsentModal } from "@/components/recording-consent-modal";
 import { recordingStatusLabel } from "@/lib/recording-helpers";
@@ -50,7 +51,7 @@ async function readRecordingJson(
 
   if (response.status === 502 || response.status === 503 || response.status === 504) {
     throw new Error(
-      `${actionLabel}: server/proxy timeout (${response.status}). Untuk Start recording, naikkan ProxyTimeout Apache (atau proxy_read_timeout Nginx) ke ≥120s. Stop sudah dioptimasi agar cepat — deploy ulang jika masih muncul di Stop.`,
+      `${actionLabel}: server/proxy timeout (${response.status}). Untuk Start recording, naikkan ProxyTimeout Apache (atau proxy_read_timeout Nginx) ke ≥120s.`,
     );
   }
 
@@ -92,12 +93,17 @@ function elapsedLabel(startedAt: string) {
   return `${mm}:${ss}`;
 }
 
+function isOpenStatus(status: ActiveRecording["status"]) {
+  return status === "STARTING" || status === "ACTIVE" || status === "ENDING";
+}
+
 export function RecordingControls({ roomName }: { roomName: string }) {
   const [active, setActive] = useState<ActiveRecording | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [egressConfigured, setEgressConfigured] = useState(true);
   const [busyAction, setBusyAction] = useState<"start" | "stop" | null>(null);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [consentOpen, setConsentOpen] = useState(false);
   const [, setTick] = useState(0);
 
@@ -109,15 +115,17 @@ export function RecordingControls({ roomName }: { roomName: string }) {
     try {
       const payload = await readRecordingJson(response, "Status recording");
       if (!response.ok) {
-        return;
+        return null;
       }
-      setActive(payload.activeRecording ?? null);
+      const next = payload.activeRecording ?? null;
+      setActive(next);
       setCanManage(Boolean(payload.canManage));
       if (typeof payload.egressConfigured === "boolean") {
         setEgressConfigured(payload.egressConfigured);
       }
+      return next;
     } catch {
-      // Poll quietly; action errors surface via runRecordingAction.
+      return null;
     }
   }, [roomName]);
 
@@ -153,6 +161,9 @@ export function RecordingControls({ roomName }: { roomName: string }) {
 
   async function runRecordingAction(action: "start" | "stop") {
     setError("");
+    if (action === "stop") {
+      setInfo("");
+    }
     setBusyAction(action);
     const controller = new AbortController();
     const timeoutMs = action === "start" ? START_TIMEOUT_MS : STOP_TIMEOUT_MS;
@@ -186,23 +197,37 @@ export function RecordingControls({ roomName }: { roomName: string }) {
           throw new Error("Backend tidak mengembalikan recording yang valid.");
         }
         setActive(payload.recording);
-      } else if (payload.recording) {
-        if (
-          payload.recording.status === "COMPLETE" ||
-          payload.recording.status === "FAILED" ||
-          payload.recording.status === "ABORTED" ||
-          payload.recording.status === "ENDING"
-        ) {
-          setActive(
-            payload.recording.status === "ENDING" ? payload.recording : null,
+        setConsentOpen(false);
+        await refresh();
+      } else {
+        // One-click stop: never require a second StopEgress.
+        setConsentOpen(false);
+        let current = payload.recording ?? null;
+        if (!current || current.status === "COMPLETE" || current.status === "FAILED" || current.status === "ABORTED") {
+          setActive(null);
+        } else {
+          setActive(current);
+        }
+
+        for (let i = 0; i < 25; i += 1) {
+          if (!current || !isOpenStatus(current.status)) {
+            break;
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, 800));
+          current = await refresh();
+        }
+
+        if (!current || !isOpenStatus(current.status)) {
+          setActive(null);
+          setInfo(
+            "Recording dihentikan. Hasil ada di Dashboard → Recording.",
           );
         } else {
-          setActive(payload.recording);
+          setInfo(
+            "Stop sudah dikirim. File masih diproses — cek Dashboard → Recording.",
+          );
         }
       }
-
-      setConsentOpen(false);
-      await refresh();
     } catch (requestError) {
       const aborted =
         requestError instanceof DOMException && requestError.name === "AbortError";
@@ -227,12 +252,13 @@ export function RecordingControls({ roomName }: { roomName: string }) {
       return;
     }
 
-    if (
-      active &&
-      (active.status === "STARTING" ||
-        active.status === "ACTIVE" ||
-        active.status === "ENDING")
-    ) {
+    // Already stopping — refresh only; do not send a second StopEgress.
+    if (active?.status === "ENDING") {
+      void refresh();
+      return;
+    }
+
+    if (active && (active.status === "STARTING" || active.status === "ACTIVE")) {
       void runRecordingAction("stop");
       return;
     }
@@ -256,9 +282,7 @@ export function RecordingControls({ roomName }: { roomName: string }) {
   const canStop =
     !isRequestBusy &&
     active &&
-    (active.status === "STARTING" ||
-      active.status === "ACTIVE" ||
-      active.status === "ENDING");
+    (active.status === "STARTING" || active.status === "ACTIVE");
 
   let label = "Rekam";
   if (busyAction === "start") label = "Starting...";
@@ -283,17 +307,19 @@ export function RecordingControls({ roomName }: { roomName: string }) {
               ? "recording-active"
               : undefined
           }
-          disabled={isRequestBusy}
+          disabled={isRequestBusy || active?.status === "ENDING"}
           onClick={() => toggleRecording()}
           title={
             !egressConfigured
               ? "Konfigurasi S3 Egress terlebih dahulu"
               : canStop
                 ? "Klik untuk stop recording"
-                : undefined
+                : active?.status === "ENDING"
+                  ? "Sedang mengakhiri recording"
+                  : undefined
           }
         >
-          {isRequestBusy ? (
+          {isRequestBusy || active?.status === "ENDING" ? (
             <LoaderCircle className="spin" size={16} />
           ) : canStop ? (
             <Square size={14} />
@@ -303,6 +329,14 @@ export function RecordingControls({ roomName }: { roomName: string }) {
           {label}
         </button>
         {error ? <p className="recording-error">{error}</p> : null}
+        {info && !error ? (
+          <p className="recording-info">
+            {info}{" "}
+            <Link href="/dashboard/recordings" target="_blank" rel="noreferrer">
+              Buka Recording
+            </Link>
+          </p>
+        ) : null}
         {!egressConfigured && !error ? (
           <p className="recording-error">
             Egress S3 belum siap — recording tidak bisa dimulai.
