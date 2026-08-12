@@ -79,6 +79,7 @@ type MeetingExperienceProps = {
     waitingRoom: boolean;
     startsAt: string | null;
     status: "SCHEDULED" | "ACTIVE" | "ENDED" | "CANCELLED";
+    canModerate?: boolean;
   } | null;
 };
 
@@ -339,6 +340,7 @@ function MeetingRoom({
   roomName,
   meetingTitle,
   meetingId,
+  canModerate = false,
   micEnabled,
   cameraEnabled,
   onError,
@@ -348,6 +350,7 @@ function MeetingRoom({
   roomName: string;
   meetingTitle: string;
   meetingId: string | null;
+  canModerate?: boolean;
   micEnabled: boolean;
   cameraEnabled: boolean;
   onError: (message: string) => void;
@@ -360,7 +363,10 @@ function MeetingRoom({
   const [elapsedLabel, setElapsedLabel] = useState("00:00");
   const leaveIntentRef = useRef(false);
   const suppressLeaveNavRef = useRef(false);
-  const isHost = connection.role === "HOST" || connection.role === "MODERATOR";
+  const isHost =
+    connection.role === "HOST" ||
+    connection.role === "MODERATOR" ||
+    canModerate;
   const mainRoomName = roomName.replace(/-bo-\d+$/, "") || roomName;
 
   const roomOptions = useMemo<RoomOptions>(() => buildMeetingRoomOptions(), []);
@@ -685,6 +691,7 @@ function MeetingExperienceInner({
         roomName={roomName}
         meetingTitle={meetingTitle}
         meetingId={meetingConfig?.id ?? null}
+        canModerate={Boolean(meetingConfig?.canModerate)}
         micEnabled={micEnabled}
         cameraEnabled={cameraEnabled}
         onError={setError}

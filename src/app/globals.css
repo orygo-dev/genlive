@@ -6482,18 +6482,22 @@ footer p {
 
 .meeting-participant-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
+  max-width: 70%;
 }
 
 .meeting-participant-actions button {
   border: 1px solid #3b4654;
   border-radius: 8px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   color: #e8eef6;
   background: #242c37;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .meeting-participant-actions button.is-danger {

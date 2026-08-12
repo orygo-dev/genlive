@@ -55,6 +55,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
               waitingRoom: meeting.waitingRoom && !canModerate,
               startsAt: meeting.startsAt?.toISOString() ?? null,
               status: meeting.status,
+              canModerate,
             }
           : null
       }

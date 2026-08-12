@@ -276,6 +276,7 @@ export function MeetingToolsDock({
     text: string;
   } | null>(null);
   const [roomLocked, setRoomLocked] = useState(false);
+  const [hostCapable, setHostCapable] = useState(isHost);
   const [hostBusy, setHostBusy] = useState(false);
   const [hostError, setHostError] = useState("");
 
@@ -468,23 +469,36 @@ export function MeetingToolsDock({
   );
 
   useEffect(() => {
-    if (!isHost || !meetingId) return;
+    setHostCapable(isHost);
+  }, [isHost]);
+
+  useEffect(() => {
+    // Always probe host API — role in token can be wrong; canManage is authoritative.
     let cancelled = false;
     void fetch(`/api/meetings/${encodeURIComponent(roomName)}/host`, {
       cache: "no-store",
     })
       .then(async (response) => {
-        if (!response.ok) return;
-        const payload = (await response.json()) as { locked?: boolean };
-        if (!cancelled) {
-          setRoomLocked(Boolean(payload.locked));
+        if (cancelled) return;
+        if (response.status === 403 || response.status === 401) {
+          if (!isHost) setHostCapable(false);
+          return;
         }
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          locked?: boolean;
+          canManage?: boolean;
+        };
+        if (payload.canManage) {
+          setHostCapable(true);
+        }
+        setRoomLocked(Boolean(payload.locked));
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [isHost, meetingId, roomName]);
+  }, [isHost, roomName]);
 
   useEffect(() => {
     applyBeautyMode(beautyMode);
@@ -1317,7 +1331,7 @@ export function MeetingToolsDock({
                 <X size={16} />
               </button>
             </header>
-            {isHost && meetingId ? (
+            {hostCapable ? (
               <div className="meeting-host-actions">
                 <button
                   type="button"
@@ -1367,6 +1381,12 @@ export function MeetingToolsDock({
                 </button>
               </div>
             ) : null}
+            {hostCapable ? (
+              <p className="meeting-invite-hint">
+                Mute mic / Mute cam / Kick ada di baris tiap peserta lain (bukan
+                pada nama Anda).
+              </p>
+            ) : null}
             {hostError ? (
               <p className="meeting-display-name-status is-error" role="alert">
                 {hostError}
@@ -1378,7 +1398,7 @@ export function MeetingToolsDock({
                   <span>{participant.name || participant.identity}</span>
                   <div className="meeting-participant-actions">
                     {participant.isLocal ? <small>Anda</small> : null}
-                    {isHost && meetingId && !participant.isLocal ? (
+                    {hostCapable && !participant.isLocal ? (
                       <>
                         <button
                           type="button"
