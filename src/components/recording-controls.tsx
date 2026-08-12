@@ -50,7 +50,7 @@ async function readRecordingJson(
 
   if (response.status === 502 || response.status === 503 || response.status === 504) {
     throw new Error(
-      `${actionLabel}: server/proxy timeout (${response.status}). Coba lagi; jika berulang, naikkan timeout reverse proxy untuk /api/meetings/*/recording.`,
+      `${actionLabel}: server/proxy timeout (${response.status}). Untuk Start recording, naikkan ProxyTimeout Apache (atau proxy_read_timeout Nginx) ke ≥120s. Stop sudah dioptimasi agar cepat — deploy ulang jika masih muncul di Stop.`,
     );
   }
 

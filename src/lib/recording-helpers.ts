@@ -69,3 +69,34 @@ export function recordingStatusLabel(
       return "Dibatalkan";
   }
 }
+
+/** Cloudflare R2 rejects AWS-style names like "Asia-Pacific" or "ap-southeast-1". */
+export function normalizeEgressS3Region(
+  region: string,
+  endpoint?: string | null,
+): string {
+  const trimmed = region.trim();
+  const endpointLower = (endpoint || "").toLowerCase();
+  const isR2 = endpointLower.includes("r2.cloudflarestorage.com");
+  if (!isR2) {
+    return trimmed;
+  }
+
+  const allowed = new Set([
+    "wnam",
+    "enam",
+    "weur",
+    "eeur",
+    "apac",
+    "oc",
+    "auto",
+  ]);
+  const lower = trimmed.toLowerCase();
+  if (allowed.has(lower)) {
+    return lower;
+  }
+  if (/asia|apac|singapore|jakarta|tokyo/i.test(trimmed)) {
+    return "apac";
+  }
+  return "auto";
+}

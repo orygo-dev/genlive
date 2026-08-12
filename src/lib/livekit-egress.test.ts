@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildRecordingFilepath,
   mapEgressStatus,
+  normalizeEgressS3Region,
   recordingStatusLabel,
 } from "./recording-helpers";
 
@@ -29,5 +30,14 @@ describe("recording helpers", () => {
   it("labels recording statuses", () => {
     expect(recordingStatusLabel("ACTIVE")).toBe("Merekam");
     expect(recordingStatusLabel("COMPLETE")).toBe("Selesai");
+  });
+
+  it("normalizes Cloudflare R2 region names", () => {
+    const endpoint = "https://abc.r2.cloudflarestorage.com";
+    expect(normalizeEgressS3Region("Asia-Pacific", endpoint)).toBe("apac");
+    expect(normalizeEgressS3Region("auto", endpoint)).toBe("auto");
+    expect(normalizeEgressS3Region("apac", endpoint)).toBe("apac");
+    expect(normalizeEgressS3Region("ap-southeast-1", endpoint)).toBe("auto");
+    expect(normalizeEgressS3Region("ap-southeast-1", null)).toBe("ap-southeast-1");
   });
 });

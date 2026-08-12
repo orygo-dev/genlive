@@ -727,8 +727,14 @@ export function AdminIntegrationsPanel() {
             <input
               value={form.livekitEgressS3Region || ""}
               onChange={(e) => setField("livekitEgressS3Region", e.target.value)}
-              placeholder="ap-southeast-1"
+              placeholder="auto (R2) atau ap-southeast-1 (AWS)"
             />
+            <small className="admin-muted">
+              Cloudflare R2: wajib salah satu dari{" "}
+              <code>auto</code>, <code>apac</code>, <code>wnam</code>,{" "}
+              <code>enam</code>, <code>weur</code>, <code>eeur</code>,{" "}
+              <code>oc</code>. Jangan isi &quot;Asia-Pacific&quot;.
+            </small>
           </label>
           <label>
             S3 Endpoint (opsional, untuk MinIO/R2)

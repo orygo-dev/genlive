@@ -241,36 +241,40 @@ export async function stopMeetingRecording(input: {
     return { recording };
   }
 
-  // Mark ENDING before LiveKit round-trip so proxy timeouts still leave a
-  // consistent UI state (poll → Mengakhiri → webhook COMPLETE).
+  // Mark ENDING immediately. Prefer finishing LiveKit stop within a short
+  // window; otherwise continue in background so Apache/aaPanel does not 502.
   const recording = await prisma.recording.update({
     where: { id: open.id },
     data: { status: "ENDING" },
     select: recordingSelect,
   });
 
-  try {
-    await stopRoomRecording(open.egressId);
-  } catch (error) {
+  const egressId = open.egressId;
+  const recordingId = open.id;
+  const stopTask = stopRoomRecording(egressId).catch(async (error) => {
     const message = sanitizeEgressError(error);
     const alreadyGone =
       /not found|does not exist|already|egress.*ended|completed|aborted/i.test(
         message,
       );
-    if (!alreadyGone) {
-      console.error("Stop egress failed", error);
-      await prisma.recording
-        .update({
-          where: { id: open.id },
-          data: { status: "ACTIVE", errorMessage: null },
-        })
-        .catch(() => undefined);
-      return {
-        error: `Recording belum dapat dihentikan: ${message}`,
-        status: 502 as const,
-      };
+    if (alreadyGone) {
+      return;
     }
-  }
+    console.error("Stop egress failed", error);
+    await prisma.recording
+      .update({
+        where: { id: recordingId },
+        data: {
+          errorMessage: `Stop egress tertunda: ${message}`.slice(0, 500),
+        },
+      })
+      .catch(() => undefined);
+  });
+
+  await Promise.race([
+    stopTask,
+    new Promise<void>((resolve) => setTimeout(resolve, 5_000)),
+  ]);
 
   await writeAuditLog({
     organizationId: input.meeting.organizationId,
@@ -282,6 +286,7 @@ export async function stopMeetingRecording(input: {
       meetingId: input.meeting.id,
       roomName: input.meeting.roomName,
       egressId: recording.egressId,
+      asyncStop: true,
     },
   });
 

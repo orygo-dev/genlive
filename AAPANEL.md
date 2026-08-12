@@ -237,6 +237,9 @@ ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-For "%{REMOTE_ADDR}s"
 
+# Recording start/stop memanggil LiveKit Egress — naikkan timeout proxy.
+ProxyTimeout 120
+
 ProxyPass / http://127.0.0.1:3010/
 ProxyPassReverse / http://127.0.0.1:3010/
 
@@ -244,6 +247,9 @@ RewriteEngine On
 RewriteCond %{HTTP:Upgrade} =websocket [NC]
 RewriteRule /(.*) ws://127.0.0.1:3010/$1 [P,L]
 ```
+
+> Tanpa `ProxyTimeout` yang cukup, Stop/Start recording sering jadi **502 HTML**
+> di browser (bukan JSON dari Next.js).
 
 ### Nginx (jika dipakai)
 

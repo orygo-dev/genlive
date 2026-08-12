@@ -8,11 +8,13 @@ import {
 } from "livekit-server-sdk";
 import { getLiveKitEnvironment } from "@/lib/livekit";
 import { getPlatformConfig } from "@/lib/platform-config";
+import { normalizeEgressS3Region } from "@/lib/recording-helpers";
 
 export {
   buildRecordingFilepath,
   extractEgressFile,
   mapEgressStatus,
+  normalizeEgressS3Region,
   recordingStatusLabel,
 } from "@/lib/recording-helpers";
 
@@ -56,7 +58,10 @@ export async function buildEncodedFileOutput(filepath: string) {
         accessKey: config.livekitEgressS3AccessKey!,
         secret: config.livekitEgressS3Secret!,
         bucket: config.livekitEgressS3Bucket!,
-        region: config.livekitEgressS3Region!,
+        region: normalizeEgressS3Region(
+          config.livekitEgressS3Region!,
+          config.livekitEgressS3Endpoint,
+        ),
         endpoint: config.livekitEgressS3Endpoint || undefined,
         forcePathStyle: config.livekitEgressS3ForcePathStyle,
       }),
