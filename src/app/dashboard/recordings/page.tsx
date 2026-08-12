@@ -4,18 +4,14 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
 import { getPlatformBranding } from "@/lib/platform-settings";
-import { getPlatformConfig } from "@/lib/platform-config";
-import {
-  recordingStatusLabel,
-  resolveRecordingDownloadUrl,
-} from "@/lib/recording-helpers";
+import { recordingAppDownloadPath } from "@/lib/recording-download";
+import { recordingStatusLabel } from "@/lib/recording-helpers";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardRecordingsPage() {
   const context = await requireActiveMembership();
   const branding = await getPlatformBranding();
-  const config = await getPlatformConfig();
   const organizationId = context.activeMembership.organization.id;
 
   const recordings = await prisma.recording.findMany({
@@ -54,8 +50,8 @@ export default async function DashboardRecordingsPage() {
           <div>
             <h1>Recording</h1>
             <p>
-              Hasil rekaman meeting organisasi ini. Unduh tersedia setelah status
-              Selesai dan Public URL R2 dikonfigurasi.
+              Hasil rekaman meeting organisasi ini. Unduh lewat GenMeet (aman,
+              tidak memakai link r2.dev yang sering diblokir browser).
             </p>
           </div>
         </div>
@@ -74,11 +70,8 @@ export default async function DashboardRecordingsPage() {
         ) : (
           <div className="recording-list">
             {recordings.map((recording) => {
-              const downloadUrl = resolveRecordingDownloadUrl({
-                downloadUrl: recording.downloadUrl,
-                filepath: recording.filepath,
-                publicBaseUrl: config.livekitEgressS3PublicBaseUrl,
-              });
+              const canDownload =
+                recording.status === "COMPLETE" && Boolean(recording.filepath);
               return (
                 <article key={recording.id}>
                   <div>
@@ -100,11 +93,10 @@ export default async function DashboardRecordingsPage() {
                     {recording.errorMessage ? (
                       <p className="form-error">{recording.errorMessage}</p>
                     ) : null}
-                    {recording.status === "COMPLETE" && !downloadUrl ? (
+                    {recording.status === "COMPLETE" && !recording.filepath ? (
                       <p className="meeting-invite-hint">
-                        File selesai diproses, tetapi Public URL R2 belum diatur.
-                        Super Admin → Integrasi → Public base URL (contoh{" "}
-                        <code>https://pub-xxxx.r2.dev</code>).
+                        Status selesai tetapi path file belum tersimpan. Coba
+                        rekam ulang atau cek LiveKit Egress / R2.
                       </p>
                     ) : null}
                   </div>
@@ -115,12 +107,13 @@ export default async function DashboardRecordingsPage() {
                     >
                       Detail meeting
                     </Link>
-                    {downloadUrl ? (
+                    {canDownload ? (
                       <a
                         className="button button-primary"
-                        href={downloadUrl}
-                        target="_blank"
-                        rel="noreferrer"
+                        href={recordingAppDownloadPath(
+                          recording.meeting.id,
+                          recording.id,
+                        )}
                       >
                         <Download size={15} /> Unduh
                       </a>

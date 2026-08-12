@@ -3,6 +3,7 @@ import { getCurrentSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
 import { getPlatformConfig } from "@/lib/platform-config";
+import { recordingAppDownloadPath } from "@/lib/recording-download";
 import {
   reconcileOpenRecording,
   startMeetingRecording,
@@ -76,6 +77,10 @@ export async function GET(_: Request, { params }: RecordingRouteProps) {
           filepath: recording.filepath,
           publicBaseUrl: config.livekitEgressS3PublicBaseUrl,
         }),
+        appDownloadUrl:
+          recording.status === "COMPLETE" && recording.filepath
+            ? recordingAppDownloadPath(meeting.id, recording.id)
+            : null,
       })),
       publicBaseConfigured: Boolean(config.livekitEgressS3PublicBaseUrl),
       activeRecording: active

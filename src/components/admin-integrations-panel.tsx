@@ -779,9 +779,10 @@ export function AdminIntegrationsPanel() {
               placeholder="https://pub-xxxx.r2.dev atau https://recordings.domain.com"
             />
             <small className="admin-muted">
-              Ambil dari Cloudflare R2 → bucket → Settings → Public Development
-              URL (atau custom domain). Tanpa ini, tombol Unduh di dashboard
-              tidak bisa memakai URL API R2.
+              Opsional. Unduh dashboard sekarang memakai signed URL lewat
+              GenMeet (aman). Public URL hanya jika Anda ingin akses CDN
+              langsung — hindari <code>*.r2.dev</code> jika browser memblokir
+              HSTS.
             </small>
           </label>
         </fieldset>

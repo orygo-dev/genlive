@@ -17,6 +17,7 @@ type RecordingRow = {
   status: "STARTING" | "ACTIVE" | "ENDING" | "COMPLETE" | "FAILED" | "ABORTED";
   filepath: string | null;
   downloadUrl: string | null;
+  appDownloadUrl?: string | null;
   durationSeconds: number | null;
   startedAt: string;
   endedAt: string | null;
@@ -201,18 +202,21 @@ export function MeetingRecordingsPanel({
                   <p className="form-error">{recording.errorMessage}</p>
                 ) : null}
               </div>
-              {recording.status === "COMPLETE" && recording.downloadUrl ? (
+              {recording.status === "COMPLETE" &&
+              (recording.appDownloadUrl ||
+                (recording.filepath && meetingId)) ? (
                 <a
                   className="button button-ghost"
-                  href={recording.downloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={
+                    recording.appDownloadUrl ||
+                    `/api/meetings/manage/${meetingId}/recording/${recording.id}/download`
+                  }
                 >
                   <Download size={15} /> Unduh
                 </a>
               ) : recording.status === "COMPLETE" ? (
                 <span className="meeting-invite-hint">
-                  Selesai — atur Public URL R2 di Integrasi untuk unduh
+                  Selesai — path file belum tersedia
                 </span>
               ) : (
                 <span className={`role-chip status-${recording.status.toLowerCase()}`}>
