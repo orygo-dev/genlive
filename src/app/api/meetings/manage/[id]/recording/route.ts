@@ -3,13 +3,16 @@ import { getCurrentSessionContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
 import { getPlatformConfig } from "@/lib/platform-config";
-import { recordingAppDownloadPath } from "@/lib/recording-download";
+import {
+  recordingAppDownloadPath,
+  recordingStatusLabel,
+  resolveRecordingDownloadUrl,
+} from "@/lib/recording-helpers";
 import {
   reconcileOpenRecording,
   startMeetingRecording,
   stopMeetingRecording,
 } from "@/lib/recording";
-import { resolveRecordingDownloadUrl } from "@/lib/recording-helpers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;

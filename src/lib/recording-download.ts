@@ -8,6 +8,8 @@ import {
   resolveEgressForcePathStyle,
 } from "@/lib/recording-helpers";
 
+export { recordingAppDownloadPath } from "@/lib/recording-helpers";
+
 export async function createRecordingS3Client() {
   const config = await getPlatformConfig();
   if (
@@ -54,8 +56,4 @@ export async function createRecordingPresignedDownloadUrl(input: {
   return getSignedUrl(client, command, {
     expiresIn: input.expiresInSeconds ?? 60 * 15,
   });
-}
-
-export function recordingAppDownloadPath(meetingId: string, recordingId: string) {
-  return `/api/meetings/manage/${meetingId}/recording/${recordingId}/download`;
 }

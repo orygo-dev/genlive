@@ -4,8 +4,10 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { requireActiveMembership } from "@/lib/dashboard-guard";
 import { prisma } from "@/lib/db";
 import { getPlatformBranding } from "@/lib/platform-settings";
-import { recordingAppDownloadPath } from "@/lib/recording-download";
-import { recordingStatusLabel } from "@/lib/recording-helpers";
+import {
+  recordingAppDownloadPath,
+  recordingStatusLabel,
+} from "@/lib/recording-helpers";
 
 export const dynamic = "force-dynamic";
 

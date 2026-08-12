@@ -68,9 +68,30 @@ if [[ -z "$ENC_KEY" || ${#ENC_KEY} -lt 32 ]]; then
 fi
 
 ensure_deps() {
+  local need_ci=0
   if [[ ! -x "$ROOT/node_modules/.bin/prisma" || ! -d "$ROOT/node_modules/next" ]]; then
-    echo "==> node_modules tidak lengkap — menjalankan npm ci"
+    need_ci=1
+  fi
+  # package.json may gain deps (e.g. @aws-sdk/*) while prisma/next already exist.
+  if [[ ! -d "$ROOT/node_modules/@aws-sdk/client-s3" || ! -d "$ROOT/node_modules/@aws-sdk/s3-request-presigner" ]]; then
+    if grep -q '"@aws-sdk/client-s3"' "$ROOT/package.json" 2>/dev/null; then
+      need_ci=1
+    fi
+  fi
+  local marker="$ROOT/node_modules/.genmeet-lock-hash"
+  local lock_hash=""
+  if [[ -f "$ROOT/package-lock.json" ]]; then
+    lock_hash="$(cksum "$ROOT/package-lock.json" | awk '{print $1"-"$2}')"
+    if [[ ! -f "$marker" || "$(cat "$marker" 2>/dev/null)" != "$lock_hash" ]]; then
+      need_ci=1
+    fi
+  fi
+  if [[ "$need_ci" -eq 1 ]]; then
+    echo "==> Menjalankan npm ci (dependency belum lengkap / package-lock berubah)"
     npm ci
+    if [[ -n "$lock_hash" ]]; then
+      echo "$lock_hash" > "$marker"
+    fi
   fi
 }
 

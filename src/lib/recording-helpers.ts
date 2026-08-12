@@ -133,8 +133,12 @@ export function resolveRecordingDownloadUrl(input: {
   if (!url) {
     return null;
   }
-  if (url.includes("r2.cloudflarestorage.com")) {
+  if (url.includes("r2.cloudflarestorage.com") || url.includes(".r2.dev")) {
     return null;
   }
   return url;
+}
+
+export function recordingAppDownloadPath(meetingId: string, recordingId: string) {
+  return `/api/meetings/manage/${meetingId}/recording/${recordingId}/download`;
 }
