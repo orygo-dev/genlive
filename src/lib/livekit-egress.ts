@@ -8,7 +8,7 @@ import {
 } from "livekit-server-sdk";
 import { getLiveKitEnvironment } from "@/lib/livekit";
 import { getPlatformConfig } from "@/lib/platform-config";
-import { normalizeEgressS3Region } from "@/lib/recording-helpers";
+import { normalizeEgressS3Region, resolveEgressForcePathStyle } from "@/lib/recording-helpers";
 
 export {
   buildRecordingFilepath,
@@ -16,6 +16,7 @@ export {
   mapEgressStatus,
   normalizeEgressS3Region,
   recordingStatusLabel,
+  resolveEgressForcePathStyle,
 } from "@/lib/recording-helpers";
 
 export async function getLiveKitApiHost(serverId?: string | null) {
@@ -63,7 +64,10 @@ export async function buildEncodedFileOutput(filepath: string) {
           config.livekitEgressS3Endpoint,
         ),
         endpoint: config.livekitEgressS3Endpoint || undefined,
-        forcePathStyle: config.livekitEgressS3ForcePathStyle,
+        forcePathStyle: resolveEgressForcePathStyle(
+          config.livekitEgressS3Endpoint,
+          config.livekitEgressS3ForcePathStyle,
+        ),
       }),
     },
   });
@@ -84,4 +88,10 @@ export async function startRoomRecording(input: {
 export async function stopRoomRecording(egressId: string) {
   const client = await getEgressClient();
   return client.stopEgress(egressId);
+}
+
+export async function getEgressInfo(egressId: string) {
+  const client = await getEgressClient();
+  const items = await client.listEgress({ egressId });
+  return items[0] ?? null;
 }

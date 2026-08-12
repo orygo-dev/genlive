@@ -4,6 +4,7 @@ import {
   mapEgressStatus,
   normalizeEgressS3Region,
   recordingStatusLabel,
+  resolveEgressForcePathStyle,
 } from "./recording-helpers";
 
 describe("recording helpers", () => {
@@ -39,5 +40,16 @@ describe("recording helpers", () => {
     expect(normalizeEgressS3Region("apac", endpoint)).toBe("apac");
     expect(normalizeEgressS3Region("ap-southeast-1", endpoint)).toBe("auto");
     expect(normalizeEgressS3Region("ap-southeast-1", null)).toBe("ap-southeast-1");
+  });
+
+  it("forces path style for Cloudflare R2", () => {
+    expect(
+      resolveEgressForcePathStyle(
+        "https://abc.r2.cloudflarestorage.com",
+        false,
+      ),
+    ).toBe(true);
+    expect(resolveEgressForcePathStyle(null, true)).toBe(true);
+    expect(resolveEgressForcePathStyle(null, false)).toBe(false);
   });
 });

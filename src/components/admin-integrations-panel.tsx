@@ -147,7 +147,9 @@ export function AdminIntegrationsPanel() {
         livekitEgressS3ForcePathStyle: payload.integrations
           .livekitEgressS3ForcePathStyle
           ? "true"
-          : "false",
+          : payload.integrations.livekitEgressS3Endpoint
+            ? "true"
+            : "false",
       });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Gagal memuat.");
@@ -749,14 +751,18 @@ export function AdminIntegrationsPanel() {
           <label>
             Force path style
             <select
-              value={form.livekitEgressS3ForcePathStyle || "false"}
+              value={form.livekitEgressS3ForcePathStyle || "true"}
               onChange={(e) =>
                 setField("livekitEgressS3ForcePathStyle", e.target.value)
               }
             >
-              <option value="false">false</option>
-              <option value="true">true</option>
+              <option value="true">true (wajib untuk Cloudflare R2)</option>
+              <option value="false">false (AWS S3 saja)</option>
             </select>
+            <small className="admin-muted">
+              Cloudflare R2 / MinIO: selalu <code>true</code>. LiveKit docs
+              mewajibkan force_path_style untuk storage non-AWS.
+            </small>
           </label>
         </fieldset>
 

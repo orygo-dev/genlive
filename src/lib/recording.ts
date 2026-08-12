@@ -6,6 +6,7 @@ import {
   buildRecordingFilepath,
   extractEgressFile,
   isEgressS3Configured,
+  getEgressInfo,
   mapEgressStatus,
   startRoomRecording,
   stopRoomRecording,
@@ -276,6 +277,36 @@ export async function stopMeetingRecording(input: {
     new Promise<void>((resolve) => setTimeout(resolve, 5_000)),
   ]);
 
+  // Reconcile from LiveKit so UI leaves ENDING even if webhook is missing.
+  try {
+    const info = await getEgressInfo(egressId);
+    if (info) {
+      await syncRecordingFromEgress(info);
+      const refreshed = await prisma.recording.findUnique({
+        where: { id: recordingId },
+        select: recordingSelect,
+      });
+      if (refreshed) {
+        await writeAuditLog({
+          organizationId: input.meeting.organizationId,
+          actorId: input.actorId,
+          action: "recording.stopped",
+          targetType: "recording",
+          targetId: refreshed.id,
+          metadata: {
+            meetingId: input.meeting.id,
+            roomName: input.meeting.roomName,
+            egressId: refreshed.egressId,
+            status: refreshed.status,
+          },
+        });
+        return { recording: refreshed };
+      }
+    }
+  } catch (error) {
+    console.error("Reconcile egress after stop failed", error);
+  }
+
   await writeAuditLog({
     organizationId: input.meeting.organizationId,
     actorId: input.actorId,
@@ -291,6 +322,29 @@ export async function stopMeetingRecording(input: {
   });
 
   return { recording };
+}
+
+export async function reconcileOpenRecording(meetingId: string) {
+  const open = await getOpenRecording(meetingId);
+  if (!open || open.egressId.startsWith("pending-")) {
+    return open;
+  }
+  if (open.status !== "ENDING" && open.status !== "STARTING") {
+    return open;
+  }
+
+  try {
+    const info = await getEgressInfo(open.egressId);
+    if (!info) {
+      return open;
+    }
+    await syncRecordingFromEgress(info);
+  } catch (error) {
+    console.error("Reconcile open recording failed", error);
+    return open;
+  }
+
+  return getOpenRecording(meetingId);
 }
 
 export async function syncRecordingFromEgress(info: EgressInfo) {

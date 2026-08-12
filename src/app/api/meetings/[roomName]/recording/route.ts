@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { canManageMeeting, canViewMeeting } from "@/lib/meeting-access";
 import { isEgressS3Configured } from "@/lib/livekit-egress";
 import {
-  getOpenRecording,
+  reconcileOpenRecording,
   startMeetingRecording,
   stopMeetingRecording,
 } from "@/lib/recording";
@@ -45,7 +45,7 @@ export async function GET(_: Request, { params }: RoomRecordingRouteProps) {
     return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
   }
 
-  const active = await getOpenRecording(meeting.id);
+  const active = await reconcileOpenRecording(meeting.id);
   const egressConfigured = await isEgressS3Configured();
   const egressId =
     active?.egressId && !active.egressId.startsWith("pending-")

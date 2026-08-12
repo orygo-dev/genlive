@@ -100,3 +100,19 @@ export function normalizeEgressS3Region(
   }
   return "auto";
 }
+
+/** LiveKit docs: non-AWS S3 (R2/MinIO) must use force_path_style. */
+export function resolveEgressForcePathStyle(
+  endpoint: string | null | undefined,
+  configured: boolean | null | undefined,
+): boolean {
+  const endpointLower = (endpoint || "").toLowerCase();
+  if (
+    endpointLower.includes("r2.cloudflarestorage.com") ||
+    endpointLower.includes("minio") ||
+    endpointLower.includes("localhost")
+  ) {
+    return true;
+  }
+  return Boolean(configured);
+}
